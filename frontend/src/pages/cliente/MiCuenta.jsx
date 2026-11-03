@@ -1,5 +1,6 @@
 // RF-10 · RF-14 · HU-8: meses pagados, deuda vigente e historial de pagos
 import { useEffect, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '../../api.js';
 import { Aviso, Estado } from '../../componentes.jsx';
 import { pesos, fecha, mes, MEDIOS } from '../../formato.js';
@@ -8,6 +9,7 @@ export default function MiCuenta() {
   const [resumen, setResumen] = useState(null);
   const [pagos, setPagos] = useState([]);
   const [error, setError] = useState('');
+  const [params] = useSearchParams();
 
   useEffect(() => {
     api('/cuenta/resumen').then(setResumen).catch((e) => setError(e.message));
@@ -18,6 +20,7 @@ export default function MiCuenta() {
     <section className="cuenta">
       <h1>Mi cuenta</h1>
       <Aviso>{error}</Aviso>
+      {params.get('cancelada') && <Aviso tipo="ok">Tu suscripción fue cancelada.</Aviso>}
 
       {resumen?.length === 0 && (
         <p className="tarjeta">Aún no tienes instalaciones con suscripción. Si ya contrataste el servicio, comunícate con ENINTI.</p>
@@ -28,7 +31,7 @@ export default function MiCuenta() {
           <article key={r.instalacion_id} className={`tarjeta resumen ${r.deuda > 0 ? 'con-deuda' : ''}`}>
             <header>
               <h2>{r.direccion}</h2>
-              <Estado deuda={r.deuda} />
+              {r.estado === 'cancelada' ? <span className="etiqueta neutra">Cancelada</span> : <Estado deuda={r.deuda} />}
             </header>
             <p className="comuna">{r.comuna}</p>
             <dl>
@@ -39,6 +42,8 @@ export default function MiCuenta() {
             {r.proximo_vencimiento && (
               <p>Próxima cuota: {pesos(r.cuota_mensual)} · vence el <span className="sin-corte">{fecha(r.proximo_vencimiento)}</span></p>
             )}
+            {r.estado === 'cancelada' && <p>Suscripción cancelada el {fecha(r.fecha_cancelacion)}.</p>}
+            <p className="enlaces"><Link to={`/cuenta/instalaciones/${r.instalacion_id}`}>Ver ficha técnica →</Link></p>
           </article>
         ))}
       </div>

@@ -1,5 +1,5 @@
 -- Datos de prueba ficticios (RNF-04). No corresponden a clientes reales.
--- Contraseñas: administrador Admin123 · clientes Cliente123 · técnico Tecnico123
+-- Contraseñas: administrador Admin123 · clientes Cliente123 · técnicos Tecnico123
 
 INSERT INTO comuna (nombre) VALUES
   ('Calama'), ('Chiu Chiu'), ('Lasana'), ('Caspana'), ('Toconce'), ('Tocopilla'), ('María Elena');
@@ -36,3 +36,21 @@ INSERT INTO pieza (nombre, descripcion, unidad) VALUES
   ('Cable solar 6 mm²',        'Cable rojo/negro',               'metro'),
   ('Protector de sobretensión', 'DPS DC 1000 V',                  'unidad'),
   ('Limpiador de paneles',     'Detergente neutro',              'litro');
+
+INSERT INTO usuario (nombre, correo, password_hash, telefono, rol) VALUES
+  ('Carla Técnica', 'carla@eninti.cl', '$2b$10$QqqVjLAZghqKEALGcwWKyO9sDLqLQx8.kj9UaXUXBvIV98eWesadS', '+56977777777', 'tecnico');
+
+-- María y Juan ya aceptaron las condiciones del servicio
+INSERT INTO aceptacion_condiciones (usuario_id, version, aceptado_en) VALUES
+  (3, '2026-11', '2026-11-01 10:00'),
+  (4, '2026-11', '2026-11-01 11:30');
+
+-- Mantenciones: algunas ya ejecutadas y otras programadas
+INSERT INTO mantencion (instalacion_id, tecnico_id, tipo, fecha_programada, fecha_ejecucion, estado, actividades, observaciones) VALUES
+  (1, 2, 'preventiva', '2026-05-20', '2026-05-20', 'finalizada', 'Limpieza de paneles, revisión de conexiones y medición de voltaje', 'Sistema en buen estado'),
+  (3, 2, 'preventiva', '2026-06-12', '2026-06-12', 'finalizada', 'Limpieza de paneles y revisión del banco de baterías', 'Se recomienda revisar baterías en la próxima visita'),
+  (1, 2,    'preventiva', '2026-11-18', NULL, 'programada', NULL, NULL),
+  (2, 2,    'preventiva', '2026-11-18', NULL, 'programada', NULL, NULL),
+  (3, 5,    'preventiva', '2026-11-25', NULL, 'programada', NULL, NULL),
+  (4, 5,    'preventiva', '2026-11-25', NULL, 'programada', NULL, NULL),
+  (5, NULL, 'preventiva', '2026-12-03', NULL, 'programada', NULL, NULL);

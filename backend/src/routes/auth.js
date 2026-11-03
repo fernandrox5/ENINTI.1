@@ -1,10 +1,11 @@
-// RF-08 · HU-7: registro e inicio de sesión
+// RF-08 · HU-7: registro e inicio de sesión · RF-19: aceptación de condiciones al registrarse
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { pool } from '../config/db.js';
 import { autenticar, JWT_SECRET } from '../middleware/auth.js';
 import { normalizarRut, correoValido, ErrorHttp } from '../utils/validar.js';
+import { CONDICIONES } from '../config/condiciones.js';
 
 const router = Router();
 
@@ -15,12 +16,13 @@ function emitirToken(usuario) {
 
 // Registro del cliente. Si el administrador ya lo había creado (mismo RUT), se vincula.
 router.post('/registro', async (req, res) => {
-  const { nombre, rut, correo, telefono, password } = req.body;
+  const { nombre, rut, correo, telefono, password, acepta_condiciones } = req.body;
   const rutNormal = normalizarRut(rut);
   if (!nombre?.trim()) throw new ErrorHttp(400, 'Ingresa tu nombre');
   if (!rutNormal) throw new ErrorHttp(400, 'El RUT no es válido');
   if (!correoValido(correo)) throw new ErrorHttp(400, 'El correo no es válido');
   if (!password || password.length < 8) throw new ErrorHttp(400, 'La contraseña debe tener al menos 8 caracteres');
+  if (acepta_condiciones !== true) throw new ErrorHttp(400, 'Debes aceptar las condiciones del servicio');
 
   const db = await pool.connect();
   try {
@@ -49,6 +51,7 @@ router.post('/registro', async (req, res) => {
         [usuario.id, rutNormal, nombre.trim(), correo.trim(), telefono || null]
       );
     }
+    await db.query('INSERT INTO aceptacion_condiciones (usuario_id, version) VALUES ($1, $2)', [usuario.id, CONDICIONES.version]);
     await db.query('COMMIT');
     res.status(201).json(emitirToken(usuario));
   } catch (err) {
@@ -69,6 +72,11 @@ router.post('/login', async (req, res) => {
   if (!ok) throw new ErrorHttp(401, 'Correo o contraseña incorrectos');
   if (!usuario.activo) throw new ErrorHttp(403, 'Tu cuenta está desactivada');
   res.json(emitirToken(usuario));
+});
+
+// Texto público de las condiciones, para mostrarlo en el registro
+router.get('/condiciones', (req, res) => {
+  res.json(CONDICIONES);
 });
 
 router.get('/yo', autenticar, (req, res) => {

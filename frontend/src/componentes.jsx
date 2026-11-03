@@ -8,7 +8,7 @@ export function Encabezado({ enlaces = [] }) {
       <div className="marca">ENINTI</div>
       <nav>
         {enlaces.map(([ruta, texto]) => (
-          <NavLink key={ruta} to={ruta}>{texto}</NavLink>
+          <NavLink key={ruta} to={ruta} end={ruta === "/cuenta"}>{texto}</NavLink>
         ))}
       </nav>
       <div className="usuario">

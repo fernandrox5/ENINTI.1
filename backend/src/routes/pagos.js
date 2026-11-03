@@ -9,17 +9,17 @@ import { ErrorHttp } from '../utils/validar.js';
 
 const router = Router();
 
-// RF-01: suscripciones con cuotas vencidas sin pagar
+// RF-01: suscripciones con cuotas vencidas sin pagar (incluye canceladas que dejaron deuda)
 router.get('/impagos', async (req, res) => {
   await generarCuotas();
   const { rows } = await pool.query(
-    `SELECT s.id AS suscripcion_id, cl.id AS cliente_id, cl.nombre AS cliente, cl.rut, cl.telefono,
+    `SELECT s.id AS suscripcion_id, s.estado, cl.id AS cliente_id, cl.nombre AS cliente, cl.rut, cl.telefono,
             i.id AS instalacion_id, i.direccion, co.nombre AS comuna,
             COUNT(c.id)::int AS meses_adeudados,
             SUM(c.monto)::int AS monto_adeudado,
             MIN(c.periodo) AS desde
      FROM cuota c
-     JOIN suscripcion s ON s.id = c.suscripcion_id AND s.estado = 'activa'
+     JOIN suscripcion s ON s.id = c.suscripcion_id
      JOIN instalacion i ON i.id = s.instalacion_id
      JOIN cliente cl ON cl.id = i.cliente_id
      JOIN comuna co ON co.id = i.comuna_id

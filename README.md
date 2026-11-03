@@ -46,7 +46,16 @@ Abre http://localhost:5173. Para detener ambos: `Ctrl + C`.
 |---|---|---|
 | Administrador | admin@eninti.cl | Admin123 |
 | Cliente | maria.rojas@correo.cl | Cliente123 |
-| Técnico | tecnico@eninti.cl | Tecnico123 |
+| Técnicos | tecnico@eninti.cl · carla@eninti.cl | Tecnico123 |
+
+### Pasarela de pago (ambiente de pruebas)
+
+En `backend/.env` se elige con `PASARELA`:
+
+- `simulada`: pasarela local que imita el flujo de Webpay. Funciona sin internet y sirve para demostraciones.
+- `transbank`: Webpay Oneclick en el ambiente de integración de Transbank (requiere internet). Usa las tarjetas de prueba que publica Transbank en su sitio para desarrolladores.
+
+En ambos casos ENINTI solo guarda el token de la pasarela y los últimos 4 dígitos, nunca la tarjeta (RNF-03).
 
 ## Avance
 
@@ -61,6 +70,11 @@ Abre http://localhost:5173. Para detener ambos: `Ctrl + C`.
 | 2 | RF-10 · Meses pagados y deuda vigente | ✅ |
 | 2 | RF-14 · Historial de pagos | ✅ |
 | 2 | RF-04 · Listado mensual de pagos y exportación | ✅ |
+| 3 | RF-13 · Ficha técnica de la instalación para el cliente | ✅ |
+| 3 | RF-09 · Inscribir medio de pago en ambiente de pruebas | ✅ |
+| 3 | RF-19 · Aceptación digital de condiciones | ✅ |
+| 3 | RF-03 · Calendario de mantenciones por comuna y asignación de técnico | ✅ |
+| 3 | RF-16 · Cancelación de la suscripción | ✅ |
 
 ## Equipo
 

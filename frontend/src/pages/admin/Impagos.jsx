@@ -31,7 +31,7 @@ export default function Impagos() {
             {lista.map((i) => (
               <tr key={i.suscripcion_id}>
                 <td><Link to={`/admin/clientes/${i.cliente_id}`}>{i.cliente}</Link><br /><small>{i.rut}</small></td>
-                <td>{i.direccion}<br /><small>{i.comuna}</small></td>
+                <td>{i.direccion}<br /><small>{i.comuna}</small>{i.estado === 'cancelada' && <> <span className="etiqueta neutra">Cancelada</span></>}</td>
                 <td>{i.telefono ? <a href={`tel:${i.telefono}`}>{i.telefono}</a> : '—'}</td>
                 <td><span className="etiqueta mala">{i.meses_adeudados}</span></td>
                 <td><strong>{pesos(i.monto_adeudado)}</strong></td>
