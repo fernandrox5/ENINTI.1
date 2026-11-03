@@ -7,10 +7,15 @@ import Clientes from './pages/admin/Clientes.jsx';
 import ClienteForm from './pages/admin/ClienteForm.jsx';
 import Instalaciones from './pages/admin/Instalaciones.jsx';
 import InstalacionForm from './pages/admin/InstalacionForm.jsx';
+import Impagos from './pages/admin/Impagos.jsx';
+import PagosMes from './pages/admin/PagosMes.jsx';
+import MiCuenta from './pages/cliente/MiCuenta.jsx';
 
 const ENLACES_ADMIN = [
   ['/admin/clientes', 'Clientes'],
   ['/admin/instalaciones', 'Instalaciones'],
+  ['/admin/impagos', 'Impagos'],
+  ['/admin/pagos', 'Pagos del mes'],
 ];
 
 function Panel({ rol, enlaces }) {
@@ -37,10 +42,12 @@ export default function App() {
             <Route path="instalaciones" element={<Instalaciones />} />
             <Route path="instalaciones/nueva" element={<InstalacionForm />} />
             <Route path="instalaciones/:id" element={<InstalacionForm />} />
+            <Route path="impagos" element={<Impagos />} />
+            <Route path="pagos" element={<PagosMes />} />
           </Route>
 
           <Route path="/cuenta" element={<Panel rol="cliente" enlaces={[['/cuenta', 'Mi cuenta']]} />}>
-            <Route index element={<p>Bienvenido a tu cuenta ENINTI.</p>} />
+            <Route index element={<MiCuenta />} />
           </Route>
 
           <Route path="/tecnico" element={<Panel rol="tecnico" />}>

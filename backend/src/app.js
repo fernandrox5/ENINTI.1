@@ -3,6 +3,8 @@ import health from './routes/health.js';
 import auth from './routes/auth.js';
 import clientes from './routes/clientes.js';
 import instalaciones from './routes/instalaciones.js';
+import pagos from './routes/pagos.js';
+import cuenta from './routes/cuenta.js';
 import { autenticar, permitir } from './middleware/auth.js';
 
 const app = express();
@@ -15,6 +17,10 @@ app.use('/api/auth', auth);
 // Administrador
 app.use('/api/clientes', autenticar, permitir('administrador'), clientes);
 app.use('/api/instalaciones', autenticar, permitir('administrador'), instalaciones);
+app.use('/api/pagos', autenticar, permitir('administrador'), pagos);
+
+// Cliente
+app.use('/api/cuenta', autenticar, permitir('cliente'), cuenta);
 
 app.use((req, res) => {
   res.status(404).json({ error: 'Ruta no encontrada' });
