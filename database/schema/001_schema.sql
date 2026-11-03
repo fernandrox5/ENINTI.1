@@ -131,9 +131,10 @@ CREATE TABLE solicitud_mantencion (
 );
 
 -- Mantención programada, asignada a un técnico y registrada al ejecutarse.
+-- Depende de la suscripción: una instalación sin suscripción no tiene mantenciones.
 CREATE TABLE mantencion (
   id                SERIAL PRIMARY KEY,
-  instalacion_id    INT NOT NULL REFERENCES instalacion(id) ON DELETE CASCADE,
+  suscripcion_id    INT NOT NULL REFERENCES suscripcion(id) ON DELETE CASCADE,
   tecnico_id        INT REFERENCES usuario(id),
   solicitud_id      INT UNIQUE REFERENCES solicitud_mantencion(id) ON DELETE SET NULL,
   tipo              VARCHAR(15) NOT NULL DEFAULT 'preventiva' CHECK (tipo IN ('preventiva', 'correctiva')),

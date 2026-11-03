@@ -30,7 +30,7 @@ npm run db:init --prefix backend
 | `medio_pago` | Token de la pasarela (nunca la tarjeta, RNF-03) | Inscribir medio de pago |
 | `aceptacion_condiciones` | Registro de la aceptación de condiciones | Aceptar condiciones del servicio |
 | `solicitud_mantencion` | Mantenciones pedidas por el cliente | Solicitar / Consultar solicitudes |
-| `mantencion` | Visita programada, técnico asignado y registro de lo ejecutado | Calendario, Asignar, Registrar mantención |
+| `mantencion` | Visita programada, técnico asignado y registro de lo ejecutado. Depende de la suscripción | Calendario, Asignar, Registrar mantención |
 | `pieza` | Catálogo de piezas y materiales | Registrar piezas |
 | `mantencion_pieza` | Piezas previstas e instaladas en cada mantención | Registrar piezas |
 | `notificacion` | Avisos de morosidad y de mantención próxima | Notificaciones (Temporizador) |
@@ -41,3 +41,4 @@ npm run db:init --prefix backend
 - La deuda no se guarda: se calcula a partir de las cuotas vencidas (`fecha_vencimiento` anterior a hoy) que siguen pendientes.
 - Las cuotas se generan solas, mes a mes, desde el inicio de la suscripción.
 - Una cuota solo puede tener un pago aprobado.
+- Las mantenciones pertenecen a una suscripción: una instalación sin suscripción no tiene mantenciones, y una con suscripción puede tener cero o muchas.
