@@ -4,9 +4,10 @@
 -- Terminología: "instalación" = planta fotovoltaica del cliente.
 -- ============================================================
 
+-- Borra el modelo anterior (incluida la tabla "planta" del primer repositorio)
 DROP TABLE IF EXISTS contacto, notificacion, mantencion_pieza, pieza, mantencion,
   solicitud_mantencion, pago, cuota, medio_pago, aceptacion_condiciones,
-  suscripcion, instalacion, cliente, comuna, usuario CASCADE;
+  suscripcion, instalacion, planta, cliente, comuna, usuario CASCADE;
 
 -- Usuario registrado (Iniciar sesión). Rol: administrador, cliente o técnico.
 CREATE TABLE usuario (
