@@ -1,0 +1,154 @@
+erDiagram
+  usuario ||--o| cliente : "tiene perfil"
+  usuario ||--o{ aceptacion_condiciones : "acepta"
+  usuario ||--o{ notificacion : "recibe"
+  usuario ||--o{ mantencion : "técnico asignado"
+  usuario ||--o{ pago : "registra"
+  cliente ||--o{ instalacion : "posee"
+  cliente ||--o{ medio_pago : "inscribe"
+  comuna ||--o{ instalacion : "ubica"
+  instalacion ||--o{ suscripcion : "contrata"
+  instalacion ||--o{ solicitud_mantencion : "solicita"
+  instalacion ||--o{ mantencion : "recibe"
+  solicitud_mantencion ||--o| mantencion : "origina"
+  suscripcion ||--o{ cuota : "genera"
+  cuota ||--o{ pago : "se paga con"
+  mantencion ||--o{ mantencion_pieza : "usa"
+  pieza ||--o{ mantencion_pieza : "se usa en"
+  usuario {
+    SERIAL id PK
+    VARCHAR nombre
+    VARCHAR correo UK
+    VARCHAR password_hash
+    VARCHAR telefono
+    VARCHAR rol
+    BOOLEAN activo
+    TIMESTAMP creado_en
+  }
+  aceptacion_condiciones {
+    SERIAL id PK
+    INT usuario_id FK
+    VARCHAR version
+    TIMESTAMP aceptado_en
+  }
+  notificacion {
+    SERIAL id PK
+    INT usuario_id FK
+    VARCHAR tipo
+    TEXT mensaje
+    BOOLEAN leida
+    TIMESTAMP creado_en
+  }
+  contacto {
+    SERIAL id PK
+    VARCHAR nombre
+    VARCHAR correo
+    VARCHAR telefono
+    TEXT mensaje
+    TIMESTAMP creado_en
+  }
+  cliente {
+    SERIAL id PK
+    INT usuario_id FK,UK
+    VARCHAR rut UK
+    VARCHAR nombre
+    VARCHAR correo
+    VARCHAR telefono
+    VARCHAR direccion
+    TIMESTAMP creado_en
+  }
+  medio_pago {
+    SERIAL id PK
+    INT cliente_id FK
+    VARCHAR pasarela
+    VARCHAR token_pasarela
+    VARCHAR tipo_tarjeta
+    CHAR ultimos_digitos
+    BOOLEAN activo
+    TIMESTAMP creado_en
+  }
+  mantencion {
+    SERIAL id PK
+    INT instalacion_id FK
+    INT tecnico_id FK
+    INT solicitud_id FK,UK
+    VARCHAR tipo
+    DATE fecha_programada
+    DATE fecha_ejecucion
+    VARCHAR estado
+    TEXT actividades
+    TEXT observaciones
+    TIMESTAMP creado_en
+  }
+  mantencion_pieza {
+    SERIAL id PK
+    INT mantencion_id FK
+    INT pieza_id FK
+    INT cantidad
+    VARCHAR tipo
+  }
+  instalacion {
+    SERIAL id PK
+    INT cliente_id FK
+    INT comuna_id FK
+    VARCHAR direccion
+    VARCHAR referencia
+    NUMERIC latitud
+    NUMERIC longitud
+    NUMERIC potencia_kw
+    VARCHAR inversor
+    VARCHAR paneles
+    INT cantidad_paneles
+    VARCHAR baterias
+    DATE fecha_instalacion
+    TIMESTAMP creado_en
+  }
+  solicitud_mantencion {
+    SERIAL id PK
+    INT instalacion_id FK
+    TEXT motivo
+    DATE fecha_preferida
+    VARCHAR estado
+    TIMESTAMP creado_en
+  }
+  pieza {
+    SERIAL id PK
+    VARCHAR nombre UK
+    VARCHAR descripcion
+    VARCHAR unidad
+  }
+  comuna {
+    SERIAL id PK
+    VARCHAR nombre UK
+  }
+  suscripcion {
+    SERIAL id PK
+    INT instalacion_id FK
+    DATE fecha_inicio
+    INT cuota_mensual
+    INT dia_cobro
+    INT mantenciones_anuales
+    VARCHAR estado
+    DATE fecha_cancelacion
+    TIMESTAMP creado_en
+  }
+  cuota {
+    SERIAL id PK
+    INT suscripcion_id FK
+    DATE periodo
+    INT monto
+    DATE fecha_vencimiento
+    VARCHAR estado
+  }
+  pago {
+    SERIAL id PK
+    INT cuota_id FK
+    INT monto
+    DATE fecha_pago
+    VARCHAR medio
+    VARCHAR origen
+    VARCHAR estado
+    VARCHAR referencia
+    INT registrado_por FK
+    TIMESTAMP creado_en
+  }
