@@ -5,24 +5,19 @@ import clientes from './routes/clientes.js';
 import instalaciones from './routes/instalaciones.js';
 import pagos from './routes/pagos.js';
 import cuenta from './routes/cuenta.js';
-import mantenciones from './routes/mantenciones.js';
-import pasarelaRutas from './routes/pasarela.js';
 import { autenticar, permitir } from './middleware/auth.js';
 
 const app = express();
 
 app.use(express.json());
-app.use(express.urlencoded({ extended: false })); // retorno de la pasarela (POST de formulario)
 
 app.use('/api/health', health);
 app.use('/api/auth', auth);
-app.use('/api/pasarela', pasarelaRutas);
 
 // Administrador
 app.use('/api/clientes', autenticar, permitir('administrador'), clientes);
 app.use('/api/instalaciones', autenticar, permitir('administrador'), instalaciones);
 app.use('/api/pagos', autenticar, permitir('administrador'), pagos);
-app.use('/api/mantenciones', autenticar, permitir('administrador'), mantenciones);
 
 // Cliente
 app.use('/api/cuenta', autenticar, permitir('cliente'), cuenta);

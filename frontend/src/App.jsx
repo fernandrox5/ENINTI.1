@@ -10,21 +10,12 @@ import InstalacionForm from './pages/admin/InstalacionForm.jsx';
 import Impagos from './pages/admin/Impagos.jsx';
 import PagosMes from './pages/admin/PagosMes.jsx';
 import MiCuenta from './pages/cliente/MiCuenta.jsx';
-import FichaInstalacion from './pages/cliente/FichaInstalacion.jsx';
-import MedioPago from './pages/cliente/MedioPago.jsx';
-import Calendario from './pages/admin/Calendario.jsx';
 
 const ENLACES_ADMIN = [
   ['/admin/clientes', 'Clientes'],
   ['/admin/instalaciones', 'Instalaciones'],
-  ['/admin/mantenciones', 'Mantenciones'],
   ['/admin/impagos', 'Impagos'],
   ['/admin/pagos', 'Pagos del mes'],
-];
-
-const ENLACES_CLIENTE = [
-  ['/cuenta', 'Mi cuenta'],
-  ['/cuenta/medio-pago', 'Medio de pago'],
 ];
 
 function Panel({ rol, enlaces }) {
@@ -51,15 +42,12 @@ export default function App() {
             <Route path="instalaciones" element={<Instalaciones />} />
             <Route path="instalaciones/nueva" element={<InstalacionForm />} />
             <Route path="instalaciones/:id" element={<InstalacionForm />} />
-            <Route path="mantenciones" element={<Calendario />} />
             <Route path="impagos" element={<Impagos />} />
             <Route path="pagos" element={<PagosMes />} />
           </Route>
 
-          <Route path="/cuenta" element={<Panel rol="cliente" enlaces={ENLACES_CLIENTE} />}>
+          <Route path="/cuenta" element={<Panel rol="cliente" enlaces={[['/cuenta', 'Mi cuenta']]} />}>
             <Route index element={<MiCuenta />} />
-            <Route path="instalaciones/:id" element={<FichaInstalacion />} />
-            <Route path="medio-pago" element={<MedioPago />} />
           </Route>
 
           <Route path="/tecnico" element={<Panel rol="tecnico" />}>
