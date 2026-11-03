@@ -1,17 +1,149 @@
-/* Texto base grande y buen contraste (RNF-01) */
+/* RNF-01: texto base grande y contraste AA · RNF-02: responsivo desde 360 px */
 :root {
-  font-family: system-ui, sans-serif;
+  --texto: #1a1a1a;
+  --suave: #555;
+  --fondo: #f5f6f4;
+  --tarjeta: #ffffff;
+  --borde: #d0d4cc;
+  --marca: #0b5d3b;
+  --marca-oscura: #08452c;
+  --sol: #f2b705;
+  --malo: #b3261e;
+  --malo-fondo: #fdecea;
+  --bueno: #1d6b33;
+  --bueno-fondo: #e7f4ea;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
   font-size: 18px;
-  color: #1a1a1a;
-  background: #ffffff;
+  line-height: 1.5;
+  color: var(--texto);
+  background: var(--fondo);
 }
 
-body {
-  margin: 0;
+* { box-sizing: border-box; }
+body { margin: 0; }
+h1 { font-size: 1.7rem; margin: 0 0 0.75rem; }
+h2 { font-size: 1.25rem; margin: 1.5rem 0 0.75rem; }
+a { color: var(--marca); }
+small { color: var(--suave); }
+.sin-corte { white-space: nowrap; }
+
+button, .boton {
+  font: inherit;
+  background: var(--marca);
+  color: #fff;
+  border: 0;
+  border-radius: 8px;
+  padding: 0.6rem 1.1rem;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  min-height: 44px;
+}
+button:hover, .boton:hover { background: var(--marca-oscura); }
+button:disabled { background: #9aa39d; cursor: not-allowed; }
+button.secundario { background: transparent; color: var(--marca); border: 2px solid var(--marca); }
+
+input, select, textarea {
+  font: inherit;
+  width: 100%;
+  padding: 0.55rem 0.7rem;
+  border: 2px solid var(--borde);
+  border-radius: 8px;
+  background: #fff;
+  min-height: 44px;
+}
+input:focus, select:focus, button:focus-visible, a:focus-visible {
+  outline: 3px solid var(--sol);
+  outline-offset: 1px;
 }
 
-.contenedor {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 1.5rem 1rem;
+.contenedor { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
+
+/* Encabezado */
+.encabezado {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1.5rem;
+  background: var(--marca); color: #fff; padding: 0.75rem 1rem;
+}
+.marca { font-weight: 800; font-size: 1.3rem; letter-spacing: 0.04em; }
+.marca::before { content: '☀ '; color: var(--sol); }
+.encabezado nav { display: flex; flex-wrap: wrap; gap: 0.25rem; flex: 1; }
+.encabezado nav a { color: #fff; text-decoration: none; padding: 0.4rem 0.75rem; border-radius: 6px; }
+.encabezado nav a.active { background: rgba(255, 255, 255, 0.2); font-weight: 600; }
+.usuario { display: flex; align-items: center; gap: 0.75rem; }
+.usuario button { color: #fff; border-color: #fff; min-height: 36px; padding: 0.3rem 0.8rem; }
+
+/* Acceso */
+.acceso { min-height: 100vh; display: grid; place-items: center; padding: 1rem; }
+.acceso .tarjeta { width: 100%; max-width: 420px; display: grid; gap: 0.9rem; }
+.acceso h1 { color: var(--marca); margin: 0; }
+.acceso p { margin: 0; }
+.centro { text-align: center; }
+
+.tarjeta { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 12px; padding: 1.5rem; }
+
+.campo { display: grid; gap: 0.3rem; font-weight: 600; }
+.campo small { font-weight: 400; }
+.check { display: flex; align-items: center; gap: 0.6rem; }
+.check input { width: 22px; min-height: 22px; }
+
+.aviso { margin: 0; padding: 0.6rem 0.9rem; border-radius: 8px; }
+.aviso.error { background: var(--malo-fondo); color: var(--malo); }
+.aviso.ok { background: var(--bueno-fondo); color: var(--bueno); }
+
+.titulo { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.75rem; }
+.titulo h1, .titulo h2 { margin: 0; }
+.titulo + * { margin-top: 1rem; }
+.buscador { max-width: 360px; margin-bottom: 1rem; }
+
+/* Tablas: se desplazan dentro de su caja en pantallas angostas */
+.tabla { overflow-x: auto; background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 12px; }
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 0.7rem 0.9rem; border-bottom: 1px solid var(--borde); vertical-align: top; }
+th { background: #eef0ec; font-size: 0.9rem; }
+tr:last-child td { border-bottom: 0; }
+.vacio { text-align: center; color: var(--suave); padding: 1.5rem; }
+
+.etiqueta { white-space: nowrap; display: inline-block; padding: 0.1rem 0.6rem; border-radius: 999px; font-size: 0.85rem; font-weight: 700; }
+.etiqueta.mala { background: var(--malo-fondo); color: var(--malo); }
+.etiqueta.buena { background: var(--bueno-fondo); color: var(--bueno); }
+
+/* Formularios en dos columnas */
+.formulario {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem;
+  background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 12px; padding: 1.5rem;
+}
+.formulario h2 { margin: 0.5rem 0 0; }
+.completo, .acciones { grid-column: 1 / -1; }
+.acciones { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 1rem; }
+
+/* Ventana modal */
+.fondo { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.45); display: grid; place-items: center; padding: 1rem; z-index: 10; }
+.modal { width: 100%; max-width: 460px; max-height: 90vh; overflow-y: auto; display: grid; gap: 0.9rem; }
+.modal h2, .modal p { margin: 0; }
+fieldset { border: 1px solid var(--borde); border-radius: 8px; display: grid; gap: 0.4rem; }
+.botones { display: flex; justify-content: flex-end; gap: 0.75rem; }
+
+/* Mi cuenta del cliente */
+.resumenes { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; }
+.resumen header { display: flex; justify-content: space-between; align-items: start; gap: 0.5rem; }
+.resumen h2 { margin: 0; }
+.resumen.con-deuda { border: 2px solid var(--malo); }
+.resumen .comuna { margin: 0.2rem 0 1rem; color: var(--suave); }
+.resumen dl { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 0 0 0.75rem; }
+.resumen dt { color: var(--suave); font-size: 0.9rem; }
+.resumen dd { margin: 0; font-size: 1.6rem; font-weight: 800; }
+.resumen dd.mala { color: var(--malo); }
+.resumen p { margin: 0.4rem 0 0; }
+
+@media (max-width: 600px) {
+  :root { font-size: 17px; }
+  /* Tablas apilables: cada fila se muestra como una tarjeta */
+  table.apilable thead { display: none; }
+  table.apilable tr { display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem 1rem; padding: 0.9rem; border-bottom: 1px solid var(--borde); }
+  table.apilable td { border: 0; padding: 0; }
+  table.apilable td::before { content: attr(data-etiqueta); display: block; font-size: 0.8rem; color: var(--suave); }
+  table.apilable td:last-child, table.apilable td.vacio { grid-column: 1 / -1; }
+  table.apilable td.vacio::before { content: none; }
+  .usuario span { display: none; }
+  .tarjeta, .formulario { padding: 1rem; }
 }
