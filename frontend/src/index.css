@@ -1,0 +1,17 @@
+/* Texto base grande y buen contraste (RNF-01) */
+:root {
+  font-family: system-ui, sans-serif;
+  font-size: 18px;
+  color: #1a1a1a;
+  background: #ffffff;
+}
+
+body {
+  margin: 0;
+}
+
+.contenedor {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem;
+}
