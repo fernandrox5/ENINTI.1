@@ -7,7 +7,7 @@ erDiagram
   cliente ||--o{ instalacion : "posee"
   cliente ||--o{ medio_pago : "inscribe"
   comuna ||--o{ instalacion : "ubica"
-  instalacion ||--o{ suscripcion : "contrata"
+  instalacion ||--o{ suscripcion : "tiene"
   instalacion ||--o{ solicitud_mantencion : "solicita"
   suscripcion ||--o{ mantencion : "incluye"
   solicitud_mantencion ||--o| mantencion : "origina"
