@@ -150,3 +150,4 @@ Las variables de `backend/.env` se cargan en *Settings → Environment Variables
 |---|---|
 | Fernando Castillo | Desarrollo full stack · base de datos y backend |
 | Cristofer Álvarez | Desarrollo full stack · frontend y avisos |
+| Jeremi Herrera Contreras | Desarrollo |
