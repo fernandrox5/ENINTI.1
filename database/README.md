@@ -1,43 +1,63 @@
 # Base de datos
 
-PostgreSQL. El modelo se derivó del diagrama de casos de uso.
+PostgreSQL alojado en **Supabase**. Los usuarios se autentican con **Supabase Auth**.
 
-- `schema/001_schema.sql` — creación de las 15 tablas.
-- `seeds/001_datos.sql` — datos de prueba ficticios (RNF-04).
-- `seeds/002_pagos.sql` — pagos de prueba (se cargan después de generar las cuotas).
-- Diagrama ER: `docs/diagramas/modelo_er.drawio` (editable) y `modelo_er.png`.
+Modelo: **Cliente → Instalación → Suscripción → { Pagos, Mantenciones }**
 
-## Crear la base local
+| Script | Qué hace |
+|---|---|
+| `schema/00_reiniciar.sql` | Borra todo lo que crean los scripts 01 y 02 (solo desarrollo). |
+| `schema/01_esquema_eninti.sql` | Esquema completo: tipos, tablas, triggers, vistas, RLS, Storage y proceso diario con pg_cron. |
+| `schema/02_backend.sql` | Complementos que usa el backend: tabla `medios_pago` (token de la pasarela) y función `fn_periodos`. |
+| `seeds/01_datos_prueba.sql` | Datos de prueba ficticios (RNF-04). |
+
+## Crear la base
+
+Con `DATABASE_URL` (Session pooler) y las claves de Supabase en `backend/.env`:
 
 ```
-createdb eninti
 npm run db:init --prefix backend
 ```
 
-`db:init` borra y vuelve a crear todas las tablas, así que úsalo solo en desarrollo.
+Ejecuta los scripts en orden y crea los usuarios de prueba en Supabase Auth. **Borra todo lo anterior**, así que úsalo solo en desarrollo.
 
-## Tablas
-
-| Tabla | Para qué sirve | Caso de uso |
-|---|---|---|
-| `usuario` | Cuentas de acceso con rol administrador, cliente o técnico | Iniciar sesión |
-| `cliente` | Ficha del cliente; se vincula a su usuario al registrarse | Gestionar clientes, Registrarse |
-| `comuna` | Localidades donde opera ENINTI | Calendario por comuna |
-| `instalacion` | Ubicación y ficha técnica de cada instalación | Gestionar instalaciones, Consultar ficha técnica y ubicación |
-| `suscripcion` | Plan contratado por instalación (una activa por instalación) | Cancelar suscripción |
-| `cuota` | Cobro mensual generado por cada suscripción | Consultar impagas, estado de pagos |
-| `pago` | Pago de una cuota, manual o automático | Registrar pago manual, Cobro automático, Historial |
-| `medio_pago` | Token de la pasarela (nunca la tarjeta, RNF-03) | Inscribir medio de pago |
-| `aceptacion_condiciones` | Registro de la aceptación de condiciones | Aceptar condiciones del servicio |
-| `solicitud_mantencion` | Mantenciones pedidas por el cliente | Solicitar / Consultar solicitudes |
-| `mantencion` | Visita programada, técnico asignado y registro de lo ejecutado | Calendario, Asignar, Registrar mantención |
-| `pieza` | Catálogo de piezas y materiales | Registrar piezas |
-| `mantencion_pieza` | Piezas previstas e instaladas en cada mantención | Registrar piezas |
-| `notificacion` | Avisos de morosidad y de mantención próxima | Notificaciones (Temporizador) |
-| `contacto` | Mensajes del formulario público | Enviar formulario de contacto |
+También se pueden ejecutar a mano en Supabase → SQL Editor (01 y luego 02), pero así no se crean los usuarios de prueba.
 
 ## Reglas del modelo
 
-- La deuda no se guarda: se calcula a partir de las cuotas vencidas (`fecha_vencimiento` anterior a hoy) que siguen pendientes.
-- Las cuotas se generan solas, mes a mes, desde el inicio de la suscripción.
-- Una cuota solo puede tener un pago aprobado.
+1. La suscripción es de la **instalación**, no del cliente.
+2. No existe "renovar": se **cierra** o **vence** una suscripción y se **crea** otra nueva (`suscripcion_anterior_id` guarda el historial).
+3. Máximo una suscripción vigente por instalación.
+4. Vigente mientras hoy ≤ `fecha_termino`. El proceso diario (`fn_proceso_diario`, pg_cron) pasa a vencidas las que terminaron y genera los avisos.
+5. La instalación nace sin suscripción.
+6. La deuda no se guarda: `v_suscripciones_estado` la calcula según los periodos de contrato que ya debían pagarse.
+7. Al crear una suscripción vigente se agendan solas sus mantenciones preventivas (Plan Básico: meses 3 y 9).
+
+## Usuarios y roles
+
+Cada usuario de `auth.users` tiene un registro en `perfiles` con su rol (`admin`, `cliente` o `tecnico`). Lo crea un trigger al registrarse, y al confirmar el correo se vincula con su ficha de `clientes` o `tecnicos` según el correo. Solo un administrador puede cambiar el rol.
+
+El backend se conecta como dueño de las tablas, así que las políticas RLS no lo limitan. Las RLS protegen el acceso directo con la clave publicable: el administrador ve todo, el cliente solo lo suyo y el técnico sus mantenciones.
+
+## Tablas
+
+| Tabla | Para qué sirve |
+|---|---|
+| `perfiles` | Usuario de la plataforma (enlazado a `auth.users`) y su rol |
+| `localidades` | Poblados atendidos (Calama, Chiu Chiu, Caspana…) |
+| `clientes` | Ficha del cliente; se vincula a su perfil al registrarse |
+| `tecnicos` | Técnicos y empresas subcontratistas |
+| `instalaciones` | Planta fotovoltaica: ubicación y ficha técnica (código `INS-0001`) |
+| `equipos` | Paneles, inversores, baterías… de cada instalación, con vida útil y retiro |
+| `tipos_suscripcion` | Planes (hoy solo el Básico está activo) |
+| `suscripciones` | Compromiso de pago de una instalación por un plazo (código `SUS-2026-00001`) y aceptación de condiciones |
+| `pagos` | Pago de un periodo de la suscripción (manual o con comprobante) |
+| `solicitudes` | Pedidos del cliente: mantención, emergencia o consulta |
+| `mantenciones` | Visitas programadas y realizadas, técnico y calificación |
+| `documentos` | Planos, fotos y contratos guardados en Storage |
+| `gestiones` | Llamadas y contactos para retener o recuperar clientes |
+| `notificaciones` | Cola de correos que genera el proceso diario |
+| `configuracion` | Correo del administrador, días de aviso, versión de condiciones |
+| `medios_pago` | Token de la tarjeta inscrita en la pasarela, nunca la tarjeta (RNF-03) |
+
+Vistas principales: `v_suscripciones_estado`, `v_morosos`, `v_por_vencer`, `v_instalaciones_sin_suscripcion`, `v_historial_retencion`, `v_pagos_por_mes`, `v_calendario_mantenciones`, `v_resumen_admin`.

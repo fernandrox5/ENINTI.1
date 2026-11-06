@@ -1,0 +1,177 @@
+/* Syntia · estilos base según los mockups (Inter, amarillo solar, bordes redondeados) */
+:root {
+  --amarillo: #ffcc00;
+  --amarillo-claro: #fff7d1;
+  --texto: #1d1d1f;
+  --gris: #6e6e73;
+  --borde: #8e8e93;
+  --linea: #d2d2d7;
+  --dorado: #8a6500;
+  --rojo: #c4161c;
+  --rojo-claro: #fdecee;
+  --verde: #1e7d32;
+  --verde-claro: #e8f5e9;
+  --radio: 12px;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: var(--texto);
+  background: #fff;
+  -webkit-font-smoothing: antialiased;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; min-height: 100vh; }
+a { color: var(--dorado); }
+button, input { font: inherit; color: inherit; }
+
+.oculto {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap;
+}
+
+/* Textos distintos en celular y escritorio (mockups 001 y 002) */
+@media (max-width: 899px) {
+  .solo-escritorio { display: none !important; }
+}
+@media (min-width: 900px) {
+  .solo-celular { display: none !important; }
+}
+
+/* ---------- Marca ---------- */
+.marca {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-size: 22px; font-weight: 600; color: var(--texto); text-decoration: none;
+}
+.marca-sol {
+  width: 16px; height: 16px; border-radius: 50%;
+  background: var(--amarillo); border: 1.5px solid #b38f00;
+}
+
+/* ---------- Títulos de dos tonos ("Syntia. Inicia sesión.") ---------- */
+.titulo-grande {
+  margin: 0; font-size: 34px; line-height: 1.12; letter-spacing: -0.02em; font-weight: 600; color: var(--gris);
+}
+.titulo-grande strong { color: var(--texto); font-weight: 700; }
+
+/* ---------- Campos y botones ---------- */
+.campo { position: relative; display: block; }
+.campo input {
+  width: 100%; height: 56px; padding: 0 18px;
+  border: 1px solid var(--borde); border-radius: var(--radio);
+  font-size: 17px; background: #fff; outline: none;
+}
+.campo input::placeholder { color: var(--gris); }
+.campo input:focus { border-color: var(--texto); box-shadow: 0 0 0 3px rgba(255, 204, 0, 0.45); }
+.campo-password input { padding-right: 96px; }
+.campo-password .enlace { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); }
+
+.enlace {
+  background: none; border: 0; padding: 4px 0; cursor: pointer;
+  color: var(--dorado); font-size: 16px; text-decoration: none;
+}
+.enlace:hover { text-decoration: underline; }
+
+.boton {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  width: 100%; min-height: 50px; padding: 0 20px;
+  border-radius: var(--radio); font-size: 17px; font-weight: 500;
+  cursor: pointer; text-decoration: none; transition: filter 0.15s, background 0.15s;
+}
+.boton.primario { background: var(--amarillo); border: 0; color: var(--texto); }
+.boton.primario:hover:not(:disabled) { filter: brightness(0.95); }
+.boton.primario:disabled { opacity: 0.55; cursor: default; }
+.boton.secundario { background: #fff; border: 1.5px solid var(--texto); color: var(--texto); }
+.boton.secundario:hover { background: #f5f5f7; }
+.boton.chico { width: auto; min-height: 38px; font-size: 15px; padding: 0 16px; }
+
+.check { display: inline-flex; align-items: center; gap: 10px; font-size: 16px; cursor: pointer; }
+.check input { width: 20px; height: 20px; accent-color: var(--amarillo); margin: 0; }
+
+.aviso-error {
+  margin: 0; padding: 12px 14px; border-radius: var(--radio);
+  background: var(--rojo-claro); color: var(--rojo); font-size: 15px;
+}
+
+.separador {
+  display: flex; align-items: center; gap: 14px; color: var(--gris); font-size: 16px;
+}
+.separador::before, .separador::after { content: ''; flex: 1; height: 1px; background: var(--linea); }
+
+/* ---------- Login (001 escritorio · 002 celular) ---------- */
+.login { min-height: 100vh; display: flex; flex-direction: column; }
+.login-barra {
+  height: 60px; padding: 0 32px; border-bottom: 1px solid var(--linea);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.login-barra nav { display: flex; gap: 38px; }
+.login-barra nav a { color: var(--gris); text-decoration: none; font-size: 16px; }
+.login-barra nav a:hover { color: var(--texto); }
+
+.login-cuerpo { flex: 1; display: flex; flex-direction: column; }
+.login-foto {
+  height: 236px; background: url('/paneles.jpg') center 60% / cover no-repeat;
+  position: relative;
+}
+.login-panel { padding: 28px 20px 40px; }
+.login-form { display: flex; flex-direction: column; gap: 16px; max-width: 420px; margin: 0 auto; }
+.login-form h1 { margin-bottom: 12px; }
+.login-opciones { display: flex; justify-content: flex-end; align-items: center; margin: 4px 0 12px; }
+.login-legal { margin: 8px 0 0; text-align: center; color: var(--gris); font-size: 14px; line-height: 1.5; }
+
+@media (min-width: 900px) {
+  .login-cuerpo { flex-direction: row-reverse; }
+  .login-foto { flex: 1; height: auto; background-position: center; }
+  .login-foto::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0) 45%, rgba(0, 0, 0, 0.65) 100%);
+  }
+  .login-lema { position: absolute; left: 56px; right: 56px; bottom: 56px; z-index: 1; }
+  .lema { margin: 0 0 12px; color: #fff; font-size: 34px; font-weight: 600; line-height: 1.15; max-width: 520px; }
+  .sublema { margin: 0; color: var(--amarillo); font-size: 18px; }
+  .login-panel { flex: 1; display: flex; align-items: center; padding: 48px 75px; }
+  .login-form { max-width: 350px; margin: 0; width: 100%; }
+  .login-form h1 { font-size: 48px; margin-bottom: 24px; }
+  .login-opciones { justify-content: space-between; }
+}
+@media (min-width: 1200px) {
+  .login-form { max-width: 360px; }
+  .login-form h1 { font-size: 52px; }
+}
+
+/* ---------- Inicio después de ingresar ---------- */
+.inicio { min-height: 100vh; background: #fbfbfd; }
+.inicio-barra {
+  position: sticky; top: 0; z-index: 1; background: #fff;
+  padding: 12px 20px; border-bottom: 1px solid var(--linea);
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+.inicio-marca { display: flex; flex-direction: column; }
+.inicio-area { color: var(--gris); font-size: 13px; margin-left: 26px; }
+.inicio-usuario { display: flex; align-items: center; gap: 12px; font-weight: 500; }
+.avatar {
+  width: 40px; height: 40px; border-radius: 50%; background: var(--amarillo-claro);
+  display: grid; place-items: center; font-weight: 600; font-size: 15px;
+}
+.inicio-cuerpo { padding: 24px 20px 48px; max-width: 1100px; margin: 0 auto; display: grid; gap: 20px; }
+.fecha { margin: 0; color: var(--gris); }
+.tarjeta { background: #fff; border: 1px solid var(--linea); border-radius: 18px; padding: 20px 24px; }
+.tarjeta h2 { margin: 0 0 12px; font-size: 20px; }
+.datos { margin: 0; display: grid; gap: 12px; }
+.datos div { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; }
+.datos dt { color: var(--gris); }
+.datos dd { margin: 0; font-weight: 500; }
+.etiqueta { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 14px; }
+.etiqueta.buena { background: var(--verde-claro); color: var(--verde); }
+.nota { margin: 16px 0 0; color: var(--gris); font-size: 15px; }
+
+@media (min-width: 900px) {
+  .inicio-barra { padding: 14px 40px; }
+  .inicio-cuerpo { padding: 40px; }
+  .inicio-cuerpo .titulo-grande { font-size: 44px; }
+}
+
+/* ---------- Próximamente ---------- */
+.proximamente {
+  min-height: 100vh; max-width: 520px; margin: 0 auto; padding: 32px 20px;
+  display: flex; flex-direction: column; justify-content: center; gap: 20px;
+}
+.proximamente p { margin: 0; color: var(--gris); font-size: 17px; line-height: 1.5; }
