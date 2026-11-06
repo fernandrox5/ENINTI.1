@@ -42,6 +42,7 @@ function html(asunto, mensaje) {
 // Envía hasta `limite` avisos pendientes (o con error y menos de 3 intentos).
 // En desarrollo, MAIL_REDIRECT manda todos los correos a esa dirección (los datos de prueba son ficticios).
 export async function enviarAvisos({ limite = 50 } = {}) {
+  const correo = smtp(); // sin credenciales falla aquí, sin gastar intentos de los avisos
   const { rows } = await pool.query(
     `SELECT id, destinatario, asunto, mensaje
      FROM notificaciones
@@ -59,7 +60,7 @@ export async function enviarAvisos({ limite = 50 } = {}) {
 
   for (const n of rows) {
     try {
-      await smtp().sendMail({
+      await correo.sendMail({
         from: remitente,
         to: redirigir || n.destinatario,
         subject: redirigir ? `${n.asunto} (para ${n.destinatario})` : n.asunto,
