@@ -11,6 +11,12 @@ if (!process.env.DATABASE_URL || process.env.DATABASE_URL.includes('PEGA_AQUI'))
   console.error('✘ Falta DATABASE_URL. Copia backend/.env.example como backend/.env y pon la contraseña de la base de Supabase.');
   process.exit(1);
 }
+// La contraseña de los usuarios de prueba vive solo en .env (y no en el repositorio, que es público)
+const DEMO_PASSWORD = process.env.DEMO_PASSWORD?.trim();
+if (!DEMO_PASSWORD || DEMO_PASSWORD.length < 8) {
+  console.error('✘ Falta DEMO_PASSWORD (mínimo 8 caracteres) en backend/.env: es la contraseña de los usuarios de prueba.');
+  process.exit(1);
+}
 
 const { pool } = await import('../src/config/db.js');
 const { supabase } = await import('../src/config/supabase.js');
@@ -28,11 +34,11 @@ const VERSION_CONDICIONES = 'v1';
 const sql = (ruta) => readFile(new URL(`../../database/${ruta}`, import.meta.url), 'utf8');
 
 const USUARIOS = [
-  { email: 'admin@eninti.cl', password: 'Admin123', nombre: 'Administrador ENINTI', telefono: '+56911111111', admin: true },
-  { email: 'tecnico@eninti.cl', password: 'Tecnico123', nombre: 'Pedro Técnico', telefono: '+56922222222' },
-  { email: 'carla@eninti.cl', password: 'Tecnico123', nombre: 'Carla Técnica', telefono: '+56977777777' },
-  { email: 'maria.rojas@correo.cl', password: 'Cliente123', nombre: 'María Rojas', telefono: '+56933333333', condiciones: true },
-  { email: 'juan.perez@correo.cl', password: 'Cliente123', nombre: 'Juan Pérez', telefono: '+56944444444', condiciones: true },
+  { email: 'admin@eninti.cl', nombre: 'Administrador ENINTI', telefono: '+56911111111', admin: true },
+  { email: 'tecnico@eninti.cl', nombre: 'Pedro Técnico', telefono: '+56922222222' },
+  { email: 'carla@eninti.cl', nombre: 'Carla Técnica', telefono: '+56977777777' },
+  { email: 'maria.rojas@correo.cl', nombre: 'María Rojas', telefono: '+56933333333', condiciones: true },
+  { email: 'juan.perez@correo.cl', nombre: 'Juan Pérez', telefono: '+56944444444', condiciones: true },
 ];
 
 // Borra de Supabase Auth los usuarios de prueba que existan de una ejecución anterior
@@ -65,7 +71,7 @@ try {
   for (const u of USUARIOS) {
     const { data, error } = await supabase.auth.admin.createUser({
       email: u.email,
-      password: u.password,
+      password: DEMO_PASSWORD,
       email_confirm: true,
       user_metadata: {
         nombre: u.nombre,

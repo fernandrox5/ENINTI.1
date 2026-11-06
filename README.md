@@ -78,6 +78,7 @@ Abre http://localhost:5173.
 | `MAIL_REDIRECT` | Todos los correos llegan a esta dirección (mientras los datos sean de prueba) |
 | `ADMIN_EMAIL` | Correo del administrador que recibe los avisos (lo guarda `db:init`) |
 | `CRON_SECRET` | Secreto con el que Vercel Cron llama a `/api/cron/avisos` |
+| `DEMO_PASSWORD` | Contraseña de los usuarios de prueba que crea `db:init` |
 | `CORS_ORIGINS` | Solo si el frontend se publica en otro dominio que la API (separados por coma) |
 
 En Vercel el frontend y la API comparten dominio, así que `VITE_API_URL` (`frontend/.env`) queda vacía. Solo se usa si la API se publica aparte.
@@ -86,13 +87,13 @@ En Vercel el frontend y la API comparten dominio, así que `VITE_API_URL` (`fron
 
 ### Usuarios de prueba
 
-Los crea `npm run db:init`. Todos los datos son ficticios.
+Los crea `npm run db:init`. Todos los datos son ficticios. La contraseña de todos es la de `DEMO_PASSWORD` en `backend/.env` (no se publica en el repositorio).
 
-| Rol | Correo | Contraseña |
-|---|---|---|
-| Administrador | admin@eninti.cl | Admin123 |
-| Cliente | maria.rojas@correo.cl · juan.perez@correo.cl | Cliente123 |
-| Técnico | tecnico@eninti.cl · carla@eninti.cl | Tecnico123 |
+| Rol | Correo |
+|---|---|
+| Administrador | admin@eninti.cl |
+| Cliente | maria.rojas@correo.cl · juan.perez@correo.cl |
+| Técnico | tecnico@eninti.cl · carla@eninti.cl |
 
 Los datos de prueba incluyen los casos principales: un cliente moroso, una suscripción por vencer, una instalación sin suscripción y un cliente recuperado.
 
