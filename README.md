@@ -71,8 +71,11 @@ Abre http://localhost:5173.
 | `SUPABASE_PUBLISHABLE_KEY` | Clave publicable (inicio de sesión) |
 | `SUPABASE_SECRET_KEY` | Clave secreta, **solo en el backend** |
 | `SUPABASE_JWKS_URL` | Claves públicas para verificar los tokens |
-| `GMAIL_USER` · `GMAIL_APP_PASSWORD` | Cuenta de Gmail y contraseña de aplicación para enviar los avisos |
-| `MAIL_REDIRECT` | Solo desarrollo: todos los correos llegan a esta dirección |
+| `SMTP_HOST` · `SMTP_PORT` · `SMTP_SECURE` | Servidor SMTP (Gmail: `smtp.gmail.com`, `465`, `true`) |
+| `SMTP_USER` · `SMTP_PASSWORD` | Cuenta de Gmail y su contraseña de aplicación |
+| `MAIL_FROM` · `MAIL_REPLY_TO` | Remitente (aparece como "ENINTI") y dirección de respuesta opcional |
+| `MAIL_ENABLED` | `false` desactiva el envío; los avisos quedan pendientes |
+| `MAIL_REDIRECT` | Todos los correos llegan a esta dirección (mientras los datos sean de prueba) |
 | `ADMIN_EMAIL` | Correo del administrador que recibe los avisos (lo guarda `db:init`) |
 | `CRON_SECRET` | Secreto con el que Vercel Cron llama a `/api/cron/avisos` |
 | `CORS_ORIGINS` | Solo si el frontend se publica en otro dominio que la API (separados por coma) |
@@ -115,7 +118,7 @@ Un solo proyecto de Vercel conectado al repositorio, configurado en `vercel.json
 | Producción | `main` | URL pública. Vercel Cron solo corre aquí |
 | Desarrollo | `develop` | URL de vista previa para probar antes de pasar a producción |
 
-Las variables de `backend/.env` se cargan en *Settings → Environment Variables* de Vercel, para Production y Preview. En Vercel, `DATABASE_URL` usa el **Transaction pooler** (puerto 6543). `MAIL_REDIRECT` va solo en Preview.
+Las variables de `backend/.env` se cargan en *Settings → Environment Variables* de Vercel, para Production y Preview. En Vercel, `DATABASE_URL` usa el **Transaction pooler** (puerto 6543). Mientras los datos sean de prueba, `MAIL_REDIRECT` va en ambos ambientes; se quita de Production al cargar clientes reales.
 
 ## Seguridad
 
