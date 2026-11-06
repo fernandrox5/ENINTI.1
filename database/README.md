@@ -8,8 +8,8 @@ Modelo: **Cliente → Instalación → Suscripción → { Pagos, Mantenciones }*
 |---|---|
 | `schema/00_reiniciar.sql` | Borra todo lo que crean los scripts 01 y 02 (solo desarrollo). |
 | `schema/01_esquema_eninti.sql` | Esquema completo: tipos, tablas, triggers, vistas, RLS, Storage y proceso diario con pg_cron. |
-| `schema/02_backend.sql` | Complementos que usa el backend: tabla `medios_pago` (token de la pasarela) y función `fn_periodos`. |
-| `seeds/01_datos_prueba.sql` | Datos de prueba ficticios (RNF-04). |
+| `schema/02_ajustes.sql` | Ajustes de la revisión: documentos visibles para el cliente, motivos de rechazo y anulación de pagos, medio "depósito", días de gracia en la deuda, renovación con motivo, calificación única, datos del servicio en la mantención y versiones de las condiciones del servicio. |
+| `seeds/03_datos_prueba.sql` | Datos de prueba ficticios: cliente moroso, suscripción por vencer, instalación sin suscripción y cliente recuperado. |
 
 ## Crear la base
 
@@ -21,7 +21,7 @@ npm run db:init --prefix backend
 
 Ejecuta los scripts en orden y crea los usuarios de prueba en Supabase Auth. **Borra todo lo anterior**, así que úsalo solo en desarrollo.
 
-También se pueden ejecutar a mano en Supabase → SQL Editor (01 y luego 02), pero así no se crean los usuarios de prueba.
+También se pueden ejecutar a mano en Supabase → SQL Editor (01, 02 y 03, en ese orden), pero así no se crean los usuarios de prueba.
 
 ## Reglas del modelo
 
@@ -30,7 +30,7 @@ También se pueden ejecutar a mano en Supabase → SQL Editor (01 y luego 02), p
 3. Máximo una suscripción vigente por instalación.
 4. Vigente mientras hoy ≤ `fecha_termino`. El proceso diario (`fn_proceso_diario`, pg_cron) pasa a vencidas las que terminaron y genera los avisos.
 5. La instalación nace sin suscripción.
-6. La deuda no se guarda: `v_suscripciones_estado` la calcula según los periodos de contrato que ya debían pagarse.
+6. La deuda no se guarda: `v_suscripciones_estado` la calcula según los periodos de contrato que ya debían pagarse. Un periodo recién empezado se adeuda solo cuando pasan los días de gracia (`configuracion.dias_gracia_pago`).
 7. Al crear una suscripción vigente se agendan solas sus mantenciones preventivas (Plan Básico: meses 3 y 9).
 
 ## Usuarios y roles
@@ -58,6 +58,6 @@ El backend se conecta como dueño de las tablas, así que las políticas RLS no 
 | `gestiones` | Llamadas y contactos para retener o recuperar clientes |
 | `notificaciones` | Cola de correos que genera el proceso diario |
 | `configuracion` | Correo del administrador, días de aviso, versión de condiciones |
-| `medios_pago` | Token de la tarjeta inscrita en la pasarela, nunca la tarjeta (RNF-03) |
+| `condiciones_servicio` | Versiones de las condiciones del servicio (vigencia y PDF); cada suscripción guarda la que aceptó el cliente |
 
 Vistas principales: `v_suscripciones_estado`, `v_morosos`, `v_por_vencer`, `v_instalaciones_sin_suscripcion`, `v_historial_retencion`, `v_pagos_por_mes`, `v_calendario_mantenciones`, `v_resumen_admin`.
