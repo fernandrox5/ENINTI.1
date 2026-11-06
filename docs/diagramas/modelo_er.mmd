@@ -7,9 +7,9 @@ erDiagram
   cliente ||--o{ instalacion : "posee"
   cliente ||--o{ medio_pago : "inscribe"
   comuna ||--o{ instalacion : "ubica"
-  instalacion ||--o{ suscripcion : "contrata"
+  instalacion ||--o{ suscripcion : "tiene"
   instalacion ||--o{ solicitud_mantencion : "solicita"
-  instalacion ||--o{ mantencion : "recibe"
+  suscripcion ||--o{ mantencion : "incluye"
   solicitud_mantencion ||--o| mantencion : "origina"
   suscripcion ||--o{ cuota : "genera"
   cuota ||--o{ pago : "se paga con"
@@ -69,7 +69,7 @@ erDiagram
   }
   mantencion {
     SERIAL id PK
-    INT instalacion_id FK
+    INT suscripcion_id FK
     INT tecnico_id FK
     INT solicitud_id FK,UK
     VARCHAR tipo
