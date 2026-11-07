@@ -14,6 +14,8 @@ import Tecnico from './pages/Tecnico';
 import PanelAdmin from './layouts/PanelAdmin';
 import PortalCliente from './layouts/PortalCliente';
 import Mas from './pages/portal/Mas';
+import Clientes from './pages/admin/clientes/Clientes';
+import ClienteFicha from './pages/admin/clientes/ClienteFicha';
 
 export default function App() {
   return (
@@ -37,7 +39,8 @@ export default function App() {
           {/* Panel de administración */}
           <Route path="/admin" element={<SoloRol rol="admin"><PanelAdmin /></SoloRol>}>
             <Route index element={<EnConstruccion titulo="Inicio" tarea="T-36" />} />
-            <Route path="clientes/*" element={<EnConstruccion titulo="Clientes" tarea="T-22" />} />
+            <Route path="clientes" element={<Clientes />} />
+            <Route path="clientes/:id" element={<ClienteFicha />} />
             <Route path="instalaciones/*" element={<EnConstruccion titulo="Instalaciones" tarea="T-24" />} />
             <Route path="suscripciones/*" element={<EnConstruccion titulo="Suscripciones" tarea="T-21" />} />
             <Route path="pagos/*" element={<EnConstruccion titulo="Pagos" tarea="T-23, T-25 y T-26" />} />

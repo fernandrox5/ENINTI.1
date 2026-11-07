@@ -342,3 +342,24 @@ p { margin: 0; }
 /* ---------- Página "Próximamente" ---------- */
 .proximamente { min-height: 100vh; max-width: 520px; margin: 0 auto; padding: 32px 20px; display: flex; flex-direction: column; justify-content: center; gap: 20px; }
 .proximamente p { color: var(--gris); font-size: 17px; line-height: 1.5; }
+
+/* ---------- Listados y fichas (T-22 en adelante) ---------- */
+.buscador-icono { position: relative; flex: 1; min-width: 220px; display: flex; }
+.buscador-icono svg { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: var(--gris); }
+.buscador-icono .buscador { padding-left: 40px; width: 100%; }
+.paginacion { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.ficha-cabecera { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.ficha-titulo { flex: 1; min-width: 240px; }
+.ficha-titulo h1 { font-size: 30px; letter-spacing: -0.02em; }
+.ficha-titulo p { color: var(--gris); margin-top: 4px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.avatar.grande { width: 56px; height: 56px; font-size: 20px; background: var(--amarillo); }
+@media (min-width: 900px) { .ficha-titulo h1 { font-size: 36px; } }
+.datos.columnas { gap: 4px 28px; }
+@media (min-width: 900px) { .datos.columnas { grid-template-columns: repeat(3, 1fr); } .datos.columnas .completo { grid-column: 1 / -1; } }
+.datos.columnas div { border-bottom: 1px solid #ececf0; padding: 10px 0; }
+.kpis.tres { grid-template-columns: 1fr; }
+@media (min-width: 700px) { .kpis.tres { grid-template-columns: repeat(3, 1fr); } }
+.tarjeta.angosta { max-width: 560px; }
+.acciones.arriba { margin-top: 16px; }
+.nota { margin: 12px 0; font-size: 14px; }
+.centrar-vertical { align-self: center; }
