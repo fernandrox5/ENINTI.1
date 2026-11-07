@@ -7,7 +7,7 @@ export default defineConfig({
     port: 5173,
     // En desarrollo la API se sirve por el mismo origen (sin CORS)
     proxy: {
-      '/api': 'http://localhost:3001',
+      '/api': process.env.API_PROXY || 'http://localhost:3001',
     },
   },
 });

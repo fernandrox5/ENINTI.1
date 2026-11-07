@@ -3,6 +3,9 @@ import cors from 'cors';
 import health from './routes/health.js';
 import auth from './routes/auth.js';
 import cron from './routes/cron.js';
+import admin from './routes/admin/index.js';
+import portal from './routes/portal/index.js';
+import { autenticar, permitir } from './middleware/auth.js';
 import { ErrorHttp } from './utils/validar.js';
 
 const app = express();
@@ -16,6 +19,8 @@ app.use(express.json());
 app.use('/api/health', health);
 app.use('/api/auth', auth);
 app.use('/api/cron', cron);
+app.use('/api/admin', autenticar, permitir('admin'), admin);
+app.use('/api/portal', autenticar, permitir('cliente'), portal);
 
 app.use((req, res) => {
   res.status(404).json({ error: 'Ruta no encontrada' });

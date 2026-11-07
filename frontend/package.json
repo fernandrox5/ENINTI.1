@@ -10,11 +10,13 @@
     "typecheck": "tsc"
   },
   "dependencies": {
+    "lucide-react": "^1.70.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.18.5"
   },
   "devDependencies": {
+    "@types/node": "^22.20.5",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^4.5.0",

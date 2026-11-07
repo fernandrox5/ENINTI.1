@@ -1,13 +1,14 @@
 // Mockups 001 (escritorio) y 002 (celular): ingreso con Supabase Auth
 import { useState, type FormEvent } from 'react';
-import { Link, Navigate, useNavigate } from 'react-router-dom';
-import { api, type Sesion } from '../api';
-import { useSesion } from '../sesion';
-import { Marca } from '../componentes';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { api, type Sesion } from '../../api';
+import { useSesion } from '../../sesion';
+import { Marca } from '../../componentes';
 
 export default function Login() {
   const { usuario, entrar } = useSesion();
   const navegar = useNavigate();
+  const mensaje = (useLocation().state as { mensaje?: string } | null)?.mensaje;
   const [correo, setCorreo] = useState('');
   const [password, setPassword] = useState('');
   const [mostrar, setMostrar] = useState(false);
@@ -82,7 +83,8 @@ export default function Login() {
               <Link to="/recuperar" className="enlace">¿Olvidaste tu contraseña?</Link>
             </div>
 
-            {error && <p className="aviso-error" role="alert">{error}</p>}
+            {mensaje && !error && <p className="aviso aviso-ok" role="status">{mensaje}</p>}
+            {error && <p className="aviso aviso-error" role="alert">{error}</p>}
 
             <button className="boton primario" disabled={enviando}>
               {enviando ? 'Ingresando…' : <><span className="solo-escritorio">Continuar</span><span className="solo-celular">Ingresar</span></>}
