@@ -1,7 +1,7 @@
 // T-22 · Mockups 048 a 054: ficha del cliente con sus pestañas
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { Copy, Plus } from 'lucide-react';
+import { Copy, Plus, Send } from 'lucide-react';
 import { api } from '../../../api';
 import { useDatos } from '../../../useDatos';
 import { Aviso, Cargando, Etiqueta, Pestanas, Vacio, Volver } from '../../../componentes';
@@ -9,12 +9,13 @@ import { fecha, fechaCorta, fechaHora, iniciales, mes, pesos, MEDIOS, SISTEMAS }
 import { ESTADO_PAGO, ESTADO_SOLICITUD, TIPO_SOLICITUD, CANALES, estadoSuscripcion, situacionInstalacion } from '../../../estados';
 import ClienteFormulario from './ClienteFormulario';
 import RegistrarGestion from './RegistrarGestion';
-import { GESTIONES } from './Clientes';
+import { GESTIONES, PORTAL, type Portal } from './Clientes';
 
 interface Ficha {
   id: number; nombre: string; rut: string | null; es_empresa: boolean; email: string | null; telefono: string | null;
   direccion: string | null; localidad_id: number | null; localidad: string | null; origen: string | null; notas: string | null;
   activo: boolean; created_at: string; perfil_id: string | null; correo_acceso: string | null; ultimo_ingreso: string | null;
+  acceso_activado: string | null; invitado_en: string | null;
   resumen: { deuda: number; total_pagado: number; ultimo_pago: { fecha_pago: string | null; created_at: string; monto: number; estado: string } | null };
   instalaciones: { id: number; codigo: string; nombre: string | null; direccion: string; tipo_sistema: string | null; potencia_kwp: string | null; localidad: string | null; suscripcion_id: number | null; dias_restantes: number | null; periodos_adeudados: number | null; pagos_por_validar: number | null }[];
   suscripciones: { id: number; codigo: string; estado: string; instalacion_nombre: string | null; instalacion_codigo: string; tipo_nombre: string; fecha_inicio: string; fecha_termino: string; fecha_cierre: string | null; motivo_cierre: string | null; dias_restantes: number; periodos_adeudados: number; monto_adeudado: number }[];
@@ -32,6 +33,7 @@ export default function ClienteFicha() {
   const [editando, setEditando] = useState(false);
   const [gestion, setGestion] = useState(false);
   const [aviso, setAviso] = useState('');
+  const [invitando, setInvitando] = useState(false);
 
   if (cargando && !c) return <Cargando />;
   if (!c) return <><Volver a="/admin/clientes" texto="Clientes" /><Aviso>{error || 'Cliente no encontrado'}</Aviso></>;
@@ -44,8 +46,24 @@ export default function ClienteFicha() {
     recargar();
   };
 
-  const invitacion = `Hola ${c.nombre.split(' ')[0]}: ya puedes ver tus instalaciones, pagos y mantenciones de ENINTI en Syntia. `
-    + `Crea tu cuenta en ${window.location.origin}/registro usando este mismo correo: ${c.email ?? '(tu correo)'}.`;
+  const portal: Portal = !c.perfil_id ? 'sin_acceso' : c.acceso_activado ? 'activo' : 'invitado';
+  const mensajeWhatsapp = `Hola ${c.nombre.split(' ')[0]}: ENINTI te dio acceso a Syntia, donde verás tus instalaciones, pagos y mantenciones. `
+    + `Te enviamos un correo a ${c.email} con el enlace para activar tu cuenta. Si no te llegó, pídelo en ${window.location.origin}/acceso con ese mismo correo.`;
+
+  const invitar = async () => {
+    setInvitando(true);
+    setAviso('');
+    try {
+      const r = await api<{ correo: string }>(`/admin/clientes/${c.id}/invitar`, { method: 'POST' });
+      setAviso(`Invitación enviada a ${r.correo}`);
+      recargar();
+    } catch (e) {
+      setAviso('');
+      window.alert((e as Error).message);
+    } finally {
+      setInvitando(false);
+    }
+  };
 
   return (
     <>
@@ -57,7 +75,7 @@ export default function ClienteFicha() {
           <p>
             {[c.rut ? `RUT ${c.rut}` : 'Sin RUT', c.localidad, `cliente desde ${mes(c.created_at).split(' ')[0].slice(0, 3)} ${c.created_at.slice(0, 4)}`].filter(Boolean).join(' · ')}
             {' '}{c.resumen.deuda > 0 && <Etiqueta tono="mala" punto>Deuda {pesos(c.resumen.deuda)}</Etiqueta>}
-            {' '}{c.perfil_id ? <Etiqueta tono="buena">Portal vinculado</Etiqueta> : <Etiqueta>Sin portal</Etiqueta>}
+            {' '}<Etiqueta tono={PORTAL[portal][0]}>{portal === 'activo' ? 'Portal vinculado' : portal === 'invitado' ? 'Invitación enviada' : 'Sin acceso al portal'}</Etiqueta>
             {' '}{!c.activo && <Etiqueta tono="mala">Inactivo</Etiqueta>}
           </p>
         </div>
@@ -198,17 +216,29 @@ export default function ClienteFicha() {
 
       {pestana === 'acceso' && (
         <div className="tarjeta angosta">
-          <header><h2>Acceso al portal</h2>{c.perfil_id ? <Etiqueta tono="buena" punto>Vinculado</Etiqueta> : <Etiqueta>No vinculado</Etiqueta>}</header>
+          <header><h2>Acceso al portal</h2><Etiqueta tono={PORTAL[portal][0]} punto>{PORTAL[portal][1]}</Etiqueta></header>
           <dl className="datos">
             <div><dt>Correo de acceso</dt><dd>{c.correo_acceso || c.email || '—'}</dd></div>
+            {c.invitado_en && <div><dt>Invitación enviada</dt><dd>{fechaHora(c.invitado_en)}</dd></div>}
             <div><dt>Último ingreso</dt><dd>{c.ultimo_ingreso ? fechaHora(c.ultimo_ingreso) : 'Nunca'}</dd></div>
           </dl>
-          {!c.perfil_id && (
+          {portal !== 'activo' && (
             <>
-              <p className="suave nota">Si el cliente aún no se vincula, envíale la invitación por WhatsApp o correo. Debe registrarse con el mismo correo de su ficha{c.email ? '' : ' (agrega su correo en Datos)'}.</p>
-              <button type="button" className="boton secundario chico" onClick={() => navigator.clipboard.writeText(invitacion).then(() => setAviso('Invitación copiada'))}>
-                <Copy size={16} /> Copiar invitación
-              </button>
+              <p className="suave nota">
+                {!c.email ? 'Agrega el correo del cliente en Datos para enviarle la invitación.'
+                  : portal === 'invitado' ? 'El cliente aún no activa su cuenta. Puedes reenviarle la invitación: el enlace anterior deja de servir.'
+                  : 'Envía la invitación: al cliente le llega un correo para activar su cuenta y crear su contraseña.'}
+              </p>
+              <div className="acciones">
+                <button type="button" className="boton primario chico" disabled={!c.email || invitando} onClick={invitar}>
+                  <Send size={16} /> {invitando ? 'Enviando…' : portal === 'invitado' ? 'Reenviar invitación' : 'Enviar invitación'}
+                </button>
+                {c.email && (
+                  <button type="button" className="boton secundario chico" onClick={() => navigator.clipboard.writeText(mensajeWhatsapp).then(() => setAviso('Mensaje copiado para WhatsApp'))}>
+                    <Copy size={16} /> Copiar aviso para WhatsApp
+                  </button>
+                )}
+              </div>
             </>
           )}
         </div>

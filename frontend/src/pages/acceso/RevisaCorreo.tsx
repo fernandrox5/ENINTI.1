@@ -14,17 +14,18 @@ function bandeja(correo: string) {
   return null;
 }
 
-export default function RevisaCorreo({ tipo }: { tipo: 'activar' | 'recuperar' }) {
+export default function RevisaCorreo({ tipo }: { tipo: 'acceso' | 'recuperar' }) {
   const correo = (useLocation().state as { correo?: string } | null)?.correo;
   const [estado, setEstado] = useState<{ tipo: 'ok' | 'error'; texto: string } | null>(null);
   const [enviando, setEnviando] = useState(false);
-  if (!correo) return <Navigate to={tipo === 'activar' ? '/registro' : '/recuperar'} replace />;
+  const volver = tipo === 'acceso' ? '/acceso' : '/recuperar';
+  if (!correo) return <Navigate to={volver} replace />;
 
   const reenviar = async () => {
     setEnviando(true);
     setEstado(null);
     try {
-      await api(tipo === 'activar' ? '/auth/reenviar-activacion' : '/auth/recuperar', { method: 'POST', body: { correo } });
+      await api(tipo === 'acceso' ? '/auth/pedir-acceso' : '/auth/recuperar', { method: 'POST', body: { correo } });
       setEstado({ tipo: 'ok', texto: 'Te enviamos un nuevo correo.' });
     } catch (e) {
       setEstado({ tipo: 'error', texto: (e as Error).message });
@@ -36,15 +37,19 @@ export default function RevisaCorreo({ tipo }: { tipo: 'activar' | 'recuperar' }
 
   return (
     <main className="acceso-pagina">
-      <Volver a={tipo === 'activar' ? '/registro' : '/recuperar'} />
+      <Volver a={volver} />
       <div className="revisa-correo">
         <span className="icono-circulo"><Mail size={40} /></span>
         <h1>Revisa tu correo</h1>
-        <p>
-          Te enviamos un enlace a <strong>{correo}</strong>{' '}
-          {tipo === 'activar' ? 'para activar tu cuenta. Al abrirlo entrarás directo a Syntia.' : 'para crear una nueva contraseña.'}
+        {tipo === 'acceso' ? (
+          <p>Si <strong>{correo}</strong> está registrado en ENINTI, te enviamos un enlace para activar tu cuenta. Al abrirlo crearás tu contraseña y entrarás directo a Syntia.</p>
+        ) : (
+          <p>Si <strong>{correo}</strong> tiene una cuenta, te enviamos un enlace para crear una nueva contraseña.</p>
+        )}
+        <p className="suave">
+          ¿No llegó? Revisa la carpeta de spam.
+          {tipo === 'acceso' && ' Si sigue sin llegar, escribe a ENINTI para que revisen tu correo.'}
         </p>
-        <p className="suave">¿No llegó? Revisa la carpeta de spam.</p>
       </div>
       <div className="revisa-acciones">
         {estado && <Aviso tipo={estado.tipo}>{estado.texto}</Aviso>}

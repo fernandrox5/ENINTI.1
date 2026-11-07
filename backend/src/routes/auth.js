@@ -1,22 +1,16 @@
-// RF-01 · RF-02: ingreso, registro, activación por correo y recuperación de contraseña con Supabase Auth.
-// Los enlaces de los correos los genera Supabase (generateLink) y los envía el backend con la marca ENINTI;
-// la página de destino entrega el token al backend, que lo verifica (verifyOtp) y abre la sesión.
+// RF-01 · RF-02: ingreso, acceso por invitación y recuperación de contraseña con Supabase Auth.
+// No hay registro abierto: ENINTI crea la ficha del cliente y le envía una invitación para activar su cuenta.
+// Los enlaces los genera Supabase (generateLink) y los envía el backend con la marca ENINTI; la página de
+// destino entrega el token al backend, que lo verifica (verifyOtp) y abre la sesión.
 import { Router } from 'express';
 import { pool } from '../config/db.js';
 import { supabase, clienteAuth } from '../config/supabase.js';
 import { autenticar } from '../middleware/auth.js';
 import { enviarCorreo } from '../services/correo.js';
+import { urlApp, invitarCliente, estadoAcceso } from '../services/invitaciones.js';
 import { correoValido, ErrorHttp } from '../utils/validar.js';
 
 const router = Router();
-
-// URL pública del frontend para armar los enlaces (en Vercel, el dominio por el que entró el usuario)
-function urlApp(req) {
-  if (process.env.APP_URL) return process.env.APP_URL.replace(/\/$/, '');
-  const proto = req.get('x-forwarded-proto') || req.protocol;
-  const host = req.get('x-forwarded-host') || req.get('host');
-  return `${proto}://${host}`;
-}
 
 // Respuesta común de ingreso, activación y renovación: tokens de Supabase y datos del perfil
 async function sesion(session) {
@@ -35,20 +29,6 @@ async function sesion(session) {
 
 const normalizarCorreo = (c) => String(c || '').trim().toLowerCase();
 
-async function correoActivacion(req, correo, nombre, hashed) {
-  await enviarCorreo({
-    para: correo,
-    asunto: 'Activa tu cuenta de Syntia',
-    titulo: `Hola${nombre ? `, ${nombre.split(' ')[0]}` : ''}. Activa tu cuenta`,
-    parrafos: [
-      'Recibimos tu registro en Syntia, la plataforma de ENINTI para ver tus instalaciones, pagos y mantenciones.',
-      'Para activar tu cuenta abre el siguiente enlace. Al abrirlo entrarás directo a Syntia. El enlace vence en 1 hora.',
-      'Si no creaste esta cuenta, ignora este correo.',
-    ],
-    boton: { texto: 'Activar mi cuenta', url: `${urlApp(req)}/activar?token=${encodeURIComponent(hashed)}` },
-  });
-}
-
 router.post('/login', async (req, res) => {
   const { correo, password } = req.body;
   if (!correo || !password) throw new ErrorHttp(400, 'Ingresa tu correo y contraseña');
@@ -60,87 +40,49 @@ router.post('/login', async (req, res) => {
   res.json(await sesion(data.session));
 });
 
-// Mockup 006: crear cuenta. Queda pendiente de activación hasta que abra el enlace del correo (007).
-router.post('/registro', async (req, res) => {
-  const { nombre, telefono, password, acepta_condiciones } = req.body;
-  const correo = normalizarCorreo(req.body.correo);
-  if (!nombre?.trim()) throw new ErrorHttp(400, 'Ingresa tu nombre completo');
-  if (!correoValido(correo)) throw new ErrorHttp(400, 'El correo no es válido');
-  if (!password || password.length < 8) throw new ErrorHttp(400, 'La contraseña debe tener al menos 8 caracteres');
-  if (acepta_condiciones !== true) throw new ErrorHttp(400, 'Debes aceptar los términos de uso y la política de privacidad');
-
-  const { rows: [condiciones] } = await pool.query(
-    'SELECT version FROM condiciones_servicio WHERE vigente_hasta IS NULL ORDER BY vigente_desde DESC LIMIT 1'
-  );
-  const { data, error } = await supabase.auth.admin.generateLink({
-    type: 'signup',
-    email: correo,
-    password,
-    options: {
-      data: {
-        nombre: nombre.trim(),
-        telefono: telefono?.trim() || null,
-        condiciones_version: condiciones?.version ?? null,
-        condiciones_at: new Date().toISOString(),
-      },
-    },
-  });
-
-  if (error) {
-    if (error.code === 'weak_password') throw new ErrorHttp(400, 'La contraseña es muy débil, prueba con otra');
-    if (error.code !== 'email_exists' && error.status !== 422) throw error;
-    // Ya existe: si no la ha activado, se le reenvía el enlace; si ya está activa, debe ingresar
-    const { rows: [u] } = await pool.query('SELECT email_confirmed_at FROM auth.users WHERE lower(email) = $1', [correo]);
-    if (u?.email_confirmed_at) throw new ErrorHttp(409, 'Ya existe una cuenta con ese correo. Ingresa o recupera tu contraseña.');
-    const reenvio = await supabase.auth.admin.generateLink({ type: 'magiclink', email: correo });
-    if (reenvio.error) throw reenvio.error;
-    await correoActivacion(req, correo, nombre, reenvio.data.properties.hashed_token);
-    return res.status(201).json({ correo });
-  }
-
-  await correoActivacion(req, correo, nombre, data.properties.hashed_token);
-  res.status(201).json({ correo });
-});
-
-// Mockup 007 "Reenviar correo": nuevo enlace de activación si la cuenta sigue sin activar
-router.post('/reenviar-activacion', async (req, res) => {
+// "¿Primera vez? Pide tu acceso": si el correo está en la ficha de un cliente activo y aún no activa
+// su cuenta, se le envía la invitación. La respuesta es la misma en todos los casos.
+router.post('/pedir-acceso', async (req, res) => {
   const correo = normalizarCorreo(req.body.correo);
   if (!correoValido(correo)) throw new ErrorHttp(400, 'El correo no es válido');
-  const { rows: [u] } = await pool.query(
-    `SELECT u.email_confirmed_at, p.nombre FROM auth.users u LEFT JOIN perfiles p ON p.id = u.id WHERE lower(u.email) = $1`,
-    [correo]
-  );
-  if (u && !u.email_confirmed_at) {
-    const { data, error } = await supabase.auth.admin.generateLink({ type: 'magiclink', email: correo });
-    if (error) throw error;
-    await correoActivacion(req, correo, u.nombre, data.properties.hashed_token);
+  const { rows: [c] } = await pool.query('SELECT id FROM clientes WHERE lower(email) = $1 AND activo', [correo]);
+  if (c && (await estadoAcceso(correo)).estado !== 'activo') {
+    await invitarCliente(req, c.id).catch((err) => console.error('No se pudo enviar la invitación:', err.message));
   }
-  res.json({ ok: true }); // misma respuesta exista o no la cuenta
+  res.json({ ok: true });
 });
 
-// Enlace del correo de activación: confirma el correo, vincula la ficha de cliente y abre la sesión
+// Enlace de la invitación: verifica el token, guarda la contraseña que eligió y abre la sesión
 router.post('/activar', async (req, res) => {
-  const { token } = req.body;
+  const { token, t, password } = req.body;
   if (!token) throw new ErrorHttp(400, 'El enlace no es válido');
-  const { data, error } = await clienteAuth().auth.verifyOtp({ token_hash: token, type: 'email' });
-  if (error || !data.session) throw new ErrorHttp(400, 'El enlace venció o ya fue usado. Pide uno nuevo desde "Crear cuenta".');
+  if (!password || password.length < 8) throw new ErrorHttp(400, 'La contraseña debe tener al menos 8 caracteres');
+  const { data, error } = await clienteAuth().auth.verifyOtp({ token_hash: token, type: t === 'invite' ? 'invite' : 'email' });
+  if (error || !data.session) throw new ErrorHttp(400, 'El enlace venció o ya fue usado. Pide uno nuevo desde "¿Primera vez? Pide tu acceso".');
 
-  // El trigger de auth.users vincula la ficha que tenga ese correo; si no existe, se crea
   const user = data.session.user;
-  await pool.query(
-    `INSERT INTO clientes (perfil_id, nombre, email, telefono, origen)
-     SELECT p.id, COALESCE(p.nombre, split_part(p.email, '@', 1)), lower(p.email), p.telefono, 'Registro web'
-     FROM perfiles p
-     WHERE p.id = $1 AND p.rol = 'cliente'
-       AND NOT EXISTS (SELECT 1 FROM clientes c WHERE c.perfil_id = p.id)
-       AND NOT EXISTS (SELECT 1 FROM clientes c WHERE lower(c.email) = lower(p.email))`,
-    [user.id]
-  );
-  await pool.query(
-    `UPDATE clientes SET perfil_id = $1 WHERE perfil_id IS NULL AND lower(email) = lower($2)`,
-    [user.id, user.email]
-  );
-  res.json(await sesion(data.session));
+  const upd = await supabase.auth.admin.updateUserById(user.id, { password });
+  if (upd.error) {
+    if (upd.error.code === 'weak_password') throw new ErrorHttp(400, 'La contraseña es muy débil, prueba con otra');
+    throw upd.error;
+  }
+  // Vincula la ficha con ese correo (si la invitación no la dejó vinculada)
+  await pool.query('UPDATE clientes SET perfil_id = $1 WHERE perfil_id IS NULL AND lower(email) = lower($2)', [user.id, user.email]);
+  const respuesta = await sesion(data.session);
+
+  // Confirmación "Tu cuenta quedó activa" (si falla el envío, la activación igual queda hecha)
+  await enviarCorreo({
+    para: user.email,
+    asunto: 'Tu cuenta de Syntia quedó activa',
+    titulo: `Listo, ${respuesta.usuario.nombre.split(' ')[0]}. Tu cuenta quedó activa`,
+    parrafos: [
+      'Ya puedes entrar a Syntia con tu correo y la contraseña que creaste.',
+      'Ahí verás tus instalaciones, su ficha técnica, tus pagos y tus mantenciones. También puedes pedir una visita o reportar una emergencia.',
+      'Si no fuiste tú quien activó la cuenta, avísale a ENINTI de inmediato.',
+    ],
+    boton: { texto: 'Ir a Syntia', url: `${urlApp(req)}/login` },
+  }).catch((err) => console.error('No se pudo enviar la confirmación de activación:', err.message));
+  res.json(respuesta);
 });
 
 // Mockup 003: pedir el enlace para crear una nueva contraseña (004: revisa tu correo)

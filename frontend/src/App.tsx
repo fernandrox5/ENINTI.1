@@ -1,7 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { SesionProvider, ConSesion, SoloRol } from './sesion';
 import Login from './pages/acceso/Login';
-import Registro from './pages/acceso/Registro';
+import PedirAcceso from './pages/acceso/PedirAcceso';
 import RevisaCorreo from './pages/acceso/RevisaCorreo';
 import Activar from './pages/acceso/Activar';
 import Recuperar from './pages/acceso/Recuperar';
@@ -22,10 +22,11 @@ export default function App() {
     <SesionProvider>
       <BrowserRouter>
         <Routes>
-          {/* Acceso (T-19) */}
+          {/* Acceso (T-19): ingreso, acceso por invitación y recuperación */}
           <Route path="/login" element={<Login />} />
-          <Route path="/registro" element={<Registro />} />
-          <Route path="/registro/revisa-correo" element={<RevisaCorreo tipo="activar" />} />
+          <Route path="/acceso" element={<PedirAcceso />} />
+          <Route path="/acceso/revisa-correo" element={<RevisaCorreo tipo="acceso" />} />
+          <Route path="/registro" element={<Navigate to="/acceso" replace />} />
           <Route path="/activar" element={<Activar />} />
           <Route path="/recuperar" element={<Recuperar />} />
           <Route path="/recuperar/revisa-correo" element={<RevisaCorreo tipo="recuperar" />} />

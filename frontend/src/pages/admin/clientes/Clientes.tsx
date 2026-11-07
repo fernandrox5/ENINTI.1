@@ -9,12 +9,15 @@ import ClienteFormulario from './ClienteFormulario';
 
 export interface Localidad { id: number; nombre: string; comuna: string }
 interface FilaCliente {
-  id: number; nombre: string; rut: string | null; activo: boolean; localidad: string | null; vinculado: boolean;
+  id: number; nombre: string; rut: string | null; activo: boolean; localidad: string | null; portal: Portal;
   instalaciones: number; deuda: number; max_adeudados: number; con_deuda: number; por_validar: number;
   vigentes: number; dias_min: number | null; gestion_tipo: string | null; gestion_fecha: string | null;
 }
 interface Listado { clientes: FilaCliente[]; total: number; pagina: number; por_pagina: number; conteo: Record<Filtro, number> }
 type Filtro = 'activos' | 'deuda' | 'inactivos' | 'todos';
+
+export type Portal = 'activo' | 'invitado' | 'sin_acceso';
+export const PORTAL: Record<Portal, [Tono, string]> = { activo: ['buena', 'Vinculado'], invitado: ['alerta', 'Invitado'], sin_acceso: ['neutra', 'No vinculado'] };
 
 export const GESTIONES: Record<string, string> = { llamada: 'Llamada', whatsapp: 'WhatsApp', email: 'Correo', visita: 'Visita', otro: 'Otro' };
 
@@ -88,7 +91,7 @@ export default function Clientes() {
                     <td className="num">{c.instalaciones}</td>
                     <td><Etiqueta tono={tono} punto={tono !== 'neutra'}>{texto}</Etiqueta></td>
                     <td className="num">{pesos(c.deuda)}</td>
-                    <td>{c.vinculado ? <Etiqueta tono="buena">Vinculado</Etiqueta> : <Etiqueta>No vinculado</Etiqueta>}</td>
+                    <td><Etiqueta tono={PORTAL[c.portal][0]}>{PORTAL[c.portal][1]}</Etiqueta></td>
                     <td>{c.gestion_tipo ? `${GESTIONES[c.gestion_tipo]} · ${fechaCorta(c.gestion_fecha)}` : '—'}</td>
                     <td><Link to={`/admin/clientes/${c.id}`} className="boton secundario mini" onClick={(e) => e.stopPropagation()}>Ver</Link></td>
                   </tr>

@@ -95,9 +95,9 @@ export default function Login() {
               <span className="solo-celular">¿Primera vez?</span>
             </div>
 
-            <Link to="/registro" className="boton secundario">
-              <span className="solo-escritorio">Crear una cuenta</span>
-              <span className="solo-celular">Crear cuenta</span>
+            <Link to="/acceso" className="boton secundario">
+              <span className="solo-escritorio">¿Primera vez? Pide tu acceso</span>
+              <span className="solo-celular">Pide tu acceso</span>
             </Link>
 
             <p className="login-legal">

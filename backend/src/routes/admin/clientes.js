@@ -2,6 +2,7 @@
 import { Router } from 'express';
 import { pool } from '../../config/db.js';
 import { normalizarRut, correoValido, ErrorHttp } from '../../utils/validar.js';
+import { invitarCliente } from '../../services/invitaciones.js';
 
 const router = Router();
 const POR_PAGINA = 20;
@@ -61,13 +62,15 @@ router.get('/', async (req, res) => {
   if (filtro === 'deuda') condiciones.push('COALESCE(v.deuda, 0) > 0');
 
   const base = `${RESUMEN}
-    SELECT c.id, c.nombre, c.rut, c.activo, l.nombre AS localidad, (c.perfil_id IS NOT NULL) AS vinculado,
+    SELECT c.id, c.nombre, c.rut, c.activo, l.nombre AS localidad,
+           CASE WHEN c.perfil_id IS NULL THEN 'sin_acceso' WHEN u.email_confirmed_at IS NULL THEN 'invitado' ELSE 'activo' END AS portal,
            (SELECT count(*)::int FROM instalaciones i WHERE i.cliente_id = c.id) AS instalaciones,
            COALESCE(v.deuda, 0) AS deuda, COALESCE(v.max_adeudados, 0) AS max_adeudados, COALESCE(v.con_deuda, 0) AS con_deuda,
            COALESCE(v.por_validar, 0) AS por_validar, COALESCE(v.vigentes, 0) AS vigentes, v.dias_min,
            g.tipo AS gestion_tipo, g.fecha AS gestion_fecha
     FROM clientes c
     LEFT JOIN localidades l ON l.id = c.localidad_id
+    LEFT JOIN auth.users u ON u.id = c.perfil_id
     LEFT JOIN v ON v.cliente_id = c.id
     LEFT JOIN g ON g.cliente_id = c.id
     WHERE ${condiciones.join(' AND ')}`;
@@ -86,7 +89,7 @@ router.get('/:id', async (req, res) => {
   const id = req.params.id;
   const { rows: [cliente] } = await pool.query(
     `SELECT c.*, l.nombre AS localidad, p.email AS correo_acceso, u.last_sign_in_at AS ultimo_ingreso,
-            u.email_confirmed_at AS acceso_confirmado
+            u.email_confirmed_at AS acceso_activado, u.invited_at AS invitado_en
      FROM clientes c
      LEFT JOIN localidades l ON l.id = c.localidad_id
      LEFT JOIN perfiles p ON p.id = c.perfil_id
@@ -173,6 +176,11 @@ router.post('/:id/activo', async (req, res) => {
   const { rowCount } = await pool.query('UPDATE clientes SET activo = $1 WHERE id = $2', [activo, req.params.id]);
   if (!rowCount) throw new ErrorHttp(404, 'Cliente no encontrado');
   res.json({ activo });
+});
+
+// Enviar o reenviar la invitación al portal (el cliente activa su cuenta y crea su contraseña)
+router.post('/:id/invitar', async (req, res) => {
+  res.json(await invitarCliente(req, req.params.id));
 });
 
 // Registrar gestión (llamada, WhatsApp, correo, visita) para retener o recuperar al cliente
