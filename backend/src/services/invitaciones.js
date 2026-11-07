@@ -5,13 +5,23 @@ import { supabase } from '../config/supabase.js';
 import { enviarCorreo } from './correo.js';
 import { ErrorHttp } from '../utils/validar.js';
 
-// URL pública del frontend para armar los enlaces (en Vercel, el dominio por el que entró el usuario)
+// Dominios desde los que se puede armar un enlace de correo: local, producción y las URL de desarrollo
+// del proyecto en Vercel. Así nadie puede pedir una invitación con un Origin falso para que el enlace
+// (con el token) apunte a otro sitio.
+const PRODUCCION = 'https://syntia-iota.vercel.app';
+const PERMITIDOS = [/^http:\/\/localhost:\d+$/, /^https:\/\/syntia-iota\.vercel\.app$/, /^https:\/\/syntia-[a-z0-9-]+-fernandos-projects-7f551f0e\.vercel\.app$/];
+
+// URL pública del frontend para los enlaces de los correos: el origen del navegador que hizo la
+// solicitud (en local, la página de Vite y no la API), si está permitido; si no, producción.
 export function urlApp(req) {
   if (process.env.APP_URL) return process.env.APP_URL.replace(/\/$/, '');
   const proto = req.get('x-forwarded-proto') || req.protocol;
-  const host = req.get('x-forwarded-host') || req.get('host');
-  return `${proto}://${host}`;
+  const candidatos = [req.get('origin'), `${proto}://${req.get('x-forwarded-host') || req.get('host')}`];
+  return candidatos.find((o) => o && PERMITIDOS.some((r) => r.test(o))) ?? PRODUCCION;
 }
+
+// Primer nombre para el saludo, sin prefijos como "[PRUEBA]"
+export const primerNombre = (nombre) => String(nombre || '').replace(/\[[^\]]*\]\s*/g, '').trim().split(/\s+/)[0] || '';
 
 // Estado del acceso de un correo en Supabase Auth: sin cuenta, invitado (sin activar) o activo
 export async function estadoAcceso(correo) {
@@ -47,7 +57,7 @@ export async function invitarCliente(req, clienteId) {
   await enviarCorreo({
     para: c.email,
     asunto: 'ENINTI te dio acceso a Syntia',
-    titulo: `Hola, ${c.nombre.split(' ')[0]}. Ya puedes ver tu instalación`,
+    titulo: `Hola, ${primerNombre(c.nombre)}. Ya puedes ver tu instalación`,
     parrafos: [
       'ENINTI creó tu cuenta en Syntia. Ahí verás tus instalaciones, su ficha técnica, tus pagos y tus mantenciones, y podrás pedir una visita o reportar una emergencia.',
       'Para entrar, abre el siguiente enlace y crea tu contraseña. El enlace sirve una sola vez; si vence, pide uno nuevo desde "¿Primera vez? Pide tu acceso" en la página de ingreso.',

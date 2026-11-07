@@ -26,8 +26,9 @@ export const fechaHora = (f?: string | null) => {
 
 export const hoyISO = () => new Date().toLocaleDateString('en-CA');
 
+// Iniciales del nombre usando solo letras ("[PRUEBA] Cliente Invitado" → "PC")
 export const iniciales = (nombre?: string | null) =>
-  (nombre || '?').split(' ').filter(Boolean).slice(0, 2).map((p) => p[0]).join('').toUpperCase();
+  (nombre || '').split(/\s+/).map((p) => p.replace(/[^\p{L}]/gu, '')).filter(Boolean).slice(0, 2).map((p) => p[0]).join('').toUpperCase() || '?';
 
 export const plural = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`;
 

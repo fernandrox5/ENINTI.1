@@ -7,7 +7,7 @@ import { pool } from '../config/db.js';
 import { supabase, clienteAuth } from '../config/supabase.js';
 import { autenticar } from '../middleware/auth.js';
 import { enviarCorreo } from '../services/correo.js';
-import { urlApp, invitarCliente, estadoAcceso } from '../services/invitaciones.js';
+import { urlApp, invitarCliente, estadoAcceso, primerNombre } from '../services/invitaciones.js';
 import { correoValido, ErrorHttp } from '../utils/validar.js';
 
 const router = Router();
@@ -74,7 +74,7 @@ router.post('/activar', async (req, res) => {
   await enviarCorreo({
     para: user.email,
     asunto: 'Tu cuenta de Syntia quedó activa',
-    titulo: `Listo, ${respuesta.usuario.nombre.split(' ')[0]}. Tu cuenta quedó activa`,
+    titulo: `Listo, ${primerNombre(respuesta.usuario.nombre)}. Tu cuenta quedó activa`,
     parrafos: [
       'Ya puedes entrar a Syntia con tu correo y la contraseña que creaste.',
       'Ahí verás tus instalaciones, su ficha técnica, tus pagos y tus mantenciones. También puedes pedir una visita o reportar una emergencia.',
@@ -95,7 +95,7 @@ router.post('/recuperar', async (req, res) => {
     await enviarCorreo({
       para: correo,
       asunto: 'Crea una nueva contraseña para Syntia',
-      titulo: `Hola${p?.nombre ? `, ${p.nombre.split(' ')[0]}` : ''}. Crea tu nueva contraseña`,
+      titulo: `Hola${p?.nombre ? `, ${primerNombre(p.nombre)}` : ''}. Crea tu nueva contraseña`,
       parrafos: [
         'Pediste crear una nueva contraseña para ingresar a Syntia.',
         'Abre el siguiente enlace para elegirla. El enlace vence en 1 hora.',
