@@ -73,14 +73,11 @@ router.post('/activar', async (req, res) => {
   // Confirmación "Tu cuenta quedó activa" (si falla el envío, la activación igual queda hecha)
   await enviarCorreo({
     para: user.email,
-    asunto: 'Tu cuenta de Syntia quedó activa',
-    titulo: `Listo, ${primerNombre(respuesta.usuario.nombre)}. Tu cuenta quedó activa`,
-    parrafos: [
-      'Ya puedes entrar a Syntia con tu correo y la contraseña que creaste.',
-      'Ahí verás tus instalaciones, su ficha técnica, tus pagos y tus mantenciones. También puedes pedir una visita o reportar una emergencia.',
-      'Si no fuiste tú quien activó la cuenta, avísale a ENINTI de inmediato.',
-    ],
-    boton: { texto: 'Ir a Syntia', url: `${urlApp(req)}/login` },
+    asunto: 'Tu cuenta de Syntia está lista',
+    titulo: `¡Listo, ${primerNombre(respuesta.usuario.nombre)}!`,
+    parrafos: ['Ya puedes entrar con tu correo y tu contraseña.'],
+    boton: { texto: 'Entrar a Syntia', url: `${urlApp(req)}/login` },
+    pie: '¿No fuiste tú? Avísale a ENINTI. ENINTI · Energía solar en el norte de Chile.',
   }).catch((err) => console.error('No se pudo enviar la confirmación de activación:', err.message));
   res.json(respuesta);
 });
@@ -94,13 +91,10 @@ router.post('/recuperar', async (req, res) => {
     const { rows: [p] } = await pool.query('SELECT nombre FROM perfiles WHERE id = $1', [data.user.id]);
     await enviarCorreo({
       para: correo,
-      asunto: 'Crea una nueva contraseña para Syntia',
-      titulo: `Hola${p?.nombre ? `, ${primerNombre(p.nombre)}` : ''}. Crea tu nueva contraseña`,
-      parrafos: [
-        'Pediste crear una nueva contraseña para ingresar a Syntia.',
-        'Abre el siguiente enlace para elegirla. El enlace vence en 1 hora.',
-        'Si no lo pediste, ignora este correo: tu contraseña actual sigue funcionando.',
-      ],
+      asunto: 'Tu nueva contraseña de Syntia',
+      titulo: `Hola${p?.nombre ? `, ${primerNombre(p.nombre)}` : ''}`,
+      parrafos: ['Toca el botón para crear tu nueva contraseña.'],
+      pie: 'El enlace vence en 1 hora. ¿No lo pediste? Ignora este correo. ENINTI · Energía solar en el norte de Chile.',
       boton: { texto: 'Crear nueva contraseña', url: `${urlApp(req)}/nueva-contrasena?token=${encodeURIComponent(data.properties.hashed_token)}` },
     });
   }

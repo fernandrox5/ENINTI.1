@@ -6,11 +6,8 @@ import { ChevronLeft, X, Loader2 } from 'lucide-react';
 export function Marca({ sub }: { sub?: string }) {
   return (
     <Link to="/" className="marca" aria-label="Syntia, ir al inicio">
-      <span className="marca-sol" aria-hidden="true" />
-      <span className="marca-texto">
-        Syntia
-        {sub && <small>{sub}</small>}
-      </span>
+      <img src="/syntia-logo.png" alt="Syntia" className="marca-logo" />
+      {sub && <small className="marca-sub">{sub}</small>}
     </Link>
   );
 }

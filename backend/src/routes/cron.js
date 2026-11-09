@@ -2,6 +2,7 @@
 // "Authorization: Bearer <CRON_SECRET>"; sin ese secreto la ruta no responde.
 import { Router } from 'express';
 import { enviarAvisos, procesoDiario } from '../services/avisos.js';
+import { ejecutarCobros, revisarPendientes } from '../services/cobros.js';
 
 const router = Router();
 
@@ -18,6 +19,14 @@ router.get('/avisos', async (req, res) => {
   const proceso = req.query.generar === '1' ? await procesoDiario() : null;
   const envio = await enviarAvisos();
   res.json({ proceso, envio });
+});
+
+// Cobros automáticos del día (tarjetas inscritas y enlaces de pago). Se activan con COBROS_AUTOMATICOS=true
+router.get('/cobros', async (req, res) => {
+  if (process.env.COBROS_AUTOMATICOS !== 'true') return res.json({ desactivado: true });
+  const revision = await revisarPendientes();
+  const cobros = await ejecutarCobros();
+  res.json({ revision, cobros });
 });
 
 export default router;

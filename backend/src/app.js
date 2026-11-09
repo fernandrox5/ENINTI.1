@@ -3,10 +3,13 @@ import cors from 'cors';
 import health from './routes/health.js';
 import auth from './routes/auth.js';
 import cron from './routes/cron.js';
+import flow from './routes/flow.js';
 import admin from './routes/admin/index.js';
 import portal from './routes/portal/index.js';
+import tecnico from './routes/tecnico/index.js';
 import { autenticar, permitir } from './middleware/auth.js';
 import { ErrorHttp } from './utils/validar.js';
+import { pool } from './config/db.js';
 
 const app = express();
 
@@ -17,10 +20,18 @@ if (origenes.length) app.use(cors({ origin: origenes }));
 app.use(express.json());
 
 app.use('/api/health', health);
+// Datos de contacto de ENINTI para el portal y la página de ingreso (públicos)
+app.get('/api/contacto', async (req, res) => {
+  const { rows } = await pool.query("SELECT clave, valor FROM configuracion WHERE clave IN ('whatsapp', 'telefono_contacto')");
+  const c = Object.fromEntries(rows.map((r) => [r.clave, r.valor]));
+  res.json({ whatsapp: c.whatsapp || null, telefono: c.telefono_contacto || null });
+});
 app.use('/api/auth', auth);
 app.use('/api/cron', cron);
+app.use('/api/flow', flow);
 app.use('/api/admin', autenticar, permitir('admin'), admin);
 app.use('/api/portal', autenticar, permitir('cliente'), portal);
+app.use('/api/tecnico', autenticar, permitir('tecnico'), tecnico);
 
 app.use((req, res) => {
   res.status(404).json({ error: 'Ruta no encontrada' });

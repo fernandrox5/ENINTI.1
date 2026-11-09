@@ -25,7 +25,7 @@ drop view if exists public.v_resumen_admin, public.v_equipos_fin_vida_util,
   public.v_ingresos_por_cliente, public.v_historial_retencion,
   public.v_instalaciones_sin_suscripcion, public.v_por_vencer, public.v_morosos,
   public.v_suscripciones_estado cascade;
-drop table if exists public.condiciones_servicio, public.notificaciones, public.gestiones, public.documentos,
+drop table if exists public.cobros, public.tarjetas, public.condiciones_servicio, public.notificaciones, public.gestiones, public.documentos,
   public.pagos, public.mantenciones, public.solicitudes, public.suscripciones,
   public.tipos_suscripcion, public.equipos, public.instalaciones, public.tecnicos,
   public.clientes, public.localidades, public.configuracion, public.perfiles cascade;

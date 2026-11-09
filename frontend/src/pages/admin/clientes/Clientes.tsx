@@ -24,8 +24,8 @@ export const GESTIONES: Record<string, string> = { llamada: 'Llamada', whatsapp:
 // Estado resumido de las suscripciones, como en la columna del mockup
 export function estadoSuscripciones(c: Pick<FilaCliente, 'activo' | 'con_deuda' | 'max_adeudados' | 'por_validar' | 'vigentes' | 'dias_min'>): [Tono, string] {
   if (!c.activo) return ['neutra', 'Cliente inactivo'];
-  if (c.con_deuda > 1) return ['mala', `${c.con_deuda} con deuda`];
-  if (c.con_deuda === 1) return ['mala', `Debe ${c.max_adeudados} ${c.max_adeudados === 1 ? 'mes' : 'meses'}`];
+  if (c.con_deuda > 1) return ['mala', `${c.con_deuda} con pago pendiente`];
+  if (c.con_deuda === 1) return ['mala', 'Pago pendiente'];
   if (c.por_validar > 0) return ['alerta', 'Pago en revisión'];
   if (c.vigentes > 0 && c.dias_min !== null && c.dias_min <= 30) return ['alerta', c.dias_min <= 0 ? 'Vence hoy' : `Vence en ${c.dias_min} días`];
   if (c.vigentes > 0) return ['buena', 'Al día'];
@@ -68,7 +68,7 @@ export default function Clientes() {
       </div>
       <Pestanas<Filtro>
         valor={filtro} cambiar={(f) => { setFiltro(f); setPagina(1); }}
-        opciones={[['activos', 'Activos', datos?.conteo.activos], ['deuda', 'Con deuda', datos?.conteo.deuda],
+        opciones={[['activos', 'Activos', datos?.conteo.activos], ['deuda', 'Pago pendiente', datos?.conteo.deuda],
           ['inactivos', 'Inactivos', datos?.conteo.inactivos], ['todos', 'Todos', datos?.conteo.todos]]}
       />
 
@@ -79,7 +79,7 @@ export default function Clientes() {
         <div className="tabla">
           <table>
             <thead>
-              <tr><th>Cliente</th><th>Localidad</th><th className="num">Instalaciones</th><th>Suscripciones</th><th className="num">Deuda</th><th>Portal</th><th>Última gestión</th><th /></tr>
+              <tr><th>Cliente</th><th>Localidad</th><th className="num">Instalaciones</th><th>Suscripciones</th><th className="num">Por pagar</th><th>Portal</th><th>Última gestión</th><th /></tr>
             </thead>
             <tbody>
               {datos.clientes.map((c) => {

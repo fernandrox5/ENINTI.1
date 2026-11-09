@@ -74,14 +74,14 @@ export default function ClienteFicha() {
           <h1>{c.nombre}</h1>
           <p>
             {[c.rut ? `RUT ${c.rut}` : 'Sin RUT', c.localidad, `cliente desde ${mes(c.created_at).split(' ')[0].slice(0, 3)} ${c.created_at.slice(0, 4)}`].filter(Boolean).join(' · ')}
-            {' '}{c.resumen.deuda > 0 && <Etiqueta tono="mala" punto>Deuda {pesos(c.resumen.deuda)}</Etiqueta>}
+            {' '}{c.resumen.deuda > 0 && <Etiqueta tono="mala" punto>Pago pendiente {pesos(c.resumen.deuda)}</Etiqueta>}
             {' '}<Etiqueta tono={PORTAL[portal][0]}>{portal === 'activo' ? 'Portal vinculado' : portal === 'invitado' ? 'Invitación enviada' : 'Sin acceso al portal'}</Etiqueta>
             {' '}{!c.activo && <Etiqueta tono="mala">Inactivo</Etiqueta>}
           </p>
         </div>
         <div className="acciones">
           <button type="button" className="boton secundario chico" onClick={() => setGestion(true)}>Registrar gestión</button>
-          <Link to={`/admin/pagos?registrar=1&cliente=${c.id}`} className="boton primario chico">Registrar pago</Link>
+          <Link to={`/admin/pagos/registrar?cliente=${c.id}`} className="boton primario chico">Registrar pago</Link>
         </div>
       </div>
       <Aviso tipo="ok">{aviso}</Aviso>
@@ -162,7 +162,7 @@ export default function ClienteFicha() {
             <div className="kpi"><span className="kpi-titulo">Último pago</span>
               <strong className="kpi-valor">{c.resumen.ultimo_pago ? fechaCorta(c.resumen.ultimo_pago.fecha_pago ?? c.resumen.ultimo_pago.created_at).replace(/ \d{4}$/, '') : '—'}</strong>
               {c.resumen.ultimo_pago && <span className="suave">{pesos(c.resumen.ultimo_pago.monto)} · {ESTADO_PAGO[c.resumen.ultimo_pago.estado][1].toLowerCase()}</span>}</div>
-            <div className={`kpi ${c.resumen.deuda > 0 ? 'mala' : ''}`}><span className="kpi-titulo">Deuda</span><strong className="kpi-valor">{pesos(c.resumen.deuda)}</strong></div>
+            <div className={`kpi ${c.resumen.deuda > 0 ? 'mala' : ''}`}><span className="kpi-titulo">Por pagar</span><strong className="kpi-valor">{pesos(c.resumen.deuda)}</strong></div>
           </div>
           {c.pagos.length === 0 ? <Vacio>Sin pagos registrados.</Vacio> : (
             <div className="tabla"><table>

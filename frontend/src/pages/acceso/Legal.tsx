@@ -8,7 +8,7 @@ const TEXTOS = {
       'Syntia es la plataforma que ENINTI usa para administrar las suscripciones de mantención de sus instalaciones solares.',
       'El Plan Básico tiene un valor de $15.000 mensuales por instalación, dura 12 meses e incluye dos mantenciones preventivas al año.',
       'Cada mes de contrato se paga por transferencia, depósito o efectivo. El cliente puede informar su pago con el comprobante desde la plataforma; ENINTI lo valida.',
-      'Los meses no pagados quedan como deuda pendiente y se muestran en la plataforma. ENINTI puede enviar recordatorios por correo.',
+      'El cobro es mensual y automático. Si un pago no se realiza dentro de 7 días, la suscripción se cancela; no se cobran meses atrás.',
       'Las mantenciones preventivas se agendan al contratar y se coordinan según la localidad de la instalación.',
       'Al terminar el plazo, la suscripción vence. Para continuar se contrata una nueva.',
       'El cliente puede cancelar su suscripción. La cancelación no elimina los meses que ya estaban vencidos.',

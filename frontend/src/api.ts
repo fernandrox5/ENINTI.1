@@ -101,3 +101,13 @@ export async function api<T = unknown>(ruta: string, { method = 'GET', body }: {
   }
   return datos as T;
 }
+
+// Descarga un archivo de la API (por ejemplo el Excel de pagos) con la sesión del usuario
+export async function descargar(ruta: string, nombre: string) {
+  const res = await pedir(ruta);
+  if (!res.ok) throw new Error('No se pudo descargar el archivo');
+  const url = URL.createObjectURL(await res.blob());
+  const a = Object.assign(document.createElement('a'), { href: url, download: nombre });
+  a.click();
+  URL.revokeObjectURL(url);
+}

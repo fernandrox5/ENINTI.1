@@ -4,6 +4,9 @@
 //   2. 01_esquema_eninti  esquema completo (tablas, triggers, vistas, RLS, storage, pg_cron)
 //   3. 02_ajustes.sql     ajustes de la revisión (9 puntos)
 //   4. 03_datos_prueba    datos de prueba ficticios
+//   5. 04_pagos_flow.sql  tarjetas inscritas y cobros en línea con Flow
+//   6. 05_plazo_pago.sql  días de plazo antes de cerrar por falta de pago
+//   7. 06_mantenciones    motivo de cancelación y notas de la mantención
 //   5. usuarios de prueba en Supabase Auth (el trigger los vincula por correo)
 import { readFile } from 'node:fs/promises';
 
@@ -67,6 +70,10 @@ try {
   console.log('✔ Esquema creado');
   await pool.query(await sql('seeds/03_datos_prueba.sql'));
   console.log('✔ Datos de prueba cargados');
+  await pool.query(await sql('schema/04_pagos_flow.sql'));
+  console.log('✔ Pagos en línea (Flow)');
+  await pool.query(await sql('schema/05_plazo_pago.sql'));
+  await pool.query(await sql('schema/06_mantenciones.sql'));
 
   for (const u of USUARIOS) {
     const { data, error } = await supabase.auth.admin.createUser({

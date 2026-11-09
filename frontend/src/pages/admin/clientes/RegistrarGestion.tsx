@@ -30,7 +30,7 @@ export default function RegistrarGestion({ clienteId, clienteNombre, suscripcion
         <Selector etiqueta="Tipo" value={f.tipo} onChange={(e) => setF({ ...f, tipo: e.target.value })}>
           {Object.entries(GESTIONES).map(([v, t]) => <option key={v} value={v}>{t}</option>)}
         </Selector>
-        <Campo etiqueta="Motivo" placeholder="Ej.: deuda de la instalación, aviso de vencimiento" value={f.motivo} onChange={(e) => setF({ ...f, motivo: e.target.value })} />
+        <Campo etiqueta="Motivo" placeholder="Ej.: pago pendiente, aviso de vencimiento" value={f.motivo} onChange={(e) => setF({ ...f, motivo: e.target.value })} />
         <AreaTexto etiqueta="Resultado" placeholder="Ej.: promete pagar esta semana" value={f.resultado} onChange={(e) => setF({ ...f, resultado: e.target.value })} />
         <Aviso>{error}</Aviso>
         <div className="botones">

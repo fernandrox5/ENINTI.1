@@ -38,7 +38,7 @@ export default function PanelAdmin() {
     <div className={`panel ${menuAbierto ? 'menu-abierto' : ''}`}>
       <aside className="panel-menu">
         <div className="panel-marca">
-          <span className="marca-sol grande" aria-hidden="true" />
+          <img src="/syntia-icono.png" alt="" className="marca-sol grande" />
           <span><strong>Syntia</strong><small>Administración</small></span>
           <button type="button" className="icono-boton solo-celular" onClick={() => setMenuAbierto(false)} aria-label="Cerrar menú"><X size={22} /></button>
         </div>

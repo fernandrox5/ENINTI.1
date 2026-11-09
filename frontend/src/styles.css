@@ -1,4 +1,4 @@
-/* Syntia · estilos según los mockups (Inter, amarillo solar, bordes redondeados) */
+/* Syntia · estilos según los mockups (Poppins, amarillo solar, bordes redondeados) */
 :root {
   --amarillo: #ffcc00;
   --amarillo-claro: #fff7d1;
@@ -19,7 +19,7 @@
   --azul-claro: #eaf2fd;
   --radio: 12px;
   --radio-grande: 18px;
-  font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: Poppins, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   color: var(--texto);
   background: #fff;
   -webkit-font-smoothing: antialiased;
@@ -44,15 +44,17 @@ p { margin: 0; }
 .marca { display: inline-flex; align-items: center; gap: 10px; font-size: 22px; font-weight: 600; color: var(--texto); text-decoration: none; }
 .marca-texto { display: flex; flex-direction: column; line-height: 1.1; }
 .marca-texto small { font-size: 13px; font-weight: 400; color: var(--gris); }
-.marca-sol { width: 16px; height: 16px; border-radius: 50%; background: var(--amarillo); border: 1.5px solid #b38f00; flex: none; }
-.marca-sol.grande { width: 22px; height: 22px; }
+.marca-sol { width: 26px; height: 26px; flex: none; object-fit: contain; }
+.marca-sol.grande { width: 34px; height: 34px; }
+.marca-logo { height: 40px; width: auto; display: block; }
+.marca-sub { font-size: 13px; color: var(--gris); font-weight: 400; }
 
 /* ---------- Títulos de dos tonos ---------- */
-.titulo-grande { font-size: 30px; line-height: 1.12; letter-spacing: -0.02em; font-weight: 600; color: var(--gris); }
-.titulo-grande strong { color: var(--texto); font-weight: 700; }
+.titulo-grande { font-size: 28px; line-height: 1.15; letter-spacing: -0.01em; font-weight: 500; color: var(--gris); }
+.titulo-grande strong { color: var(--texto); font-weight: 600; }
 .titulo-medio { font-size: 22px; line-height: 1.2; font-weight: 600; color: var(--gris); }
 .titulo-medio strong { color: var(--texto); }
-@media (min-width: 900px) { .titulo-grande { font-size: 44px; } }
+@media (min-width: 900px) { .titulo-grande { font-size: 38px; } }
 
 /* ---------- Campos ---------- */
 .campo { position: relative; display: block; }
@@ -176,7 +178,7 @@ p { margin: 0; }
   border: 1px solid var(--linea); background: #fff; text-decoration: none; color: var(--texto);
 }
 .kpi-titulo { color: var(--gris); font-size: 15px; display: inline-flex; align-items: center; gap: 8px; }
-.kpi-valor { font-size: 32px; font-weight: 700; letter-spacing: -0.02em; }
+.kpi-valor { font-size: 32px; font-weight: 600; letter-spacing: -0.01em; }
 .kpi-enlace { color: var(--dorado); font-size: 15px; }
 .kpi.mala { background: var(--rojo-claro); border-color: transparent; }
 .kpi.mala .kpi-titulo .punto { color: var(--rojo); }
@@ -218,7 +220,7 @@ p { margin: 0; }
 .acceso-pagina.centrada { justify-content: center; align-items: stretch; }
 .acceso-pagina .volver { margin-bottom: 4px; }
 .acceso-form { display: flex; flex-direction: column; gap: 14px; }
-.acceso-titulo { font-size: 30px; line-height: 1.15; font-weight: 700; letter-spacing: -0.02em; }
+.acceso-titulo { font-size: 30px; line-height: 1.15; font-weight: 600; letter-spacing: -0.01em; }
 .acceso-texto { color: var(--gris); font-size: 17px; line-height: 1.45; margin-bottom: 6px; }
 .acceso-pie { text-align: center; color: var(--gris); font-size: 15px; }
 .icono-cuadro { width: 56px; height: 56px; border-radius: 16px; background: var(--amarillo-claro); display: grid; place-items: center; }
@@ -363,3 +365,267 @@ p { margin: 0; }
 .acciones.arriba { margin-top: 16px; }
 .nota { margin: 12px 0; font-size: 14px; }
 .centrar-vertical { align-self: center; }
+
+/* ---------- Instalaciones y asistentes (T-24) ---------- */
+.titulo-pagina { font-size: 28px; font-weight: 600; letter-spacing: -0.01em; }
+@media (min-width: 900px) { .titulo-pagina { font-size: 34px; } }
+.segmentos { display: inline-flex; flex-wrap: wrap; gap: 2px; background: var(--fondo); border-radius: 12px; padding: 3px; }
+.segmentos button { border: 0; background: none; padding: 8px 12px; border-radius: 9px; font-size: 14px; cursor: pointer; color: var(--gris); white-space: nowrap; }
+.segmentos button.activo { background: #fff; color: var(--texto); font-weight: 600; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12); }
+.segmentos.chicos button { padding: 6px 10px; font-size: 13px; }
+.foto-instalacion { width: 64px; height: 64px; border-radius: 14px; background: url('/paneles.jpg') center / cover; flex: none; }
+.tabla tr.retirado td { color: var(--gris); background: #fafafa; }
+.texto-malo { color: var(--rojo); }
+.cadena { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 8px 0; }
+.cadena-item { display: inline-flex; align-items: center; gap: 8px; }
+.eslabon { display: flex; flex-direction: column; border: 1px solid var(--linea); border-radius: 12px; padding: 8px 12px; text-decoration: none; color: var(--texto); font-size: 14px; }
+.eslabon small { color: var(--gris); font-size: 12px; }
+.eslabon.vigente { background: var(--amarillo-claro); border-color: var(--amarillo); }
+.pasos { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; max-width: 900px; }
+.pasos li { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; background: var(--fondo); color: var(--gris); font-size: 14px; }
+.pasos li span { width: 24px; height: 24px; border-radius: 50%; background: #fff; display: grid; place-items: center; font-size: 13px; font-weight: 600; flex: none; }
+.pasos li.hecho { background: var(--amarillo-claro); color: var(--texto); }
+.pasos li.actual { background: var(--amarillo); color: var(--texto); font-weight: 600; }
+.tarjeta.asistente { max-width: 900px; display: grid; gap: 14px; }
+.tarjeta.asistente h2 { margin: 0; font-size: 19px; }
+.tarjeta.asistente.centrado { text-align: center; justify-items: center; padding: 36px 24px; }
+.asistente-botones { display: flex; justify-content: space-between; max-width: 900px; gap: 12px; }
+.icono-circulo.chico { width: 64px; height: 64px; margin: 0; }
+.formulario.tres { display: grid; gap: 14px; }
+@media (min-width: 700px) { .formulario.tres { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1000px) { .formulario.tres { grid-template-columns: repeat(3, 1fr); } }
+.opciones-radio { display: grid; gap: 10px; }
+.opciones-radio label { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid var(--linea); border-radius: 12px; cursor: pointer; }
+.opciones-radio label span { flex: 1; display: flex; flex-direction: column; }
+.opciones-radio label small { color: var(--gris); font-size: 13px; }
+.opciones-radio label.elegida { border-color: var(--amarillo); background: var(--amarillo-suave); }
+.opciones-radio input { accent-color: var(--dorado); width: 18px; height: 18px; }
+.nota-info { display: flex; gap: 8px; align-items: flex-start; background: var(--fondo); border-radius: 12px; padding: 10px 12px; font-size: 14px; color: var(--gris); }
+.lista-equipos { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.lista-equipos li { display: grid; grid-template-columns: 100px 1fr 1fr 1fr auto; gap: 12px; align-items: center; border: 1px solid var(--linea); border-radius: 12px; padding: 8px 12px; font-size: 14px; }
+@media (max-width: 700px) { .lista-equipos li { grid-template-columns: 1fr auto; } .lista-equipos li span { grid-column: 1; } }
+.borrador { border: 1px dashed var(--borde); border-radius: 14px; padding: 14px; display: grid; gap: 12px; }
+.icono-boton.chico { width: 34px; height: 34px; border-radius: 10px; }
+.archivo { display: flex; align-items: center; gap: 12px; border: 1px dashed var(--borde); border-radius: 12px; padding: 16px; cursor: pointer; color: var(--gris); }
+.archivo input { max-width: 110px; }
+.acciones.centro { justify-content: center; }
+.check.arriba { margin-top: 12px; }
+@media (min-width: 900px) { .datos.columnas.dos { grid-template-columns: repeat(2, 1fr); } }
+
+.formulario, .formulario.dos, .formulario.tres { align-items: start; }
+
+.tabla td:first-child { white-space: nowrap; }
+.nota-info span { flex: 1; }
+
+/* ---------- Suscripciones (T-21) ---------- */
+.sin-corte { white-space: nowrap; }
+.ficha-titulo h1 .suave { font-weight: 600; }
+.grilla-2.arriba-alineado { align-items: start; }
+.columna { display: grid; gap: 16px; }
+.tarjeta h2 { font-size: 18px; margin: 0 0 12px; }
+.tarjeta-cabecera { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 12px; }
+.tarjeta-cabecera h2 { margin: 0; }
+.datos.lineas { gap: 0; }
+.datos.lineas div { border-top: 1px solid #ececf0; padding: 11px 0; }
+.datos.lineas div:first-child { border-top: 0; }
+.vigencia-fechas { display: flex; justify-content: space-between; gap: 12px; font-size: 15px; margin-bottom: 10px; }
+.barra-progreso { height: 8px; border-radius: 99px; background: var(--fondo); overflow: hidden; }
+.barra-progreso span { display: block; height: 100%; background: var(--amarillo); border-radius: 99px; }
+.kpis.compactos { margin-bottom: 8px; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.kpis.compactos .kpi { padding: 12px 14px; background: var(--fondo); border-color: transparent; }
+.kpis.compactos .kpi-valor { font-size: 28px; }
+.kpis.compactos .kpi.buena { background: var(--verde-claro); }
+.kpis.compactos .kpi.buena .kpi-titulo { color: var(--verde); }
+.desplegable summary { cursor: pointer; color: var(--dorado); font-size: 14px; margin-top: 8px; }
+.lista-simple { list-style: none; margin: 8px 0 0; padding: 0; }
+.lista-simple li { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid #ececf0; font-size: 15px; flex-wrap: wrap; }
+.lista-simple li:first-child { border-top: 0; }
+.lista-simple li > :first-child { flex: 1; min-width: 120px; }
+.eslabon.punteado { border-style: dashed; color: var(--gris); }
+.eslabon strong { display: inline-flex; align-items: center; gap: 4px; }
+.nota-peligro { background: var(--rojo-claro); color: var(--texto); border-radius: 12px; padding: 12px 14px; font-size: 14px; margin: 0; }
+.nota-alerta { display: flex; align-items: center; gap: 12px; background: var(--amarillo-claro); border-radius: 12px; padding: 12px 14px; font-size: 15px; }
+.nota-alerta span { flex: 1; }
+.con-resumen { display: grid; gap: 18px; align-items: start; }
+@media (min-width: 1100px) { .con-resumen { grid-template-columns: minmax(0, 1fr) 380px; } }
+.tarjeta.resumen { background: var(--amarillo-suave); display: grid; gap: 12px; position: sticky; top: 16px; }
+.tarjeta.resumen h2 { margin: 0; }
+.tarjeta.resumen h3 { font-size: 15px; margin: 4px 0 0; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.opciones-tarjeta { display: grid; gap: 10px; }
+@media (min-width: 700px) { .opciones-tarjeta { grid-template-columns: repeat(2, 1fr); } }
+.opciones-tarjeta button { text-align: left; background: #fff; border: 1.5px solid var(--linea); border-radius: 14px; padding: 14px 16px; cursor: pointer; display: grid; gap: 4px; font: inherit; color: var(--texto); }
+.opciones-tarjeta button small { color: var(--gris); font-size: 14px; }
+.opciones-tarjeta button.elegida { border-color: var(--dorado); background: var(--amarillo-suave); }
+.kpis.compactos .kpi.mala { background: var(--rojo-claro); }
+.kpis.compactos .kpi.mala .kpi-titulo { color: var(--rojo); }
+.acciones.sin-corte { flex-wrap: nowrap; }
+.buscador-icono .buscador { height: 44px; border: 1px solid var(--borde); border-radius: 12px; font-size: 15px; padding-right: 14px; }
+
+/* ---------- Pagos (T-23, T-25, T-26) ---------- */
+button.kpi { text-align: left; font: inherit; color: inherit; cursor: pointer; }
+.empujar { margin-left: auto; }
+.selector-mes { display: grid; border: 1px solid var(--borde); border-radius: 12px; padding: 4px 12px; background: #fff; }
+.selector-mes span { font-size: 12px; color: var(--gris); }
+.filtros .selector-mes select { border: 0; height: auto; padding: 0; font-size: 15px; }
+.total-mes { font-size: 16px; }
+.chips.grandes { gap: 10px; }
+.chip { border: 1.5px solid var(--linea); background: #fff; border-radius: 12px; padding: 10px 14px; font: inherit; font-size: 15px; cursor: pointer; color: var(--texto); }
+.chip.elegido { background: var(--amarillo); border-color: var(--amarillo); font-weight: 600; }
+.fila-suscripcion { display: flex; align-items: center; justify-content: space-between; gap: 12px; border: 1px solid var(--linea); border-radius: 12px; padding: 12px 14px; }
+.fila-suscripcion span { display: grid; }
+.fila-suscripcion small { color: var(--gris); }
+.tarjeta.resumen.deuda { background: var(--rojo-claro); }
+.tarjeta.resumen hr { border: 0; border-top: 1px solid var(--linea); margin: 4px 0; width: 100%; }
+.enlace-generado { display: grid; gap: 8px; }
+.enlace-generado code { font-size: 12px; background: #fff; border: 1px solid var(--linea); border-radius: 10px; padding: 8px 10px; word-break: break-all; }
+.lista-simple svg { vertical-align: -2px; }
+.pago-tarjeta { display: grid; gap: 10px; align-content: start; justify-items: start; }
+.pago-tarjeta > .boton { width: 100%; }
+.pago-tarjeta.debe { background: var(--rojo-claro); border-color: transparent; }
+.pago-tarjeta h2 { display: flex; align-items: center; gap: 8px; margin: 0; }
+.pago-monto { font-size: 40px; letter-spacing: -0.02em; line-height: 1.1; }
+.pago-tarjeta p { margin: 0; }
+.subtitulo { font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--gris); margin-top: 8px; }
+.etiqueta svg { vertical-align: -2px; }
+.pago-monto small { font-size: 16px; font-weight: 500; color: var(--gris); letter-spacing: 0; }
+
+/* ---------- Portal del cliente (T-27) ---------- */
+.acciones-rapidas { display: flex; flex-wrap: wrap; gap: 10px; }
+.avisos-portal { display: grid; gap: 12px; }
+@media (min-width: 900px) { .avisos-portal { grid-template-columns: repeat(3, 1fr); } }
+.aviso-portal { display: flex; gap: 14px; align-items: flex-start; padding: 16px; border-radius: 16px; background: var(--fondo); color: var(--texto); text-decoration: none; border: 0; font: inherit; text-align: left; cursor: pointer; width: 100%; }
+.aviso-portal strong { display: block; font-size: 16px; line-height: 1.3; }
+.aviso-portal small { display: block; color: var(--dorado); font-size: 15px; margin-top: 4px; }
+.aviso-portal .aviso-icono { width: 42px; height: 42px; border-radius: 12px; background: #fff; display: grid; place-items: center; flex: none; }
+.aviso-portal.alerta { background: var(--amarillo-claro); }
+.aviso-portal.alerta .aviso-icono { background: var(--amarillo); }
+.aviso-portal.mala { background: var(--rojo-claro); }
+.aviso-portal.mala .aviso-icono, .aviso-portal.mala small { color: var(--rojo); }
+.aviso-portal.buena { background: var(--verde-claro); }
+.aviso-portal.buena .aviso-icono { color: var(--verde); }
+.aviso-portal.info .aviso-icono { color: var(--dorado); }
+.instalacion-portal { padding: 0; overflow: hidden; display: grid; }
+.instalacion-portal-cuerpo { padding: 18px 22px 22px; display: grid; gap: 10px; }
+.instalacion-portal-cuerpo header { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.instalacion-portal-cuerpo h2 { margin: 0; font-size: 24px; }
+.instalacion-portal-cuerpo p { margin: 0; }
+.foto-ancha { display: block; height: 170px; background: url('/paneles.jpg') center / cover; }
+.foto-ancha.redondeada { border-radius: var(--radio-grande); height: 220px; }
+.lista-equipos-portal { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.lista-equipos-portal li { display: flex; justify-content: space-between; align-items: center; gap: 12px; border: 1px solid var(--linea); border-radius: 14px; padding: 14px 16px; background: #fff; }
+.lista-equipos-portal li span { display: grid; gap: 2px; }
+.lista-equipos-portal small { color: var(--gris); font-size: 13px; }
+.lista-equipos-portal li.retirado { background: #fafafa; color: var(--gris); }
+.beneficios { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.beneficios li { display: flex; gap: 8px; align-items: flex-start; }
+.beneficios svg { color: var(--verde); flex: none; margin-top: 2px; }
+.tarjeta.destacada { background: var(--amarillo); border-color: transparent; display: grid; gap: 10px; }
+.tarjeta.destacada h2 { margin: 0; }
+.tarjeta.destacada p { margin: 0; }
+.tarjeta.destacada .boton.secundario { background: #fff; }
+.tarjeta.plan { display: grid; gap: 12px; align-content: start; }
+.tarjeta.plan.elegido { border: 2px solid var(--dorado); background: var(--amarillo-suave); }
+.texto-bueno { color: var(--verde); }
+.pagina-portal.angosta { max-width: 640px; }
+.lista-menu button span small { font-size: 13px; }
+
+/* ---------- Mantenciones (T-28, T-32) ---------- */
+.leyenda { display: inline-flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; font-size: 14px; color: var(--gris); }
+.leyenda i { display: inline-block; width: 12px; height: 12px; border-radius: 4px; margin-right: 4px; vertical-align: -1px; }
+.leyenda i.preventiva, .evento.preventiva, .punto-tipo.preventiva { background: var(--amarillo-claro); }
+.leyenda i.correctiva, .evento.correctiva, .punto-tipo.correctiva { background: #ececf0; }
+.leyenda i.emergencia, .evento.emergencia, .punto-tipo.emergencia { background: var(--rojo-claro); }
+.leyenda i.realizada, .evento.realizada { background: var(--verde-claro); }
+.calendario { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); border: 1px solid var(--linea); border-radius: var(--radio-grande); overflow: hidden; background: #fff; }
+.calendario-dia-nombre { padding: 10px 12px; font-size: 13px; font-weight: 600; color: var(--gris); text-transform: uppercase; border-bottom: 1px solid var(--linea); background: #fafafa; }
+.calendario-celda { min-height: 112px; padding: 8px; border-right: 1px solid #ececf0; border-bottom: 1px solid #ececf0; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.calendario-celda:nth-child(7n) { border-right: 0; }
+.calendario.semana .calendario-celda { min-height: 320px; }
+.calendario-celda.fuera { background: #f4f4f6; color: var(--gris); }
+.calendario-celda.hoy { background: var(--amarillo-suave); }
+.calendario-celda.hoy .calendario-numero { background: var(--amarillo); border-radius: 8px; padding: 0 6px; }
+.calendario-numero { font-weight: 600; font-size: 15px; align-self: flex-start; }
+.evento { display: flex; align-items: center; gap: 3px; font-size: 13px; padding: 4px 7px; border-radius: 7px; color: var(--texto); text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.evento:hover { filter: brightness(0.96); }
+.evento.emergencia { color: var(--rojo); font-weight: 600; }
+.evento.realizada { color: var(--verde); }
+.evento.atrasada { outline: 1.5px dashed var(--rojo); }
+.evento.cancelada { background: #f4f4f6; color: var(--gris); text-decoration: line-through; }
+.punto-tipo { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; border: 1px solid var(--linea); }
+.grilla-3.arriba-alineado { align-items: start; }
+.tarjeta.informe { display: grid; gap: 14px; }
+.caja { border: 1px solid var(--linea); border-radius: 14px; padding: 14px 16px; display: grid; gap: 8px; align-content: start; justify-items: start; }
+.caja p { margin: 0; }
+@media (max-width: 800px) { .calendario-celda { min-height: 80px; padding: 4px; } .evento { font-size: 11px; padding: 2px 4px; } .calendario-dia-nombre { padding: 8px 4px; font-size: 11px; } }
+.tarjeta.informe .botones { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
+
+/* ---------- Mantenciones en el portal (T-31) ---------- */
+.segmentos.ancho { display: grid; grid-template-columns: 1fr 1fr; }
+.segmentos.ancho button { padding: 10px; font-size: 16px; }
+.lista-mantenciones { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.lista-mantenciones a { display: flex; align-items: center; gap: 16px; padding: 16px; border: 1px solid var(--linea); border-radius: var(--radio-grande); background: #fff; color: var(--texto); text-decoration: none; }
+.lista-mantenciones-texto { flex: 1; display: grid; gap: 4px; justify-items: start; }
+.lista-mantenciones-texto strong { font-size: 17px; }
+.lista-mantenciones-texto small { color: var(--gris); font-size: 14px; }
+.calendarito { width: 64px; height: 70px; border-radius: 14px; background: var(--amarillo); display: grid; place-items: center; align-content: center; flex: none; line-height: 1.05; }
+.calendarito small { font-size: 12px; font-weight: 600; }
+.calendarito b { font-size: 26px; }
+.calendarito.vacio { background: var(--fondo); color: var(--gris); font-size: 22px; font-weight: 700; }
+.informe-portal h2 { font-size: 20px; margin: 10px 0 0; }
+.informe-portal ul:not(.lista-menu) { margin: 0; padding-left: 22px; display: grid; gap: 6px; font-size: 16px; }
+.aviso-portal.inversion { border: 1.5px solid var(--amarillo); cursor: default; }
+.aviso-portal.inversion > span:last-child { display: grid; gap: 8px; flex: 1; }
+.fotos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.fotos img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 12px; background: var(--fondo); }
+.estrellas { display: inline-flex; gap: 2px; color: var(--borde); vertical-align: middle; margin-right: 6px; }
+.estrellas .llena { fill: var(--amarillo); color: var(--dorado); }
+.estrellas.grandes { display: flex; justify-content: center; gap: 8px; margin: 16px 0 4px; }
+.estrellas.grandes button { background: none; border: 0; padding: 4px; cursor: pointer; color: var(--gris); }
+.centrado { text-align: center; }
+.calificada { color: var(--gris); }
+
+/* ---------- Solicitudes (T-29) ---------- */
+.maestro-detalle { display: grid; gap: 18px; align-items: start; }
+@media (min-width: 1100px) { .maestro-detalle { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); } }
+.lista-solicitudes { list-style: none; margin: 0; padding: 0; border: 1px solid var(--linea); border-radius: var(--radio-grande); overflow: hidden; background: #fff; }
+.lista-solicitudes li + li { border-top: 1px solid #ececf0; }
+.lista-solicitudes button { width: 100%; display: flex; gap: 12px; align-items: center; padding: 14px 16px; background: #fff; border: 0; border-left: 4px solid transparent; font: inherit; text-align: left; cursor: pointer; color: var(--texto); }
+.lista-solicitudes button.elegida { background: var(--amarillo-suave); border-left-color: var(--dorado); }
+.lista-solicitudes-texto { flex: 1; display: grid; min-width: 0; }
+.lista-solicitudes-texto strong { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lista-solicitudes-texto small { color: var(--gris); font-size: 13px; }
+.icono-solicitud { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; flex: none; background: var(--amarillo-claro); color: var(--dorado); }
+.icono-solicitud.emergencia { background: var(--rojo-claro); color: var(--rojo); }
+.detalle-solicitud { display: grid; gap: 12px; }
+.detalle-solicitud h2 { margin: 0; font-size: 26px; }
+.cita { background: var(--fondo); border-radius: 14px; padding: 12px 14px; }
+.cita small { color: var(--gris); font-size: 13px; }
+.cita p { margin: 4px 0 0; font-size: 16px; white-space: pre-wrap; }
+.cita.respuesta { background: var(--verde-claro); }
+.tarjeta.enviada { display: grid; justify-items: center; text-align: center; gap: 8px; }
+.tarjeta.enviada h2 { margin: 0; }
+.segmentos.ancho.tres { grid-template-columns: repeat(3, 1fr); }
+.nota-peligro svg { vertical-align: -3px; color: var(--rojo); }
+.enlace-suave { background: none; border: 0; padding: 0; font: inherit; font-size: 14px; color: var(--gris); text-decoration: underline; cursor: pointer; justify-self: center; }
+
+/* ---------- Panel del técnico ---------- */
+.panel-tecnico { min-height: 100vh; background: #fff; }
+.tecnico-cabecera { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--amarillo-suave); border-bottom: 1px solid var(--linea); }
+.tecnico-cabecera .portal-marca { flex: 1; display: flex; align-items: center; gap: 8px; color: var(--texto); text-decoration: none; }
+.tecnico-pagina { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; display: grid; gap: 14px; }
+.visita { display: flex; align-items: center; gap: 14px; padding: 14px; border: 1px solid var(--linea); border-left: 5px solid var(--amarillo); border-radius: 14px; background: #fff; color: var(--texto); text-decoration: none; }
+.visita.emergencia { border-left-color: var(--rojo); }
+.visita.atrasada { background: var(--rojo-claro); }
+.visita-hora { min-width: 58px; font-weight: 700; font-size: 17px; }
+.archivo.camara { justify-content: center; padding: 22px; font-size: 16px; color: var(--texto); background: var(--amarillo-suave); }
+.archivo.camara input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.archivo { position: relative; }
+
+/* ---------- Inicio del administrador (T-36) ---------- */
+.alertas-inicio { display: grid; gap: 10px; }
+@media (min-width: 900px) { .alertas-inicio { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); } }
+.fila-enlace { display: flex; align-items: center; gap: 12px; width: 100%; color: var(--texto); text-decoration: none; }
+.fila-enlace > span:first-child, .lista-simple li > span:first-child { display: grid; flex: 1; min-width: 0; }
+.tarjeta.angosta-2 { max-width: 760px; }
+.tarjeta.formulario h2 { margin: 6px 0 0; }

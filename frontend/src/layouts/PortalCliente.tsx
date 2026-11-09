@@ -19,7 +19,7 @@ export default function PortalCliente() {
   return (
     <div className="portal">
       <aside className="portal-menu solo-escritorio">
-        <div className="portal-marca"><span className="marca-sol grande" aria-hidden="true" /> <strong>Syntia</strong></div>
+        <div className="portal-marca"><img src="/syntia-icono.png" alt="" className="marca-sol grande" /> <strong>Syntia</strong></div>
         <nav>
           {MENU.map(({ a, texto, icono: Icono, fin }) => (
             <NavLink key={a} to={a} end={fin} className={({ isActive }) => (isActive ? 'activo' : '')}>
