@@ -97,7 +97,7 @@ function Nueva({ datos, tipoInicial, instalacion, volver, listo }: {
       <div className="opciones-tarjeta">
         {datos.instalaciones.map((i) => (
           <button key={i.id} type="button" className={f.instalacion_id === String(i.id) ? 'elegida' : ''} onClick={() => setF({ ...f, instalacion_id: String(i.id) })}>
-            <strong>{i.nombre}</strong><small>{i.con_plan ? 'Con plan de mantención' : 'Sin plan'}</small>
+            <strong>{i.nombre}</strong><small>{i.con_plan ? 'Con plan de mantención' : 'Sin suscripción'}</small>
           </button>
         ))}
       </div>
@@ -109,7 +109,7 @@ function Nueva({ datos, tipoInicial, instalacion, volver, listo }: {
         <p className="nota-peligro"><Zap size={16} /> ¿Es muy urgente? {wa ? <>Escríbenos también por <a href={wa} target="_blank" rel="noreferrer">WhatsApp</a>.</> : 'Llámanos también.'}</p>
       )}
       {f.tipo === 'mantencion' && elegida && !elegida.con_plan && (
-        <p className="nota-info"><span>Sin plan: la visita se cobra aparte.</span></p>
+        <p className="nota-info"><span>Sin suscripción: la visita se cobra aparte.</span></p>
       )}
       {wa && <p className="suave">¿Solo quieres hacer una consulta? Escríbenos por <a href={wa} target="_blank" rel="noreferrer">WhatsApp</a>.</p>}
       <AreaTexto etiqueta="¿Qué está pasando?"

@@ -1,14 +1,13 @@
 // T-24 · Mockups 056 a 061: ficha de la instalación con sus pestañas
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowRight, Plus, Upload } from 'lucide-react';
+import { Plus, Upload } from 'lucide-react';
 import { api } from '../../../api';
 import { useDatos } from '../../../useDatos';
 import { Aviso, Campo, Cargando, Etiqueta, Modal, Pestanas, Selector, Vacio, Volver } from '../../../componentes';
-import { TIPOS_EQUIPO, TIPOS_MANTENCION, fechaCorta, mes, pesos, FRECUENCIAS } from '../../../formato';
+import { TIPOS_EQUIPO, TIPOS_MANTENCION, fechaCorta, pesos, FRECUENCIAS } from '../../../formato';
 import { ESTADO_MANTENCION, estadoSuscripcion, situacionInstalacion } from '../../../estados';
 import { CamposEquipo, EQUIPO_VACIO, SISTEMAS_LARGO, describirEquipo, equipoParaApi, fechaOGuion, vidaUtil, type DatosEquipo, type Opciones, subirArchivo } from './comun';
-import { sistema } from './Instalaciones';
 
 interface Equipo {
   id: number; tipo: string; marca: string | null; modelo: string | null; cantidad: number; potencia_unitaria_w: string | null; capacidad_kwh: string | null;
@@ -30,14 +29,14 @@ export interface FichaInstalacion {
   suscripciones: Suscripcion[];
   mantenciones: { id: number; tipo: string; estado: string; fecha_programada: string | null; fecha_realizada: string | null; numero_en_plan: number | null; valor_servicio: number | null; tecnico: string | null; suscripcion_codigo: string | null; plan: string | null }[];
 }
-type Pestana = 'datos' | 'equipos' | 'documentos' | 'actual' | 'historial' | 'mantenciones';
+type Pestana = 'resumen' | 'equipos' | 'documentos' | 'mantenciones' | 'suscripciones';
 const TIPOS_DOCUMENTO: Record<string, string> = { plano: 'Plano', foto: 'Foto', contrato: 'Contrato', informe: 'Informe', otro: 'Otro' };
 
 export default function InstalacionFicha() {
   const { id } = useParams();
   const navegar = useNavigate();
   const { datos: i, error, cargando, recargar } = useDatos<FichaInstalacion>(`/admin/instalaciones/${id}`);
-  const [pestana, setPestana] = useState<Pestana>('datos');
+  const [pestana, setPestana] = useState<Pestana>('resumen');
   const [modal, setModal] = useState<'editar' | 'equipo' | 'documento' | null>(null);
   const [aviso, setAviso] = useState('');
 
@@ -75,12 +74,6 @@ export default function InstalacionFicha() {
     recargar();
   };
 
-  // Cadena de suscripciones: de la más antigua a la vigente
-  const recuperaciones = i.suscripciones.filter((s, k) => {
-    const ant = k > 0 ? i.suscripciones[k - 1] : null;
-    return ant && s.fecha_inicio > (ant.fecha_cierre ?? ant.fecha_termino);
-  }).length;
-
   return (
     <>
       <Volver a="/admin/instalaciones" texto="Instalaciones" />
@@ -89,38 +82,59 @@ export default function InstalacionFicha() {
         <div className="ficha-titulo">
           <h1>{i.nombre || i.direccion}</h1>
           <p>
-            {i.codigo} · <Link to={`/admin/clientes/${i.cliente_id}`}>{i.cliente}</Link> · {i.localidad || 'Sin localidad'} · {sistema(i)}
+            <Link to={`/admin/clientes/${i.cliente_id}`}>{i.cliente}</Link> · {i.localidad || 'Sin localidad'}
             {' '}<Etiqueta tono={tono} punto={tono !== 'neutra'}>{vigente ? texto.replace(/^Vence/, 'Suscripción vence') : 'Sin suscripción'}</Etiqueta>
             {!i.activa && <Etiqueta tono="mala">Desactivada</Etiqueta>}
+            <span className="codigo-chico">{i.codigo}</span>
           </p>
         </div>
         <div className="acciones">
-          <Link to={`/admin/mantenciones?nueva=1&instalacion=${i.id}`} className="boton secundario chico">Nueva mantención</Link>
+          <button type="button" className="boton suave chico" onClick={() => setModal('editar')}>Editar datos</button>
+          <Link to={`/admin/mantenciones?nueva=1&instalacion=${i.id}`} className="boton primario chico">Agendar mantención</Link>
         </div>
       </div>
       <Aviso tipo="ok">{aviso}</Aviso>
 
       <Pestanas<Pestana> valor={pestana} cambiar={setPestana} opciones={[
-        ['datos', 'Datos técnicos'], ['equipos', 'Equipos', activos.length], ['documentos', 'Documentos', i.documentos.length],
-        ['actual', 'Suscripción actual'], ['historial', 'Historial de suscripciones', i.suscripciones.length], ['mantenciones', 'Mantenciones', i.mantenciones.length],
+        ['resumen', 'Resumen'], ['equipos', 'Equipos', activos.length], ['documentos', 'Documentos', i.documentos.length],
+        ['mantenciones', 'Mantenciones', i.mantenciones.length], ['suscripciones', 'Suscripciones', i.suscripciones.length],
       ]} />
 
-      {pestana === 'datos' && (
-        <div className="tarjeta">
-          <dl className="datos columnas">
-            <div><dt>Dirección</dt><dd>{i.direccion}</dd></div>
-            <div><dt>Localidad</dt><dd>{[i.localidad, i.comuna].filter(Boolean).join(', ') || '—'}</dd></div>
-            <div><dt>Fecha de instalación</dt><dd>{fechaOGuion(i.fecha_instalacion)}</dd></div>
-            <div><dt>Potencia</dt><dd>{i.potencia_kwp ? `${Number(i.potencia_kwp).toLocaleString('es-CL')} kWp` : '—'}</dd></div>
-            <div><dt>Tipo de sistema</dt><dd>{i.tipo_sistema ? SISTEMAS_LARGO[i.tipo_sistema] : '—'}</dd></div>
-            <div><dt>Instaló</dt><dd>{i.instalada_por_eninti ? ['ENINTI', i.instalador].filter(Boolean).join(' · ') : `Otro instalador${i.instalador ? ` · ${i.instalador}` : ''}`}</dd></div>
-            <div><dt>Ubicación</dt><dd><a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(i.latitud && i.longitud ? `${i.latitud},${i.longitud}` : `${i.direccion}, ${i.localidad ?? ''}, Chile`)}`} target="_blank" rel="noreferrer">Ver en el mapa</a></dd></div>
-            {i.notas && <div className="completo"><dt>Referencia y notas</dt><dd>{i.notas}</dd></div>}
-          </dl>
-          <div className="acciones arriba">
-            <button type="button" className="boton secundario mini" onClick={() => setModal('editar')}>Editar</button>
-            <button type="button" className={`boton mini ${i.activa ? 'peligro' : 'suave'}`} onClick={cambiarActiva}>{i.activa ? 'Desactivar instalación' : 'Reactivar instalación'}</button>
-          </div>
+      {pestana === 'resumen' && (
+        <div className="resumen-instalacion">
+          <section className="tarjeta">
+            <h2>La instalación</h2>
+            <div className="mosaico-datos">
+              <div><span>Potencia</span><strong>{i.potencia_kwp ? `${Number(i.potencia_kwp).toLocaleString('es-CL')} kWp` : '—'}</strong></div>
+              <div><span>Sistema</span><strong>{i.tipo_sistema ? SISTEMAS_LARGO[i.tipo_sistema] : '—'}</strong></div>
+              <div><span>Instalada el</span><strong>{fechaOGuion(i.fecha_instalacion)}</strong></div>
+              <div><span>Instaló</span><strong>{i.instalada_por_eninti ? ['ENINTI', i.instalador].filter(Boolean).join(' · ') : `Otro instalador${i.instalador ? ` · ${i.instalador}` : ''}`}</strong></div>
+              <div className="ancho"><span>Dirección</span><strong>{i.localidad && !i.direccion.includes(i.localidad) ? `${i.direccion}, ${i.localidad}` : i.direccion}</strong>
+                <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(i.latitud && i.longitud ? `${i.latitud},${i.longitud}` : `${i.direccion}, ${i.localidad ?? ''}, Chile`)}`} target="_blank" rel="noreferrer">Ver en el mapa ›</a></div>
+            </div>
+            {i.notas && <p className="nota-instalacion"><strong>Referencia:</strong> {i.notas}</p>}
+          </section>
+
+          <section className="tarjeta">
+            <h2>Suscripción</h2>
+            {vigente ? (
+              <>
+                <div className="suscripcion-resumen">
+                  <strong>{vigente.tipo_nombre}</strong>
+                  <span>{pesos(vigente.monto_pactado)} {FRECUENCIAS[vigente.frecuencia_pago]}</span>
+                </div>
+                <dl className="datos lineas">
+                  <div><dt>Pago</dt><dd className={vigente.periodos_adeudados > 0 ? 'texto-malo' : ''}>{vigente.periodos_adeudados > 0 ? 'Pendiente' : vigente.pagado_hasta ? `Al día hasta el ${fechaCorta(vigente.pagado_hasta)}` : 'Sin pagos'}</dd></div>
+                  <div><dt>Próxima mantención</dt><dd>{fechaOGuion(vigente.proxima_mantencion)}</dd></div>
+                  <div><dt>Vence</dt><dd>{fechaCorta(vigente.fecha_termino)}</dd></div>
+                </dl>
+                <Link to={`/admin/suscripciones/${vigente.id}`} className="enlace">Ver la suscripción ›</Link>
+              </>
+            ) : (
+              <p className="suave">No tiene suscripción. El cliente la contrata desde su portal{i.suscripciones.length ? `; antes tuvo ${i.suscripciones.length}.` : '.'}</p>
+            )}
+          </section>
+          <button type="button" className="enlace-peligro" onClick={cambiarActiva}>{i.activa ? 'Desactivar instalación' : 'Reactivar instalación'}</button>
         </div>
       )}
 
@@ -181,42 +195,18 @@ export default function InstalacionFicha() {
         </>
       )}
 
-      {pestana === 'actual' && (vigente ? (
-        <div className="tarjeta angosta">
-          <header><h2>{vigente.codigo} · {vigente.tipo_nombre}</h2>
-            <Etiqueta tono={estadoSuscripcion(vigente)[0]}>{vigente.dias_restantes <= 30 ? `Vence en ${vigente.dias_restantes} días` : estadoSuscripcion(vigente)[1]}</Etiqueta></header>
-          <dl className="datos">
-            <div><dt>Vigencia</dt><dd>{fechaCorta(vigente.fecha_inicio)} → {fechaCorta(vigente.fecha_termino)}</dd></div>
-            <div><dt>Monto pactado</dt><dd>{pesos(vigente.monto_pactado)} {FRECUENCIAS[vigente.frecuencia_pago]}</dd></div>
-            <div><dt>Pagado hasta</dt><dd>{vigente.pagado_hasta ? mes(vigente.pagado_hasta) : 'Sin pagos'}{vigente.pagos_por_validar > 0 ? ` · ${vigente.pagos_por_validar} por validar` : ''}</dd></div>
-            <div><dt>Por pagar</dt><dd className={vigente.monto_adeudado > 0 ? 'texto-malo' : ''}>{pesos(vigente.monto_adeudado)}</dd></div>
-            <div><dt>Próxima mantención</dt><dd>{fechaOGuion(vigente.proxima_mantencion)}</dd></div>
-            <div><dt>Condiciones aceptadas</dt><dd>{vigente.version_condiciones ?? 'Pendiente'}</dd></div>
-          </dl>
-          <div className="acciones arriba">
-            <Link to={`/admin/suscripciones/${vigente.id}`} className="boton secundario mini">Ver detalle</Link>
-          </div>
-        </div>
-      ) : (
-        <Vacio>Esta instalación no tiene suscripción vigente. El cliente puede contratar un plan desde su portal (<Link to={`/admin/clientes/${i.cliente_id}`}>ver su acceso al portal</Link>). En casos especiales, <Link to={`/admin/suscripciones/nueva?instalacion=${i.id}`}>inscríbela manualmente</Link>.</Vacio>
-      ))}
-
-      {pestana === 'historial' && (i.suscripciones.length === 0 ? <Vacio>Nunca ha tenido suscripción.</Vacio> : (
-        <div className="tarjeta">
-          <h2>Cadena de suscripciones</h2>
-          <div className="cadena">
-            {i.suscripciones.map((s, k) => (
-              <span key={s.id} className="cadena-item">
-                {k > 0 && <ArrowRight size={16} className="suave" />}
-                <Link to={`/admin/suscripciones/${s.id}`} className={`eslabon ${s.estado === 'vigente' ? 'vigente' : ''}`}>
-                  <strong>{s.codigo} · {s.tipo_nombre}</strong>
-                  <small>{mes(s.fecha_inicio).replace(/^(\w{3})\w*/, '$1')} → {mes(s.fecha_cierre ?? s.fecha_termino).replace(/^(\w{3})\w*/, '$1')} · {estadoSuscripcion(s)[1].toLowerCase()}</small>
-                </Link>
-              </span>
-            ))}
-          </div>
-          <p className="suave nota">Veces recuperada: {recuperaciones}.</p>
-        </div>
+      {pestana === 'suscripciones' && (i.suscripciones.length === 0 ? <Vacio>Nunca ha tenido suscripción. El cliente la contrata desde su portal.</Vacio> : (
+        <div className="tabla"><table>
+          <thead><tr><th>Plan</th><th>Desde</th><th>Hasta</th><th>Estado</th></tr></thead>
+          <tbody>{[...i.suscripciones].reverse().map((x) => (
+            <tr key={x.id} className="clic" onClick={() => navegar(`/admin/suscripciones/${x.id}`)}>
+              <td><strong>{x.tipo_nombre}</strong><small>{pesos(x.monto_pactado)} {FRECUENCIAS[x.frecuencia_pago]}</small></td>
+              <td>{fechaCorta(x.fecha_inicio)}</td>
+              <td>{fechaCorta(x.fecha_cierre ?? x.fecha_termino)}</td>
+              <td><Etiqueta tono={estadoSuscripcion(x)[0]}>{estadoSuscripcion(x)[1]}</Etiqueta>{x.motivo_cierre && <small>{x.motivo_cierre}</small>}</td>
+            </tr>
+          ))}</tbody>
+        </table></div>
       ))}
 
       {pestana === 'mantenciones' && (i.mantenciones.length === 0 ? <Vacio>Sin mantenciones.</Vacio> : (

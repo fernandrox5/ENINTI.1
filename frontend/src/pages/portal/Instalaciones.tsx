@@ -64,11 +64,10 @@ export function FichaInstalacion() {
           <section className="tarjeta">
             <dl className="datos lineas">
               <div><dt>Dirección</dt><dd>{i.direccion}</dd></div>
-              <div><dt>Localidad</dt><dd>{[i.localidad, i.comuna].filter(Boolean).join(', ') || '—'}</dd></div>
+              <div><dt>Localidad</dt><dd>{i.localidad && i.comuna && i.localidad !== i.comuna ? `${i.localidad}, ${i.comuna}` : i.localidad || i.comuna || '—'}</dd></div>
               <div><dt>Fecha de instalación</dt><dd>{i.fecha_instalacion ? fechaCorta(i.fecha_instalacion) : '—'}</dd></div>
               <div><dt>Potencia</dt><dd>{i.potencia_kwp ? `${Number(i.potencia_kwp).toLocaleString('es-CL')} kWp` : '—'}</dd></div>
               <div><dt>Tipo de sistema</dt><dd>{i.tipo_sistema ? SISTEMAS_LARGO[i.tipo_sistema] : '—'}</dd></div>
-              <div><dt>Código</dt><dd>{i.codigo}</dd></div>
             </dl>
           </section>
           {i.suscripcion_id ? (
@@ -143,7 +142,7 @@ export function FichaInstalacion() {
             {anteriores.length > 0 && <Anteriores lista={anteriores} />}
             {(i.dias_restantes ?? 99) <= 30 && (
               <section className="tarjeta destacada">
-                <h2>Tu plan vence en {i.dias_restantes} días</h2>
+                <h2>Tu suscripción vence en {i.dias_restantes} días</h2>
                 <p>Renueva para no perder tus mantenciones.</p>
                 <Link to={`/portal/planes?instalacion=${i.id}`} className="boton secundario"><RefreshCw size={18} /> Quiero renovar</Link>
               </section>
@@ -173,7 +172,7 @@ function SinPlan({ i }: { i: InstalacionPortal }) {
 function Anteriores({ lista }: { lista: Ficha['suscripciones'] }) {
   return (
     <section className="tarjeta">
-      <h2>Suscripciones anteriores</h2>
+      <h2>Planes anteriores</h2>
       <ul className="lista-simple">
         {lista.map((s) => (
           <li key={s.id}><span><strong>{s.plan}</strong><small className="suave"> · {mes(s.fecha_inicio)} → {mes(s.fecha_cierre ?? s.fecha_termino)} · {s.estado === 'cerrada' ? 'cerrada' : 'vencida'}</small></span></li>

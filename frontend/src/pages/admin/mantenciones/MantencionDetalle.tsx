@@ -48,12 +48,13 @@ export default function MantencionDetalle() {
       <Volver a="/admin/mantenciones" texto="Calendario" />
       <div className="ficha-cabecera">
         <div className="ficha-titulo">
-          <h1>MNT-{String(m.id).padStart(4, '0')} <span className="suave">· {TIPOS_MANTENCION[m.tipo]}</span></h1>
+          <h1>{TIPOS_MANTENCION[m.tipo]} <span className="suave">· {m.instalacion || m.direccion}</span></h1>
           <p>
             {fecha ? DIA(fecha) : 'Sin fecha'}{m.hora_inicio ? ` · ${hora(m.hora_inicio)}${m.hora_fin ? ` a ${hora(m.hora_fin)}` : ''}` : ''} ·
-            <Link to={`/admin/instalaciones/${m.instalacion_id}`}>{m.instalacion || m.direccion} {m.instalacion_codigo}</Link> ·
+            <Link to={`/admin/instalaciones/${m.instalacion_id}`}>{m.instalacion_codigo}</Link> ·
             <Link to={`/admin/clientes/${m.cliente_id}`}>{m.cliente}</Link>
             <Etiqueta tono={tono}>{texto}</Etiqueta>
+            <span className="codigo-chico">MNT-{String(m.id).padStart(4, '0')}</span>
           </p>
         </div>
       </div>
@@ -73,7 +74,7 @@ export default function MantencionDetalle() {
             <div><dt>Técnico</dt><dd>{m.tecnico ? `${m.tecnico}${m.tecnico_empresa ? ` · ${m.tecnico_empresa}` : ''}` : <span className="texto-malo">Sin asignar</span>}</dd></div>
             <div><dt>Origen</dt><dd>{m.suscripcion ? <Link to={`/admin/suscripciones/${m.suscripcion_id}`}>{m.suscripcion} · {m.plan}{m.numero_en_plan ? ` (${m.numero_en_plan} de ${m.del_plan})` : ''}</Link> : 'Servicio aparte (sin suscripción)'}</dd></div>
             {!m.suscripcion && <div><dt>Valor del servicio</dt><dd>{m.valor_servicio !== null ? pesos(m.valor_servicio) : 'Por definir'}</dd></div>}
-            <div><dt>Solicitud ligada</dt><dd>{m.solicitud_id ? <Link to={`/admin/solicitudes?id=${m.solicitud_id}`}>N° {m.solicitud_id}</Link> : 'Ninguna'}</dd></div>
+            {m.solicitud_id && <div><dt>Pedido del cliente</dt><dd><Link to={`/admin/solicitudes?id=${m.solicitud_id}`}>Ver pedido ›</Link></dd></div>}
           </dl>
         </section>
         <section className="tarjeta">

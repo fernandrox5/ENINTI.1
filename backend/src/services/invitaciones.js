@@ -63,7 +63,7 @@ export async function invitarCliente(req, clienteId, { instalacion = null } = {}
     titulo: `¡Hola, ${primerNombre(c.nombre)}!`,
     parrafos: [
       instalacion ? `Registramos tu instalación ${instalacion}.` : 'Ya tienes tu cuenta para ver tus instalaciones.',
-      'En Syntia puedes ver tus pagos, tus mantenciones y contratar tu plan.',
+      'En Syntia puedes ver tus pagos, tus mantenciones y contratar tu suscripción.',
     ],
     boton: { texto: 'Crear mi contraseña', url },
     pie: 'El enlace sirve una sola vez. ENINTI · Energía solar en el norte de Chile.',

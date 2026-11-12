@@ -13,7 +13,7 @@ import { Pasos } from './ReemplazarEquipo';
 
 interface ClienteBuscado { id: number; nombre: string; rut: string | null; localidad: string | null; portal: string }
 interface ClienteFicha { id: number; nombre: string; rut: string | null; email: string | null; direccion: string | null; localidad_id: number | null; acceso_activado: string | null }
-interface Resultado { cliente_id: number; instalacion_id: number; codigo: string; suscripcion: { codigo: string } | null; mantenciones: number; invitacion: { enviada: boolean; correo?: string; error?: string; aviso?: boolean } | null }
+interface Resultado { cliente_id: number; instalacion_id: number; codigo: string; mantenciones: number; invitacion: { enviada: boolean; correo?: string; error?: string; aviso?: boolean } | null }
 
 const CLIENTE_VACIO = { nombre: '', rut: '', email: '', telefono: '', direccion: '', localidad_id: '', es_empresa: false, origen: '' };
 const INSTALACION_VACIA: DatosInstalacion = {

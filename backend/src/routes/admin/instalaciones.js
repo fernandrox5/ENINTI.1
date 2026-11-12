@@ -258,7 +258,7 @@ router.delete('/:id/documentos/:doc', async (req, res) => {
 
 // ---------- Asistente de alta (066 a 071): cliente + instalación + equipos + suscripción ----------
 router.post('/alta', async (req, res) => {
-  const { cliente, instalacion, equipos = [], suscripcion, invitar } = req.body;
+  const { cliente, instalacion, equipos = [], invitar } = req.body;
   const datosInst = datosInstalacion(instalacion || {});
   const listaEquipos = (Array.isArray(equipos) ? equipos : []).map(datosEquipo);
 
@@ -294,14 +294,6 @@ router.post('/alta', async (req, res) => {
     for (const e of listaEquipos) {
       await insertar(db, 'equipos', { ...e, fecha_instalacion: e.fecha_instalacion ?? creada.fecha_instalacion }, { instalacion_id: creada.id });
     }
-    let sus = null;
-    if (suscripcion?.tipo_suscripcion_id) {
-      const { rows: [s] } = await db.query(
-        `INSERT INTO suscripciones (instalacion_id, tipo_suscripcion_id, fecha_inicio, meses_gratis, creada_por)
-         VALUES ($1, $2, COALESCE($3::date, fn_hoy()), COALESCE($4::smallint, 0), $5) RETURNING id, codigo`,
-        [creada.id, suscripcion.tipo_suscripcion_id, vacio(suscripcion.fecha_inicio), vacio(suscripcion.meses_gratis), req.usuario.id]);
-      sus = s;
-    }
     await db.query('COMMIT');
     // La invitación va después de guardar: si el correo falla, la instalación igual queda creada
     let invitacion = null;
@@ -321,7 +313,7 @@ router.post('/alta', async (req, res) => {
         .catch((err) => ({ enviada: false, error: err.message }));
     }
     const { rows: [mant] } = await pool.query("SELECT count(*)::int AS n FROM mantenciones WHERE instalacion_id = $1 AND estado = 'programada'", [creada.id]);
-    res.status(201).json({ cliente_id: clienteId, instalacion_id: creada.id, codigo: creada.codigo, suscripcion: sus, mantenciones: mant.n, invitacion });
+    res.status(201).json({ cliente_id: clienteId, instalacion_id: creada.id, codigo: creada.codigo, mantenciones: mant.n, invitacion });
   } catch (err) {
     await db.query('ROLLBACK').catch(() => {});
     throw err;

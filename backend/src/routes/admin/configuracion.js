@@ -83,7 +83,7 @@ router.put('/planes/:id', async (req, res) => {
     `UPDATE tipos_suscripcion SET nombre = $2, descripcion = $3, frecuencia_pago = $4, monto_clp = $5, duracion_meses = $6,
             mantenciones_por_anio = $7, incluye_reposicion_equipos = $8, tiempo_respuesta_horas = $9 WHERE id = $1`,
     [Number(req.params.id) || 0, d.nombre, d.descripcion, d.frecuencia_pago, d.monto_clp, d.duracion_meses, d.mantenciones_por_anio, d.incluye_reposicion_equipos, d.tiempo_respuesta_horas]);
-  if (!rowCount) throw new ErrorHttp(404, 'Plan no encontrado');
+  if (!rowCount) throw new ErrorHttp(404, 'Suscripción no encontrada');
   res.json({ ok: true });
 });
 router.post('/planes/:id/activo', async (req, res) => {
@@ -93,7 +93,7 @@ router.post('/planes/:id/activo', async (req, res) => {
     if (!n) throw new ErrorHttp(409, 'Debe quedar al menos un plan activo para que los clientes puedan contratar');
   }
   const { rowCount } = await pool.query('UPDATE tipos_suscripcion SET activo = $2 WHERE id = $1', [Number(req.params.id) || 0, activo]);
-  if (!rowCount) throw new ErrorHttp(404, 'Plan no encontrado');
+  if (!rowCount) throw new ErrorHttp(404, 'Suscripción no encontrada');
   res.json({ ok: true });
 });
 

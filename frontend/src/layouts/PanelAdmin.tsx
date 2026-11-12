@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
-  Home, Users, LayoutGrid, RefreshCw, CreditCard, CalendarDays, Inbox, CircleCheck, BarChart3, Settings,
+  Home, Users, LayoutGrid, RefreshCw, CreditCard, CalendarDays, Inbox, BarChart3, Settings,
   Search, Menu, LogOut, X, ChevronDown,
 } from 'lucide-react';
 import { api } from '../api';
@@ -21,7 +21,6 @@ const MENU = [
   { a: '/admin/pagos', texto: 'Pagos', icono: CreditCard, contador: 'pagos_por_validar' as const },
   { a: '/admin/mantenciones', texto: 'Mantenciones', icono: CalendarDays },
   { a: '/admin/solicitudes', texto: 'Solicitudes', icono: Inbox, contador: 'solicitudes_nuevas' as const, urgente: true },
-  { a: '/admin/seguimiento', texto: 'Seguimiento', icono: CircleCheck },
   { a: '/admin/reportes', texto: 'Reportes', icono: BarChart3 },
   { a: '/admin/configuracion', texto: 'Configuración', icono: Settings },
 ];
@@ -79,7 +78,7 @@ interface Resultados {
   suscripciones: { id: number; codigo: string; estado: string; instalacion: string | null; cliente: string }[];
 }
 
-// Buscador global: cliente, RUT, código de instalación o de suscripción
+// Buscador global: cliente, RUT, código de instalación
 function Buscador() {
   const [q, setQ] = useState('');
   const [r, setR] = useState<Resultados | null>(null);
@@ -105,7 +104,7 @@ function Buscador() {
   return (
     <div className="buscador-global" ref={caja}>
       <Search size={19} className="lupa" />
-      <input type="search" placeholder="Buscar cliente, RUT, código de instalación o de suscripción" value={q}
+      <input type="search" placeholder={window.innerWidth < 700 ? 'Buscar' : 'Buscar cliente, RUT o instalación'} value={q}
         onChange={(e) => { setQ(e.target.value); setAbierto(true); }} onFocus={() => setAbierto(true)} aria-label="Buscar" />
       {abierto && r && (
         <div className="buscador-resultados">

@@ -127,7 +127,7 @@ export async function crearEnlacePago(req, suscripcionId, { cantidad = 1, origen
   if (s.estado !== 'vigente') throw new ErrorHttp(409, 'La suscripción no está vigente');
   if (!s.email) throw new ErrorHttp(400, 'El cliente necesita un correo para pagar en línea');
   const pendientes = await periodosSinPagar(s.id);
-  if (!pendientes.length) throw new ErrorHttp(409, 'No hay periodos por pagar en esta suscripción');
+  if (!pendientes.length) throw new ErrorHttp(409, 'Esta suscripción no tiene meses por pagar');
   const n = Math.min(Math.max(1, Number(cantidad) || 1), pendientes.length);
   const periodo = pendientes[0].periodo;
   // Si ya hay un enlace vigente para ese periodo y la misma cantidad, se reutiliza

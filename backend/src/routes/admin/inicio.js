@@ -3,6 +3,7 @@
 import { Router } from 'express';
 import { pool } from '../../config/db.js';
 import { cobrosDelDia } from '../../services/cobros.js';
+import { aRecuperar, porVencer, ultimasGestiones } from './seguimiento.js';
 
 const router = Router();
 
@@ -36,7 +37,21 @@ router.get('/', async (req, res) => {
     .sort((a, b) => a.quedan_dias - b.quedan_dias)
     .map((r) => ({ suscripcion_id: r.id, cliente_id: r.cliente_id, cliente: r.cliente, telefono: r.telefono, instalacion: r.instalacion, monto: r.monto_pactado, quedan_dias: r.quedan_dias }));
   const { rows: [p] } = await pool.query('SELECT nombre FROM perfiles WHERE id = $1', [req.usuario.id]);
-  res.json({ nombre: p?.nombre ?? '', ...indicadores.rows[0], pagos_pendientes: pagos, hoy: hoy.rows, solicitudes: solicitudes.rows });
+
+  // Para llamar hoy: a quién conviene escribir y por qué
+  const [vencer, recuperar] = await Promise.all([porVencer(), aRecuperar()]);
+  const llamar = [
+    ...pagos.map((r) => ({ clave: `pago-${r.suscripcion_id}`, motivo: 'pago', cliente_id: r.cliente_id, cliente: r.cliente, telefono: r.telefono, instalacion: r.instalacion,
+      suscripcion_id: r.suscripcion_id, dias: r.quedan_dias, detalle: r.quedan_dias === 0 ? 'Pago pendiente · último día' : `Pago pendiente · quedan ${r.quedan_dias} ${r.quedan_dias === 1 ? 'día' : 'días'}` })),
+    ...vencer.filter((v) => !v.renovada && v.dias_restantes <= 15).map((v) => ({ clave: `vence-${v.suscripcion_id}`, motivo: 'vence', cliente_id: v.cliente_id, cliente: v.cliente, telefono: v.telefono,
+      instalacion: v.instalacion, suscripcion_id: v.suscripcion_id, dias: v.dias_restantes, detalle: v.dias_restantes <= 0 ? 'Su suscripción vence hoy' : `Su suscripción vence en ${v.dias_restantes} ${v.dias_restantes === 1 ? 'día' : 'días'}` })),
+    ...recuperar.filter((r) => r.situacion !== 'nunca suscrita' && r.dias_sin_cobertura !== null && r.dias_sin_cobertura <= 7).map((r) => ({ clave: `cerrada-${r.instalacion_id}`, motivo: 'cerrada',
+      cliente_id: r.cliente_id, cliente: r.cliente, telefono: r.telefono, instalacion: r.instalacion, suscripcion_id: null, dias: r.dias_sin_cobertura,
+      detalle: r.ultimo_motivo_cierre === 'Falta de pago' ? 'Suscripción cerrada por falta de pago' : r.ultimo_motivo_cierre ? `No renovó · ${r.ultimo_motivo_cierre.toLowerCase()}` : 'No renovó su suscripción' })),
+  ];
+  const gestiones = await ultimasGestiones([...new Set(llamar.map((x) => x.cliente_id))]);
+  const para_llamar = llamar.map((x) => ({ ...x, ultima_gestion: gestiones[x.cliente_id] ?? null }));
+  res.json({ nombre: p?.nombre ?? '', ...indicadores.rows[0], pagos_pendientes: pagos, para_llamar, hoy: hoy.rows, solicitudes: solicitudes.rows });
 });
 
 export default router;

@@ -3,7 +3,6 @@
 // excepcionales, la cierra con motivo.
 import { useCallback, useState, type FormEvent } from 'react';
 import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { api } from '../../../api';
 import { useDatos } from '../../../useDatos';
 import { Aviso, Campo, Cargando, Etiqueta, Modal, Selector, Volver } from '../../../componentes';
@@ -28,9 +27,16 @@ export interface DetalleSuscripcion {
 export const MOTIVOS_CIERRE = ['Cliente se va', 'No pagó', 'Cambio o retiro de equipos', 'Venta de la propiedad', 'Otro'];
 
 // Porcentaje transcurrido de la vigencia
-function avance(inicio: string, termino: string) {
-  const i = Date.parse(inicio), t = Date.parse(termino), h = Date.parse(hoyISO());
+function avance(inicio: string, termino: string, hasta?: string) {
+  const i = Date.parse(inicio), t = Date.parse(termino), h = Date.parse(hasta ?? hoyISO());
   return Math.min(100, Math.max(0, ((h - i) / (t - i)) * 100));
+}
+
+// "1 mes", "3 meses", "menos de un mes"
+function duracionTexto(inicio: string, fin: string) {
+  const [a1, m1, d1] = inicio.split('-').map(Number), [a2, m2, d2] = fin.slice(0, 10).split('-').map(Number);
+  const meses = (a2 - a1) * 12 + (m2 - m1) - (d2 < d1 ? 1 : 0);
+  return meses < 1 ? 'menos de un mes' : `${meses} ${meses === 1 ? 'mes' : 'meses'}`;
 }
 
 export default function SuscripcionDetalle() {
@@ -51,16 +57,19 @@ export default function SuscripcionDetalle() {
   const realizadas = s.mantenciones.filter((m) => m.estado === 'realizada').length;
   const delPlan = s.mantenciones.filter((m) => m.estado !== 'cancelada').length;
   const porValidar = s.pagos.find((p) => p.estado === 'pendiente');
+  // Hasta dónde llegó: hoy si está vigente; la fecha de cierre si se cerró
+  const transcurrido = avance(s.fecha_inicio, s.fecha_termino, s.fecha_cierre ?? undefined);
 
   return (
     <>
       <Volver a="/admin/suscripciones" texto="Suscripciones" />
       <div className="ficha-cabecera">
         <div className="ficha-titulo">
-          <h1>{s.codigo} <span className="suave">· {s.tipo_nombre}</span></h1>
+          <h1>{s.tipo_nombre} <span className="suave">· {s.instalacion_nombre || s.direccion}</span></h1>
           <p>
             <Link to={`/admin/clientes/${s.cliente_id}`}>{s.cliente_nombre}</Link> ·
-            <Link to={`/admin/instalaciones/${s.instalacion_id}`}>{s.instalacion_nombre || s.direccion} {s.instalacion_codigo}</Link>
+            <Link to={`/admin/instalaciones/${s.instalacion_id}`}>{s.instalacion_codigo}</Link>
+            <span className="codigo-chico">{s.codigo}</span>
             <Etiqueta tono={tonoEstado} punto>{s.estado === 'vigente' && s.dias_restantes <= 30 ? `Vigente · ${s.dias_restantes <= 0 ? 'vence hoy' : `vence en ${s.dias_restantes} días`}` : textoEstado}</Etiqueta>
             {s.estado !== 'cerrada' && <Etiqueta tono={tonoPago}>{textoPago}</Etiqueta>}
           </p>
@@ -79,7 +88,6 @@ export default function SuscripcionDetalle() {
               <div><dt>Plan</dt><dd>{s.tipo_nombre}</dd></div>
               <div><dt>Monto pactado</dt><dd>{pesos(s.monto_pactado)} {FRECUENCIAS[s.frecuencia_pago]}{s.monto_pactado !== s.monto_plan && <small className="suave"> (plan: {pesos(s.monto_plan)})</small>}</dd></div>
               <div><dt>Mantenciones</dt><dd>{s.mantenciones_por_anio} al año · dura {s.duracion_meses} meses</dd></div>
-              <div><dt>Meses gratis</dt><dd>{s.meses_gratis}</dd></div>
             </dl>
           </section>
 
@@ -87,28 +95,25 @@ export default function SuscripcionDetalle() {
             <header className="tarjeta-cabecera"><h2>Vigencia</h2>
               <strong>{s.estado === 'vigente' ? <Quedan dias={s.dias_restantes} /> : s.estado === 'cerrada' ? `Cerrada el ${fechaCorta(s.fecha_cierre)}` : `Venció el ${fechaCorta(s.fecha_termino)}`}</strong></header>
             <div className="vigencia-fechas"><span>Inicio {fechaCorta(s.fecha_inicio)}</span><span>Término {fechaCorta(s.fecha_termino)}</span></div>
-            <div className="barra-progreso" role="progressbar" aria-valuenow={Math.round(avance(s.fecha_inicio, s.fecha_termino))} aria-valuemin={0} aria-valuemax={100}>
-              <span style={{ width: `${avance(s.fecha_inicio, s.fecha_cierre ?? s.fecha_termino)}%` }} />
+            <div className={`barra-progreso ${s.estado === 'cerrada' ? 'cerrada' : ''}`} role="progressbar" aria-valuenow={Math.round(transcurrido)} aria-valuemin={0} aria-valuemax={100}>
+              <span style={{ width: `${transcurrido}%` }} />
             </div>
+            {s.estado === 'cerrada' && <p className="suave nota">Duró {duracionTexto(s.fecha_inicio, s.fecha_cierre!)} de {s.duracion_meses} meses.</p>}
             {s.motivo_cierre && <p className="suave nota">Motivo del cierre: {s.motivo_cierre}</p>}
           </section>
 
           <section className="tarjeta">
             <header className="tarjeta-cabecera"><h2>Pagos</h2>
-              {s.estado === 'vigente' && <Link to={`/admin/pagos/registrar?suscripcion=${s.id}`} className="boton primario mini">+ Registrar pago</Link>}</header>
-            <div className="kpis tres compactos">
-              <div className="kpi"><span className="kpi-titulo">Esperados</span><strong className="kpi-valor">{s.periodos_esperados}</strong></div>
-              <div className="kpi"><span className="kpi-titulo">Pagados</span><strong className="kpi-valor">{s.periodos_pagados}</strong></div>
-              <div className={`kpi ${s.periodos_adeudados > 0 ? 'mala' : 'buena'}`}><span className="kpi-titulo">Pendientes</span><strong className="kpi-valor">{s.periodos_adeudados}</strong></div>
-            </div>
+</header>
             <dl className="datos lineas">
-              <div><dt>Pagado hasta</dt><dd>{s.pagado_hasta ? mes(s.pagado_hasta) : 'Sin pagos'}</dd></div>
-              {s.monto_adeudado > 0 && <div><dt>Por pagar</dt><dd className="texto-malo">{pesos(s.monto_adeudado)}</dd></div>}
+              <div><dt>Meses pagados</dt><dd>{s.periodos_pagados}</dd></div>
+              <div><dt>Pagado hasta</dt><dd>{s.pagado_hasta ? fechaCorta(s.pagado_hasta) : 'Sin pagos'}</dd></div>
+              {s.periodos_adeudados > 0 && s.estado === 'vigente' && <div><dt>Pago del mes</dt><dd className="texto-malo">Pendiente · {pesos(s.monto_pactado)}</dd></div>}
               {porValidar && <div><dt>Por validar</dt><dd><Link to="/admin/pagos?vista=validar">{mes(porValidar.periodo)} · {pesos(porValidar.monto)} ›</Link></dd></div>}
             </dl>
             {s.pagos.length > 0 && (
               <details className="desplegable">
-                <summary>Ver los {s.pagos.length} pagos</summary>
+                <summary>{s.pagos.length === 1 ? 'Ver el pago' : `Ver los ${s.pagos.length} pagos`}</summary>
                 <ul className="lista-simple">
                   {s.pagos.map((p) => (
                     <li key={p.id}><span>{mes(p.periodo)}</span><span>{pesos(p.monto)}</span>
@@ -123,13 +128,12 @@ export default function SuscripcionDetalle() {
         <div className="columna">
           <section className="tarjeta">
             <header className="tarjeta-cabecera"><h2>Mantenciones del plan</h2>{delPlan > 0 && <span className="suave">{realizadas} de {delPlan} realizadas</span>}</header>
-            {s.mantenciones.length === 0 ? <p className="suave">Este plan no tiene mantenciones agendadas.</p> : (
+            {s.mantenciones.length === 0 ? <p className="suave">Esta suscripción no tiene mantenciones agendadas.</p> : (
               <ul className="lista-simple">
                 {s.mantenciones.map((m) => (
                   <li key={m.id}>
-                    <span>{m.numero_en_plan ? `${m.numero_en_plan}ª ` : ''}{TIPOS_MANTENCION[m.tipo].toLowerCase()}</span>
-                    <span>{fechaCorta(m.fecha_realizada ?? m.fecha_programada)}</span>
-                    <span className="suave">{m.tecnico ?? 'Sin técnico'}</span>
+                    <span><strong>{fechaCorta(m.fecha_realizada ?? m.fecha_programada)}</strong>
+                      <small className="suave">{TIPOS_MANTENCION[m.tipo]}{m.numero_en_plan ? ` ${m.numero_en_plan} del plan` : ''} · {m.tecnico ?? 'sin técnico'}</small></span>
                     <Etiqueta tono={ESTADO_MANTENCION[m.estado][0]}>{ESTADO_MANTENCION[m.estado][1]}</Etiqueta>
                     <Link to={`/admin/mantenciones/${m.id}`} className="boton secundario mini">Ver</Link>
                   </li>
@@ -139,28 +143,30 @@ export default function SuscripcionDetalle() {
           </section>
 
           <section className="tarjeta">
-            <h2>Condiciones aceptadas</h2>
+            <h2>Condiciones del servicio</h2>
             <dl className="datos lineas">
-              <div><dt>Versión</dt><dd>{s.condiciones_version ?? 'Pendiente de aceptar'}</dd></div>
+              <div><dt>Versión aceptada</dt><dd>{s.condiciones_version ?? (s.estado === 'cerrada' ? 'No registradas' : 'Pendiente: el cliente las acepta en su portal')}</dd></div>
               {s.acepto_condiciones_at && <div><dt>Aceptada</dt><dd>{fechaCorta(s.acepto_condiciones_at)}</dd></div>}
               {s.creada_por && <div><dt>Creada por</dt><dd>{s.creada_por}</dd></div>}
             </dl>
           </section>
 
-          <section className="tarjeta">
-            <h2>Cadena</h2>
-            <div className="cadena">
-              {s.anterior
-                ? <Link to={`/admin/suscripciones/${s.anterior.id}`} className="eslabon"><strong><ArrowLeft size={14} /> {s.anterior.codigo} · {s.anterior.tipo_nombre}</strong>
-                  <small>Anterior · {s.anterior.motivo_cierre ? `cerrada: ${s.anterior.motivo_cierre.toLowerCase()}` : estadoSuscripcion(s.anterior)[1].toLowerCase()}</small></Link>
-                : <span className="eslabon punteado"><small>Es la primera de esta instalación</small></span>}
-              <span className="eslabon vigente"><strong>{s.codigo}</strong><small>Esta</small></span>
-              {s.siguiente
-                ? <Link to={`/admin/suscripciones/${s.siguiente.id}`} className="eslabon"><strong>{s.siguiente.codigo} · {s.siguiente.tipo_nombre} <ArrowRight size={14} /></strong>
-                  <small>Siguiente · {estadoSuscripcion(s.siguiente)[1].toLowerCase()}</small></Link>
-                : <span className="eslabon punteado"><small>Siguiente: se crea al renovar <ArrowRight size={12} /></small></span>}
-            </div>
-          </section>
+          {(s.anterior || s.siguiente) && (
+            <section className="tarjeta">
+              <h2>Otras suscripciones de esta instalación</h2>
+              <ul className="lista-simple">
+                {[s.anterior && ['Anterior', s.anterior] as const, s.siguiente && ['Siguiente', s.siguiente] as const].filter(Boolean).map((x) => {
+                  const [cual, e] = x as readonly [string, Eslabon];
+                  return (
+                    <li key={e.id}><Link to={`/admin/suscripciones/${e.id}`} className="fila-enlace">
+                      <span><strong>{e.tipo_nombre}</strong><small className="suave">{cual} · {e.motivo_cierre ? `cerrado: ${e.motivo_cierre.toLowerCase()}` : estadoSuscripcion(e)[1].toLowerCase()}</small></span>
+                      <span className="codigo-chico">{e.codigo}</span>
+                    </Link></li>
+                  );
+                })}
+              </ul>
+            </section>
+          )}
         </div>
       </div>
 

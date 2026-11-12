@@ -34,4 +34,8 @@ export async function guardarInforme(id, b, { tecnicoId = null } = {}) {
     [id, fecha, hi, hf, tecnico, trabajo, vacio(String(b.hallazgos || '').trim()), vacio(String(b.recomendaciones || '').trim()),
      inversion, inversion ? detalle : null, Number(costo)]);
   if (!rowCount) throw new ErrorHttp(409, tecnicoId ? 'Esta visita no está asignada a ti o fue cancelada' : 'Una mantención cancelada no lleva informe');
+  // La solicitud que originó la visita queda atendida al enviar el informe
+  await pool.query(
+    `UPDATE solicitudes SET estado = 'resuelta', atendida_at = coalesce(atendida_at, now())
+     WHERE estado IN ('nueva', 'en_proceso') AND id = (SELECT solicitud_id FROM mantenciones WHERE id = $1)`, [id]);
 }

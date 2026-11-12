@@ -48,11 +48,12 @@ export function TarjetaInstalacion({ i }: { i: InstalacionPortal }) {
             <div className="barra-progreso"><span style={{ width: `${total ? Math.min(100, (pagados / total) * 100) : 0}%` }} /></div>
           </>
         ) : null}
-        <div className="vigencia-fechas"><span className="suave">Última / próxima mantención</span>
-          <strong>{i.ultima_mantencion ? fechaCorta(i.ultima_mantencion) : '—'} · {i.proxima ? fechaCorta(i.proxima) : i.suscripcion_id ? 'por agendar' : '—'}</strong></div>
+        <div className="vigencia-fechas"><span className="suave">Próxima mantención</span>
+          <strong>{i.proxima ? fechaCorta(i.proxima) : i.suscripcion_id ? 'Por agendar' : '—'}</strong></div>
+        {i.ultima_mantencion && <div className="vigencia-fechas"><span className="suave">Última mantención</span><strong>{fechaCorta(i.ultima_mantencion)}</strong></div>}
         {i.suscripcion_id
           ? <Link to={`/portal/instalaciones/${i.id}`} className="boton suave">Ver instalación</Link>
-          : <div className="acciones"><Link to={`/portal/planes?instalacion=${i.id}`} className="boton primario chico">{i.ultima_suscripcion ? 'Renovar plan' : 'Contratar plan'}</Link>
+          : <div className="acciones"><Link to={`/portal/planes?instalacion=${i.id}`} className="boton primario chico">{i.ultima_suscripcion ? 'Renovar suscripción' : 'Contratar suscripción'}</Link>
             <Link to={`/portal/instalaciones/${i.id}`} className="boton suave chico">Ver instalación</Link></div>}
       </div>
     </article>

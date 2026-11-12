@@ -3,12 +3,12 @@
 // mantención, resolver o cerrar. "Anotar solicitud" registra las que llegan por teléfono o WhatsApp.
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Inbox, Info, Plus, Search, Wrench, Zap } from 'lucide-react';
+import { CalendarDays, Check, Inbox, Plus, Search, Wrench, Zap } from 'lucide-react';
 import { api } from '../../../api';
 import { useDatos } from '../../../useDatos';
 import { AreaTexto, Aviso, Cargando, Etiqueta, Modal, Selector, Titulo, Vacio, type Tono } from '../../../componentes';
 import { fechaCorta, fechaHora } from '../../../formato';
-import { CANALES, ESTADO_SOLICITUD, TIPO_SOLICITUD } from '../../../estados';
+import { CANALES, TIPO_SOLICITUD } from '../../../estados';
 
 interface Solicitud {
   id: number; tipo: string; prioridad: string; descripcion: string; canal: string; estado: string; respuesta: string | null; atendida_at: string | null;
@@ -17,11 +17,8 @@ interface Solicitud {
   atendida_por: string | null; suscripcion_id: number | null; suscripcion: string | null; periodos_adeudados: number | null;
   mantencion: { id: number; estado: string; fecha_programada: string | null; fecha_realizada: string | null } | null;
 }
-type Estado = 'nueva' | 'en_proceso' | 'resuelta' | 'cerrada';
-
 export const PRIORIDAD: Record<string, [Tono, string]> = { critica: ['mala', 'Crítica'], alta: ['mala', 'Alta'], media: ['alerta', 'Media'], baja: ['neutra', 'Baja'] };
-const ICONO = { emergencia: Zap, mantencion: Wrench, consulta: Info } as const;
-const SOL = (id: number) => `SOL-${String(id).padStart(4, '0')}`;
+const ICONO = { emergencia: Zap, mantencion: Wrench } as const;
 
 // "hace 12 min", "hoy 10:20", "ayer", "3 nov"
 function cuando(f: string) {
@@ -37,51 +34,44 @@ function cuando(f: string) {
 
 export default function Solicitudes() {
   const [params, setParams] = useSearchParams();
-  const [estado, setEstado] = useState<Estado>('nueva');
-  const [tipo, setTipo] = useState('');
+  const [vista, setVista] = useState<'pendientes' | 'atendidas'>('pendientes');
   const [version, setVersion] = useState(0);
   const [anotar, setAnotar] = useState(false);
   const [aviso, setAviso] = useState('');
-  const { datos, error, cargando } = useDatos<{ solicitudes: Solicitud[]; conteo: Record<Estado | 'emergencias', number> }>(
-    `/admin/solicitudes?estado=${estado}${tipo ? `&tipo=${tipo}` : ''}&v=${version}`);
+  const { datos, error, cargando } = useDatos<{ solicitudes: Solicitud[]; conteo: { pendientes: number; emergencias: number } }>(
+    `/admin/solicitudes?vista=${vista}&v=${version}`);
   const idSel = Number(params.get('id')) || datos?.solicitudes[0]?.id || 0;
   const elegir = (id: number) => setParams({ id: String(id) }, { replace: true });
-  const listo = (m: string) => { setAviso(m); setVersion((v) => v + 1); };
+  const listo = (m: string, cambiaLista = false) => { setAviso(m); setVersion((v) => v + 1); if (cambiaLista) setParams({}, { replace: true }); };
+  const cambiarVista = (v: 'pendientes' | 'atendidas') => { setVista(v); setParams({}, { replace: true }); };
 
   return (
     <>
       <div className="encabezado">
-        <Titulo icono={Inbox} fuerte="Solicitudes" />
+        <Titulo icono={Inbox} fuerte="Solicitudes" suave="Pedidos de mantención y emergencias de los clientes" />
         <button type="button" className="boton primario chico" onClick={() => setAnotar(true)}><Plus size={18} /> Anotar solicitud</button>
       </div>
-      <div className="filtros">
-        <div className="segmentos">
-          {(['nueva', 'en_proceso', 'resuelta', 'cerrada'] as Estado[]).map((e) => (
-            <button key={e} type="button" className={estado === e ? 'activo' : ''} onClick={() => { setEstado(e); setParams({}, { replace: true }); }}>
-              {e === 'nueva' ? 'Nuevas' : e === 'en_proceso' ? 'En proceso' : e === 'resuelta' ? 'Resueltas' : 'Cerradas'}{datos && (e === 'nueva' || e === 'en_proceso') ? ` · ${datos.conteo[e]}` : ''}
-            </button>
-          ))}
-        </div>
-        <div className="segmentos empujar">
-          {[['', 'Todos'], ['emergencia', 'Emergencia'], ['mantencion', 'Mantención'], ['consulta', 'Consulta']].map(([v, t]) => (
-            <button key={v} type="button" className={tipo === v ? 'activo' : ''} onClick={() => setTipo(v)}>{t}</button>
-          ))}
-        </div>
+      <div className="segmentos">
+        <button type="button" className={vista === 'pendientes' ? 'activo' : ''} onClick={() => cambiarVista('pendientes')}>
+          Pendientes{datos ? ` · ${datos.conteo.pendientes}` : ''}</button>
+        <button type="button" className={vista === 'atendidas' ? 'activo' : ''} onClick={() => cambiarVista('atendidas')}>Atendidas</button>
       </div>
       <Aviso tipo="ok">{aviso}</Aviso>
       <Aviso>{error}</Aviso>
-      {cargando && !datos ? <Cargando /> : datos && (datos.solicitudes.length === 0 ? <Vacio>No hay solicitudes {estado === 'nueva' ? 'nuevas' : estado === 'en_proceso' ? 'en proceso' : estado === 'resuelta' ? 'resueltas' : 'cerradas'}.</Vacio> : (
+      {cargando && !datos ? <Cargando /> : datos && (datos.solicitudes.length === 0 ? <Vacio>{vista === 'pendientes' ? 'No hay solicitudes pendientes.' : 'Aún no hay solicitudes atendidas.'}</Vacio> : (
         <div className="maestro-detalle">
           <ul className="lista-solicitudes">
             {datos.solicitudes.map((s) => {
-              const Icono = ICONO[s.tipo as keyof typeof ICONO] ?? Info;
+              const Icono = ICONO[s.tipo as keyof typeof ICONO] ?? Wrench;
               return (
                 <li key={s.id}>
                   <button type="button" className={`${s.id === idSel ? 'elegida' : ''} ${s.tipo}`} onClick={() => elegir(s.id)}>
                     <span className={`icono-solicitud ${s.tipo}`}><Icono size={20} /></span>
                     <span className="lista-solicitudes-texto"><strong>{TIPO_SOLICITUD[s.tipo]} · {s.cliente}</strong>
-                      <small>{s.instalacion ?? s.instalacion_codigo ?? 'Sin instalación'} · {CANALES[s.canal]} · {cuando(s.created_at)}</small></span>
-                    <Etiqueta tono={PRIORIDAD[s.prioridad][0]}>{PRIORIDAD[s.prioridad][1]}</Etiqueta>
+                      <small>{s.instalacion ?? s.instalacion_codigo ?? 'Sin instalación'} · {cuando(s.created_at)}</small></span>
+                    {vista === 'pendientes' && (s.mantencion ? <Etiqueta tono="info">Visita agendada</Etiqueta>
+                      : s.respuesta ? <Etiqueta tono="neutra">Respondida</Etiqueta>
+                        : <Etiqueta tono={s.tipo === 'emergencia' ? 'mala' : 'alerta'}>Sin atender</Etiqueta>)}
                   </button>
                 </li>
               );
@@ -90,62 +80,79 @@ export default function Solicitudes() {
           {idSel ? <Detalle key={`${idSel}-${version}`} id={idSel} listo={listo} /> : null}
         </div>
       ))}
-      {anotar && <Anotar cerrar={() => setAnotar(false)} listo={(id) => { setAnotar(false); setEstado('en_proceso'); elegir(id); listo('Solicitud anotada'); }} />}
+      {anotar && <Anotar cerrar={() => setAnotar(false)} listo={(id) => { setAnotar(false); setVista('pendientes'); elegir(id); listo('Solicitud anotada'); }} />}
     </>
   );
 }
 
-function Detalle({ id, listo }: { id: number; listo: (m: string) => void }) {
+// Detalle: agendar la visita, una sola respuesta al cliente (se puede corregir) y marcarla como atendida.
+// Mantención o emergencia se atienden igual: la visita queda como una mantención (de emergencia si corresponde).
+function Detalle({ id, listo }: { id: number; listo: (m: string, cambiaLista?: boolean) => void }) {
   const { datos: s, error } = useDatos<Solicitud>(`/admin/solicitudes/${id}`);
   const [respuesta, setRespuesta] = useState('');
+  const [editando, setEditando] = useState(false);
   const [falla, setFalla] = useState('');
   const [ocupado, setOcupado] = useState(false);
-  useEffect(() => { if (s) setRespuesta(s.respuesta ?? ''); }, [s]);
+  useEffect(() => { if (s) { setRespuesta(s.respuesta ?? ''); setEditando(!s.respuesta); } }, [s]);
   if (!s) return <section className="tarjeta">{error ? <Aviso>{error}</Aviso> : <Cargando />}</section>;
   const abierta = s.estado === 'nueva' || s.estado === 'en_proceso';
-  const accion = async (ruta: string, body: object | undefined, mensaje: string) => {
+  const accion = async (ruta: string, body: object | undefined, mensaje: string, cambiaLista = false) => {
     setFalla('');
     setOcupado(true);
-    try { await api(`/admin/solicitudes/${s.id}/${ruta}`, { method: 'POST', body }); listo(mensaje); }
+    try { await api(`/admin/solicitudes/${s.id}/${ruta}`, { method: 'POST', body }); listo(mensaje, cambiaLista); }
     catch (e) { setFalla((e as Error).message); setOcupado(false); }
   };
   const tipoMantencion = s.tipo === 'emergencia' ? 'emergencia' : 'correctiva';
+  const sinCambios = respuesta.trim() === (s.respuesta ?? '').trim();
+  const m = s.mantencion;
 
   return (
     <section className="tarjeta detalle-solicitud">
       <header className="tarjeta-cabecera">
-        <span className="suave">{SOL(s.id)} · {TIPO_SOLICITUD[s.tipo]}</span>
-        <Etiqueta tono={ESTADO_SOLICITUD[s.estado][0]}>{ESTADO_SOLICITUD[s.estado][1]}</Etiqueta>
+        <span className="suave">{TIPO_SOLICITUD[s.tipo]} · {CANALES[s.canal]} · {fechaHora(s.created_at)}</span>
+        <Etiqueta tono={abierta ? (s.tipo === 'emergencia' ? 'mala' : 'alerta') : 'buena'}>{abierta ? 'Pendiente' : 'Atendida'}</Etiqueta>
       </header>
-      <h2>{s.instalacion ?? s.cliente}{s.tipo === 'emergencia' ? ' · emergencia' : ''}</h2>
+      <h2>{s.instalacion ?? s.cliente}</h2>
       <dl className="datos lineas">
         <div><dt>Cliente</dt><dd><Link to={`/admin/clientes/${s.cliente_id}`}>{s.cliente}</Link>{s.cliente_telefono ? <> · <a href={`tel:${s.cliente_telefono}`}>{s.cliente_telefono}</a></> : ''}</dd></div>
         {s.instalacion_id && <div><dt>Instalación</dt><dd><Link to={`/admin/instalaciones/${s.instalacion_id}`}>{s.instalacion_codigo}{s.potencia_kwp ? ` · ${Number(s.potencia_kwp).toLocaleString('es-CL')} kWp` : ''}</Link></dd></div>}
-        <div><dt>Canal</dt><dd>{CANALES[s.canal]} · {fechaHora(s.created_at)}</dd></div>
-        <div><dt>Suscripción</dt><dd>{s.suscripcion
-          ? <Link to={`/admin/suscripciones/${s.suscripcion_id}`} className={s.periodos_adeudados ? 'texto-malo' : ''}>{s.suscripcion}{s.periodos_adeudados ? ' · pago pendiente' : ' · al día'}</Link>
+        <div><dt>Plan</dt><dd>{s.suscripcion
+          ? <Link to={`/admin/suscripciones/${s.suscripcion_id}`} className={s.periodos_adeudados ? 'texto-malo' : ''}>{s.periodos_adeudados ? 'Con pago pendiente' : 'Al día'}</Link>
           : <span className="suave">Sin suscripción{s.tipo === 'emergencia' ? ' (la emergencia se atiende igual)' : ''}</span>}</dd></div>
-        {s.atendida_por && <div><dt>A cargo</dt><dd>{s.atendida_por}</dd></div>}
-        {s.mantencion && <div><dt>Mantención</dt><dd><Link to={`/admin/mantenciones/${s.mantencion.id}`}>MNT-{String(s.mantencion.id).padStart(4, '0')} · {s.mantencion.estado} · {fechaCorta(s.mantencion.fecha_realizada ?? s.mantencion.fecha_programada)}</Link></dd></div>}
       </dl>
       <div className="cita"><small>Lo que escribió el cliente</small><p>{s.descripcion}</p></div>
-      {abierta ? (
-        <AreaTexto etiqueta="Responder (lo ve el cliente)" placeholder="Hola, ya vimos tu caso. Mañana a las 9:00 va un técnico a revisar el inversor." value={respuesta} onChange={(e) => setRespuesta(e.target.value)} />
-      ) : s.respuesta && <div className="cita respuesta"><small>Respuesta de ENINTI</small><p>{s.respuesta}</p></div>}
+
+      {m ? (
+        <Link to={`/admin/mantenciones/${m.id}`} className="aviso-portal buena">
+          <span className="aviso-icono"><CalendarDays size={20} /></span>
+          <span><strong>{m.estado === 'realizada' ? `Visita realizada el ${fechaCorta(m.fecha_realizada)}` : m.estado === 'cancelada' ? 'Visita cancelada' : `Visita agendada para el ${fechaCorta(m.fecha_programada)}`}</strong><small>Ver la mantención ›</small></span>
+        </Link>
+      ) : abierta && s.instalacion_id ? (
+        <Link to={`/admin/mantenciones?nueva=1&instalacion=${s.instalacion_id}&solicitud=${s.id}&tipo=${tipoMantencion}`} className={`boton chico ${s.tipo === 'emergencia' ? 'peligro' : 'secundario'}`}>
+          <CalendarDays size={18} /> Agendar visita{s.tipo === 'emergencia' ? ' de emergencia' : ''}</Link>
+      ) : null}
+
+      {abierta && editando ? (
+        <>
+          <AreaTexto etiqueta="Respuesta al cliente (la ve en su portal)" placeholder="Hola, ya vimos tu caso. El jueves a las 9:00 va un técnico a revisar el inversor." value={respuesta} onChange={(e) => setRespuesta(e.target.value)} />
+          <div className="acciones">
+            {s.respuesta && <button type="button" className="boton suave chico" onClick={() => { setRespuesta(s.respuesta ?? ''); setEditando(false); }}>Cancelar</button>}
+            <button type="button" className="boton secundario chico" disabled={ocupado || !respuesta.trim() || sinCambios}
+              onClick={() => accion('responder', { respuesta }, s.respuesta ? 'Respuesta corregida' : 'Respuesta enviada: el cliente la ve en su portal')}>
+              {s.respuesta ? 'Guardar cambio' : 'Enviar respuesta'}</button>
+          </div>
+        </>
+      ) : s.respuesta ? (
+        <div className="cita respuesta"><small>Respuesta enviada · {fechaHora(s.updated_at)}</small><p>{s.respuesta}</p>
+          {abierta && <button type="button" className="enlace" onClick={() => setEditando(true)}>Corregir respuesta</button>}</div>
+      ) : null}
+
       <Aviso>{falla}</Aviso>
-      {abierta ? (
-        <div className="acciones">
-          {s.estado === 'nueva' && <button type="button" className="boton secundario chico" disabled={ocupado} onClick={() => accion('tomar', undefined, 'Solicitud tomada')}>Tomar</button>}
-          {s.instalacion_id && s.tipo !== 'consulta' && !s.mantencion && (
-            <Link to={`/admin/mantenciones?nueva=1&instalacion=${s.instalacion_id}&solicitud=${s.id}&tipo=${tipoMantencion}`} className="boton secundario chico">Agendar mantención</Link>
-          )}
-          <button type="button" className="boton secundario chico" disabled={ocupado} onClick={() => accion('responder', { respuesta, estado: 'resuelta' }, 'Solicitud resuelta')}>Resolver</button>
-          <button type="button" className="boton suave chico" disabled={ocupado} onClick={() => accion('responder', { respuesta, estado: 'cerrada' }, 'Solicitud cerrada')}>Cerrar</button>
-          <button type="button" className="boton primario chico" disabled={ocupado || !respuesta.trim()} onClick={() => accion('responder', { respuesta }, 'Respuesta enviada: el cliente la ve en su portal')}>Enviar respuesta</button>
-        </div>
-      ) : (
-        <div className="acciones"><button type="button" className="boton secundario chico" disabled={ocupado} onClick={() => accion('reabrir', undefined, 'Solicitud reabierta')}>Reabrir</button></div>
-      )}
+      <div className="acciones">
+        {abierta
+          ? <button type="button" className="boton primario chico" disabled={ocupado} onClick={() => accion('responder', { respuesta: sinCambios ? '' : respuesta, estado: 'resuelta' }, 'Solicitud atendida', true)}><Check size={18} /> Marcar como atendida</button>
+          : <button type="button" className="boton secundario chico" disabled={ocupado} onClick={() => accion('reabrir', undefined, 'Solicitud reabierta', true)}>Volver a pendientes</button>}
+      </div>
     </section>
   );
 }
@@ -156,7 +163,7 @@ function Anotar({ cerrar, listo }: { cerrar: () => void; listo: (id: number) => 
   const [busqueda, setBusqueda] = useState('');
   useEffect(() => { const t = setTimeout(() => setBusqueda(q.trim()), 300); return () => clearTimeout(t); }, [q]);
   const { datos: clientes } = useDatos<{ clientes: { id: number; nombre: string; rut: string | null }[] }>(`/admin/clientes?filtro=todos${busqueda ? `&q=${encodeURIComponent(busqueda)}` : ''}`);
-  const [f, setF] = useState({ cliente_id: '', instalacion_id: '', tipo: 'emergencia', prioridad: '', canal: 'telefono', descripcion: '' });
+  const [f, setF] = useState({ cliente_id: '', instalacion_id: '', tipo: 'mantencion', canal: 'whatsapp', descripcion: '' });
   const { datos: ficha } = useDatos<{ instalaciones: { id: number; codigo: string; nombre: string | null }[] }>(f.cliente_id ? `/admin/clientes/${f.cliente_id}` : null);
   const [error, setError] = useState('');
   const [guardando, setGuardando] = useState(false);
@@ -178,18 +185,14 @@ function Anotar({ cerrar, listo }: { cerrar: () => void; listo: (id: number) => 
           {clientes?.clientes.map((c) => <option key={c.id} value={c.id}>{c.nombre}{c.rut ? ` · ${c.rut}` : ''}</option>)}
         </Selector>
         <Selector etiqueta="Instalación" value={f.instalacion_id} onChange={(e) => setF({ ...f, instalacion_id: e.target.value })} disabled={!ficha}>
-          <option value="">{f.tipo === 'consulta' ? 'No aplica' : 'Elige la instalación'}</option>
+          <option value="">Elige la instalación</option>
           {ficha?.instalaciones.map((i) => <option key={i.id} value={i.id}>{i.nombre || i.codigo} · {i.codigo}</option>)}
         </Selector>
         <div className="completo segmentos">
-          {Object.entries(TIPO_SOLICITUD).map(([v, t]) => <button key={v} type="button" className={f.tipo === v ? 'activo' : ''} onClick={() => setF({ ...f, tipo: v })}>{t}</button>)}
+          {Object.entries(TIPO_SOLICITUD).filter(([v]) => v !== 'consulta').map(([v, t]) => <button key={v} type="button" className={f.tipo === v ? 'activo' : ''} onClick={() => setF({ ...f, tipo: v })}>{t}</button>)}
         </div>
-        <Selector etiqueta="Canal" value={f.canal} onChange={(e) => setF({ ...f, canal: e.target.value })}>
+        <Selector etiqueta="¿Por dónde llegó?" value={f.canal} onChange={(e) => setF({ ...f, canal: e.target.value })}>
           {Object.entries(CANALES).filter(([v]) => v !== 'plataforma').map(([v, t]) => <option key={v} value={v}>{t}</option>)}
-        </Selector>
-        <Selector etiqueta="Prioridad" value={f.prioridad} onChange={(e) => setF({ ...f, prioridad: e.target.value })}>
-          <option value="">Según el tipo</option>
-          {Object.entries(PRIORIDAD).map(([v, [, t]]) => <option key={v} value={v}>{t}</option>)}
         </Selector>
         <div className="completo"><AreaTexto etiqueta="¿Qué pasa?" placeholder="El inversor muestra una luz roja y no tienen energía desde la mañana." value={f.descripcion} onChange={(e) => setF({ ...f, descripcion: e.target.value })} /></div>
         <div className="completo"><Aviso>{error}</Aviso></div>

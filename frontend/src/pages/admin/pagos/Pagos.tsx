@@ -88,7 +88,7 @@ export default function Pagos() {
             <span className="kpi-enlace">{r.morosos} con pago pendiente ›</span></button>
         </div>
       )}
-      {r && !r.automaticos && <p className="nota-info"><Zap size={16} /><span>Cobro automático apagado en este ambiente.</span></p>}
+      {r && !r.automaticos && <p className="nota-info"><Zap size={16} /><span>El cobro automático con tarjeta todavía no está activado: hoy los clientes pagan con enlace o se anota el pago a mano.</span></p>}
 
       <Pestanas<Vista> valor={vista} cambiar={cambiar} opciones={[
         ['mes', 'Pagos del mes'], ['cobros', 'Cobros en línea', r?.pendientes],
@@ -155,7 +155,7 @@ function TablaPagos({ pagos, listo, boleta }: { pagos: Pago[]; listo: (m: string
                 : <button type="button" className="boton secundario mini" onClick={() => setAccion({ tipo: 'boleta', p })}>Agregar boleta</button>)
               : <><Etiqueta tono={ESTADO_PAGO[p.estado][0]}>{ESTADO_PAGO[p.estado][1]}</Etiqueta>
                 {(p.motivo_anulacion || p.motivo_rechazo) && <small>{p.motivo_anulacion || p.motivo_rechazo}</small>}</>}</td>
-            <td>{p.estado === 'pagado' && <button type="button" className="boton peligro mini" onClick={() => setAccion({ tipo: 'anular', p })}>Anular</button>}
+            <td>{p.estado === 'pagado' && <button type="button" className="enlace-peligro" onClick={() => setAccion({ tipo: 'anular', p })}>Anular</button>}
               {p.estado !== 'pagado' && <button type="button" className="boton secundario mini" onClick={() => navegar(`/admin/suscripciones/${p.suscripcion_id}`)}>Ver</button>}</td>
           </tr>
         ))}</tbody>
@@ -221,7 +221,7 @@ function Cobros({ version, listo }: { version: number; listo: (m: string) => voi
             <button key={v} type="button" className={estado === v ? 'activo' : ''} onClick={() => setEstado(v)}>{t}</button>
           ))}
         </div>
-        <button type="button" className="boton secundario chico empujar" disabled={revisando} onClick={revisar}><RefreshCw size={16} /> {revisando ? 'Revisando…' : 'Revisar estados en Flow'}</button>
+        <button type="button" className="boton secundario chico empujar" disabled={revisando} onClick={revisar}><RefreshCw size={16} /> {revisando ? 'Revisando…' : 'Actualizar estados'}</button>
       </div>
       <Aviso>{error}</Aviso>
       {cargando && !datos ? <Cargando /> : datos && (datos.length === 0 ? <Vacio>Aún no hay cobros en línea. Usa "Cobrar ahora" o espera a que un cliente pague desde el portal.</Vacio> : (
@@ -303,7 +303,7 @@ function Historial({ version, listo }: { version: number; listo: (m: string) => 
     <>
       <div className="filtros">
         <label className="buscador-icono"><Search size={18} />
-          <input className="buscador" type="search" placeholder="Cliente, suscripción o N° de boleta" value={q} onChange={(e) => setQ(e.target.value)} /></label>
+          <input className="buscador" type="search" placeholder="Cliente o N° de boleta" value={q} onChange={(e) => setQ(e.target.value)} /></label>
         <select value={f.estado} onChange={sel('estado')} aria-label="Estado">
           <option value="">Todos los estados</option>
           {Object.entries(ESTADO_PAGO).map(([v, [, t]]) => <option key={v} value={v}>{t}</option>)}

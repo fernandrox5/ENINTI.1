@@ -2,7 +2,7 @@
 // tarjeta presencial) o generar un enlace de pago de Flow para mandarlo por WhatsApp o correo.
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { CalendarDays, Check, Copy, CreditCard, Link2, Search } from 'lucide-react';
+import { CalendarDays, Check, CreditCard, Search } from 'lucide-react';
 import { api } from '../../../api';
 import { useDatos } from '../../../useDatos';
 import { Aviso, Campo, Cargando, Volver } from '../../../componentes';
@@ -70,8 +70,6 @@ function Formulario({ susId, otro }: { susId: string; otro: () => void }) {
   const [falla, setFalla] = useState('');
   const [guardando, setGuardando] = useState(false);
   const [listo, setListo] = useState<{ total: number; n: number } | null>(null);
-  const [enlace, setEnlace] = useState<{ url: string; monto: number } | null>(null);
-  const [copiado, setCopiado] = useState(false);
 
   useEffect(() => { if (d) setF((x) => (x.monto_periodo ? x : { ...x, monto_periodo: String(d.monto_pactado) })); }, [d]);
 
@@ -93,15 +91,6 @@ function Formulario({ susId, otro }: { susId: string; otro: () => void }) {
       setListo({ total: r.total, n: r.ids.length });
     } catch (e) { setFalla((e as Error).message); } finally { setGuardando(false); }
   };
-  const generarEnlace = async () => {
-    setFalla('');
-    setGuardando(true);
-    try { setEnlace(await api<{ url: string; monto: number }>(`/admin/pagos/suscripcion/${d.id}/enlace`, { method: 'POST', body: { cantidad: 1 } })); }
-    catch (e) { setFalla((e as Error).message); } finally { setGuardando(false); }
-  };
-  const copiar = () => enlace && navigator.clipboard.writeText(enlace.url).then(() => setCopiado(true));
-  const whatsapp = enlace && `https://wa.me/?text=${encodeURIComponent(`Hola, te dejo el enlace para pagar tu suscripción de mantención ENINTI ${d.codigo} (${pesos(enlace.monto)}): ${enlace.url}`)}`;
-
   if (listo) return (
     <>
       <Volver a="/admin/pagos" texto="Pagos" />
@@ -164,23 +153,10 @@ function Formulario({ susId, otro }: { susId: string; otro: () => void }) {
           <dl className="datos lineas">
             <div><dt>Pagado hasta</dt><dd>{d.pagado_hasta ? fechaCorta(d.pagado_hasta) : 'Sin pagos'}</dd></div>
             {siguiente && <div><dt>{siguiente.vencido ? 'Pendiente desde' : 'Próximo pago'}</dt><dd className={siguiente.vencido ? 'texto-malo' : ''}>{fechaCorta(siguiente.inicio)}</dd></div>}
-            <div><dt>Última gestión</dt><dd>{d.ultima_gestion ?? '—'}</dd></div>
+            <div><dt>Último contacto</dt><dd>{d.ultima_gestion ?? '—'}</dd></div>
             <div><dt>Cobro automático</dt><dd>{d.tarjeta ? <><CreditCard size={14} /> {d.tarjeta}</> : 'Sin tarjeta inscrita'}</dd></div>
           </dl>
-          <hr />
-          <h3>¿Prefiere pagar en línea?</h3>
-          <p className="suave">Mándale un enlace y paga desde su celular.</p>
-          {enlace ? (
-            <div className="enlace-generado">
-              <code>{enlace.url}</code>
-              <div className="acciones">
-                <button type="button" className="boton secundario mini" onClick={copiar}><Copy size={14} /> {copiado ? 'Copiado' : 'Copiar'}</button>
-                <a href={whatsapp!} target="_blank" rel="noreferrer" className="boton primario mini">Enviar por WhatsApp</a>
-              </div>
-            </div>
-          ) : (
-            <button type="button" className="boton secundario chico" disabled={guardando || !d.periodos.length || temprano} onClick={generarEnlace}><Link2 size={16} /> Generar enlace de pago</button>
-          )}
+          <p className="suave nota">Solo para pagos en efectivo o transferencia directa. Los pagos con tarjeta o por el portal se registran solos.</p>
         </aside>
       </div>
     </>

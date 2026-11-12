@@ -40,4 +40,4 @@ export const SISTEMAS: Record<string, string> = { on_grid: 'On-grid', off_grid: 
 export const TIPOS_EQUIPO: Record<string, string> = {
   panel: 'Paneles', inversor: 'Inversor', bateria: 'Batería', estructura: 'Estructura', medidor: 'Medidor', otro: 'Otro',
 };
-export const TIPOS_MANTENCION: Record<string, string> = { preventiva: 'Preventiva', correctiva: 'Correctiva', emergencia: 'Emergencia' };
+export const TIPOS_MANTENCION: Record<string, string> = { preventiva: 'Preventiva', correctiva: 'Reparación', emergencia: 'Emergencia' };

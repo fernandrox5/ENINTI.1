@@ -12,3 +12,9 @@ export function useWhatsapp(texto?: string) {
   if (!numero) return null;
   return `https://wa.me/${numero.replace(/\D/g, '')}${texto ? `?text=${encodeURIComponent(texto)}` : ''}`;
 }
+
+// Enlace de WhatsApp al teléfono del cliente con un mensaje ya escrito (null si no tiene teléfono)
+export function whatsapp(telefono: string | null, texto: string) {
+  const numero = (telefono ?? '').replace(/\D/g, '');
+  return numero ? `https://wa.me/${numero.length === 9 ? `56${numero}` : numero}?text=${encodeURIComponent(texto)}` : null;
+}

@@ -7,6 +7,7 @@
 //   5. 04_pagos_flow.sql  tarjetas inscritas y cobros en línea con Flow
 //   6. 05_plazo_pago.sql  días de plazo antes de cerrar por falta de pago
 //   7. 06_mantenciones    motivo de cancelación y notas de la mantención
+//   8. 07_pago_pendiente  un solo criterio de pago pendiente (sin días de gracia)
 //   5. usuarios de prueba en Supabase Auth (el trigger los vincula por correo)
 import { readFile } from 'node:fs/promises';
 
@@ -74,6 +75,7 @@ try {
   console.log('✔ Pagos en línea (Flow)');
   await pool.query(await sql('schema/05_plazo_pago.sql'));
   await pool.query(await sql('schema/06_mantenciones.sql'));
+  await pool.query(await sql('schema/07_pago_pendiente.sql'));
 
   for (const u of USUARIOS) {
     const { data, error } = await supabase.auth.admin.createUser({

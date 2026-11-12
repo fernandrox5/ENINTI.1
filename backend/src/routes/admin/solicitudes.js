@@ -7,7 +7,6 @@ import { ErrorHttp } from '../../utils/validar.js';
 
 const router = Router();
 const TIPOS = ['mantencion', 'emergencia', 'consulta'];
-const ESTADOS = ['nueva', 'en_proceso', 'resuelta', 'cerrada'];
 const PRIORIDADES = ['baja', 'media', 'alta', 'critica'];
 const CANALES = ['plataforma', 'whatsapp', 'telefono', 'email', 'presencial'];
 export const PRIORIDAD_POR_TIPO = { emergencia: 'alta', mantencion: 'media', consulta: 'baja' };
@@ -29,18 +28,16 @@ const DESDE = `FROM solicitudes s
 // Emergencias primero, luego por prioridad y antigüedad
 const ORDEN = `(s.tipo = 'emergencia') DESC, array_position(ARRAY['critica','alta','media','baja']::text[], s.prioridad::text), s.created_at`;
 
+// Dos vistas: pendientes (nuevas y en proceso, emergencias primero) y atendidas (resueltas o cerradas)
 router.get('/', async (req, res) => {
-  const estado = ESTADOS.includes(req.query.estado) ? req.query.estado : 'nueva';
-  const params = [estado];
-  let extra = '';
-  if (TIPOS.includes(req.query.tipo)) { params.push(req.query.tipo); extra = ` AND s.tipo = $${params.length}`; }
+  const atendidas = req.query.vista === 'atendidas';
   const { rows } = await pool.query(
-    `SELECT ${COLUMNAS} ${DESDE} WHERE s.estado = $1${extra}
-     ORDER BY ${estado === 'nueva' || estado === 'en_proceso' ? ORDEN : 's.updated_at DESC'} LIMIT 100`, params);
+    `SELECT ${COLUMNAS} ${DESDE} WHERE s.estado IN (${atendidas ? "'resuelta', 'cerrada'" : "'nueva', 'en_proceso'"}) AND s.tipo <> 'consulta'
+     ORDER BY ${atendidas ? 's.updated_at DESC' : ORDEN} LIMIT 100`);
   const { rows: [conteo] } = await pool.query(
-    `SELECT ${ESTADOS.map((e) => `count(*) FILTER (WHERE estado = '${e}')::int AS ${e}`).join(', ')},
+    `SELECT count(*) FILTER (WHERE estado IN ('nueva', 'en_proceso'))::int AS pendientes,
             count(*) FILTER (WHERE estado IN ('nueva', 'en_proceso') AND tipo = 'emergencia')::int AS emergencias
-     FROM solicitudes`);
+     FROM solicitudes WHERE tipo <> 'consulta'`);
   res.json({ solicitudes: rows, conteo });
 });
 

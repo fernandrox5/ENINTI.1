@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Plus, Search, Users } from 'lucide-react';
 import { useDatos } from '../../../useDatos';
 import { Aviso, Cargando, Etiqueta, Pestanas, Titulo, Vacio, type Tono } from '../../../componentes';
-import { fechaCorta, pesos } from '../../../formato';
+import { fechaCorta } from '../../../formato';
 import ClienteFormulario from './ClienteFormulario';
 
 export interface Localidad { id: number; nombre: string; comuna: string }
@@ -17,7 +17,7 @@ interface Listado { clientes: FilaCliente[]; total: number; pagina: number; por_
 type Filtro = 'activos' | 'deuda' | 'inactivos' | 'todos';
 
 export type Portal = 'activo' | 'invitado' | 'sin_acceso';
-export const PORTAL: Record<Portal, [Tono, string]> = { activo: ['buena', 'Vinculado'], invitado: ['alerta', 'Invitado'], sin_acceso: ['neutra', 'No vinculado'] };
+export const PORTAL: Record<Portal, [Tono, string]> = { activo: ['buena', 'Activa'], invitado: ['alerta', 'Invitado'], sin_acceso: ['neutra', 'Sin cuenta'] };
 
 export const GESTIONES: Record<string, string> = { llamada: 'Llamada', whatsapp: 'WhatsApp', email: 'Correo', visita: 'Visita', otro: 'Otro' };
 
@@ -79,7 +79,7 @@ export default function Clientes() {
         <div className="tabla">
           <table>
             <thead>
-              <tr><th>Cliente</th><th>Localidad</th><th className="num">Instalaciones</th><th>Suscripciones</th><th className="num">Por pagar</th><th>Portal</th><th>Última gestión</th><th /></tr>
+              <tr><th>Cliente</th><th>Localidad</th><th className="num">Instalaciones</th><th>Suscripción</th><th>Cuenta</th><th>Último contacto</th><th /></tr>
             </thead>
             <tbody>
               {datos.clientes.map((c) => {
@@ -90,7 +90,6 @@ export default function Clientes() {
                     <td>{c.localidad || '—'}</td>
                     <td className="num">{c.instalaciones}</td>
                     <td><Etiqueta tono={tono} punto={tono !== 'neutra'}>{texto}</Etiqueta></td>
-                    <td className="num">{pesos(c.deuda)}</td>
                     <td><Etiqueta tono={PORTAL[c.portal][0]}>{PORTAL[c.portal][1]}</Etiqueta></td>
                     <td>{c.gestion_tipo ? `${GESTIONES[c.gestion_tipo]} · ${fechaCorta(c.gestion_fecha)}` : '—'}</td>
                     <td><Link to={`/admin/clientes/${c.id}`} className="boton secundario mini" onClick={(e) => e.stopPropagation()}>Ver</Link></td>

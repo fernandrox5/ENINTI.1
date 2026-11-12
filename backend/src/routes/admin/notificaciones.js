@@ -30,22 +30,36 @@ router.get('/', async (_req, res) => {
      UNION ALL
        SELECT 'cob-' || k.id, 'rechazo', k.updated_at,
               'No se pudo cobrar la tarjeta de ' || c.nombre,
-              coalesce(i.nombre, i.codigo) || ' · intento ' || k.intento, '/admin/seguimiento', true
+              coalesce(i.nombre, i.codigo) || ' · intento ' || k.intento, '/admin/clientes/' || c.id, true
        FROM cobros k JOIN suscripciones s ON s.id = k.suscripcion_id JOIN instalaciones i ON i.id = s.instalacion_id JOIN clientes c ON c.id = i.cliente_id
        WHERE k.canal = 'tarjeta' AND k.estado = 'rechazado' AND k.updated_at > now() - interval '30 days'
      UNION ALL
        SELECT 'sus-' || s.id, 'plan', s.created_at,
-              CASE WHEN pf.rol = 'cliente' THEN c.nombre || ' contrató el ' || t.nombre ELSE 'Plan inscrito manualmente: ' || c.nombre END,
+              CASE WHEN pf.rol = 'cliente' THEN c.nombre || ' contrató el ' || t.nombre ELSE 'Suscripción inscrita manualmente: ' || c.nombre END,
               coalesce(i.nombre, i.codigo), '/admin/suscripciones/' || s.id, false
        FROM suscripciones s JOIN instalaciones i ON i.id = s.instalacion_id JOIN clientes c ON c.id = i.cliente_id
        JOIN tipos_suscripcion t ON t.id = s.tipo_suscripcion_id LEFT JOIN perfiles pf ON pf.id = s.creada_por
        WHERE s.created_at > now() - interval '30 days'
      UNION ALL
        SELECT 'baj-' || s.id, 'baja', s.updated_at,
-              'Plan cerrado: ' || c.nombre,
+              'Suscripción cerrada: ' || c.nombre,
               coalesce(i.nombre, i.codigo) || coalesce(' · ' || s.motivo_cierre, ''), '/admin/suscripciones/' || s.id, false
        FROM suscripciones s JOIN instalaciones i ON i.id = s.instalacion_id JOIN clientes c ON c.id = i.cliente_id
        WHERE s.estado = 'cerrada' AND s.fecha_cierre > fn_hoy() - 30
+     UNION ALL
+       SELECT 'ven-' || s.id, 'vence', (s.fecha_termino - 15)::timestamptz,
+              'La suscripción de ' || c.nombre || ' vence el ' || to_char(s.fecha_termino, 'DD-MM'),
+              coalesce(i.nombre, i.codigo) || ' · conviene llamarlo para renovar', '/admin/clientes/' || c.id, false
+       FROM suscripciones s JOIN instalaciones i ON i.id = s.instalacion_id JOIN clientes c ON c.id = i.cliente_id
+       WHERE s.estado = 'vigente' AND s.fecha_termino BETWEEN fn_hoy() AND fn_hoy() + 15
+         AND NOT EXISTS (SELECT 1 FROM suscripciones n WHERE n.suscripcion_anterior_id = s.id)
+     UNION ALL
+       SELECT 'noren-' || s.id, 'no_renovo', s.fecha_termino::timestamptz,
+              c.nombre || ' no renovó su suscripción',
+              coalesce(i.nombre, i.codigo) || ' · venció el ' || to_char(s.fecha_termino, 'DD-MM'), '/admin/clientes/' || c.id, true
+       FROM suscripciones s JOIN instalaciones i ON i.id = s.instalacion_id JOIN clientes c ON c.id = i.cliente_id
+       WHERE s.estado = 'vencida' AND s.fecha_termino > fn_hoy() - 30
+         AND NOT EXISTS (SELECT 1 FROM suscripciones n WHERE n.instalacion_id = s.instalacion_id AND n.estado = 'vigente')
      UNION ALL
        SELECT 'inf-' || m.id, 'informe', m.updated_at,
               coalesce(t.nombre, 'El técnico') || ' envió el informe de ' || coalesce(i.nombre, i.codigo),

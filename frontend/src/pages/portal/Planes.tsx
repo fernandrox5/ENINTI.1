@@ -44,8 +44,8 @@ export default function Planes() {
               </ul>
               {mios.length > 0 && <p className="suave">Activo en {mios.map((i) => i.nombre || i.codigo).join(', ')}</p>}
               {libres.length > 0
-                ? <button type="button" className="boton primario" onClick={() => setElegido(p)}>{libres.some((i) => i.ultima_suscripcion) && !libres.some((i) => !i.ultima_suscripcion) ? 'Renovar con este plan' : 'Contratar'}</button>
-                : <p className="suave">Todas tus instalaciones tienen un plan vigente.</p>}
+                ? <button type="button" className="boton primario" onClick={() => setElegido(p)}>{libres.length === 1 ? `Contratar para ${libres[0].nombre || libres[0].codigo}` : 'Contratar'}</button>
+                : <p className="suave">Todas tus instalaciones tienen una suscripción vigente.</p>}
             </section>
           );
         })}
@@ -84,7 +84,7 @@ function Contratar({ plan, datos, inicial, cerrar }: { plan: Plan; datos: Datos;
     <Modal titulo={`Contratar ${plan.nombre}`} cerrar={cerrar} ancho={560}>
       <form className="formulario" onSubmit={enviar} noValidate>
         <Selector etiqueta="Instalación" value={instalacion} onChange={(e) => setInstalacion(e.target.value)}>
-          {libres.map((x) => <option key={x.id} value={x.id}>{x.nombre || x.codigo}{x.ultima_suscripcion ? ` · antes con ${x.ultima_suscripcion.plan}` : ' · sin plan'}</option>)}
+          {libres.map((x) => <option key={x.id} value={x.id}>{x.nombre || x.codigo}{x.ultima_suscripcion ? ` · antes con ${x.ultima_suscripcion.plan}` : ' · sin suscripción'}</option>)}
         </Selector>
         <dl className="datos lineas">
           <div><dt>Plan</dt><dd>{plan.nombre}</dd></div>

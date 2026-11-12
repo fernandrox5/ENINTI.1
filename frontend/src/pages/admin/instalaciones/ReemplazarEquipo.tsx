@@ -15,7 +15,7 @@ export function Pasos({ pasos, actual }: { pasos: string[]; actual: number }) {
   return (
     <ol className="pasos">
       {pasos.map((p, k) => (
-        <li key={p} className={k === actual ? 'actual' : k < actual ? 'hecho' : ''}><span>{k + 1}</span>{p}</li>
+        <li key={p} className={k === actual ? 'actual' : k < actual ? 'hecho' : ''}><span>{k + 1}</span><em>{p}</em></li>
       ))}
     </ol>
   );

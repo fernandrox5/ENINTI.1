@@ -18,7 +18,7 @@ interface Suscripcion {
 interface Datos {
   cliente: string; email: string | null; tarjeta: { tipo: string | null; ultimos4: string | null; inscrita_at: string } | null;
   suscripciones: Suscripcion[];
-  pagos: { id: number; periodo: string; monto: number; fecha_pago: string | null; medio_pago: string; estado: string; nro_boleta: string | null; motivo_rechazo: string | null; suscripcion: string; en_linea: boolean }[];
+  pagos: { id: number; periodo: string; monto: number; fecha_pago: string | null; medio_pago: string; estado: string; nro_boleta: string | null; motivo_rechazo: string | null; suscripcion: string; instalacion: string; en_linea: boolean }[];
 }
 
 const RESULTADOS: Record<string, ['ok' | 'error' | 'info', string]> = {
@@ -60,6 +60,7 @@ export default function Pagos() {
 
   if (cargando && !d) return <Cargando />;
   if (!d) return <Aviso>{error}</Aviso>;
+  const variasInstalaciones = new Set(d.pagos.map((p) => p.instalacion)).size > 1;
   const diaCobro = (s: Suscripcion) => (s.proximo_cobro ? Number(s.proximo_cobro.slice(8, 10)) : null);
 
   return (
@@ -80,10 +81,10 @@ export default function Pagos() {
               <strong className="pago-monto">{pesos(s.monto_pactado)} <small>{FRECUENCIAS[s.frecuencia_pago]}</small></strong>
               <p className="suave">{s.instalacion_nombre || s.direccion} · {s.tipo_nombre}</p>
               {p ? (
-                <p className="texto-malo">{d.tarjeta ? 'No pudimos cobrar tu tarjeta. ' : ''}{p.quedan_dias === 0 ? 'Hoy es el último día' : `Tienes ${p.quedan_dias} ${p.quedan_dias === 1 ? 'día' : 'días'}`} para pagar; si no, tu plan se cancelará.</p>
+                <p className="texto-malo">{d.tarjeta ? 'No pudimos cobrar tu tarjeta. ' : ''}{p.quedan_dias === 0 ? 'Hoy es el último día' : `Tienes ${p.quedan_dias} ${p.quedan_dias === 1 ? 'día' : 'días'}`} para pagar; si no, tu suscripción se cancelará.</p>
               ) : (
                 <p className="suave">
-                  {s.pagado_hasta ? `Pagado hasta ${mesLargo(s.pagado_hasta).toLowerCase()}. ` : ''}
+                  {s.pagado_hasta ? `Pagado hasta el ${fechaCorta(s.pagado_hasta)}. ` : ''}
                   {s.proximo_cobro && (d.tarjeta ? `Se cobra solo el ${fechaCorta(s.proximo_cobro)}.` : `Próximo pago: ${fechaCorta(s.proximo_cobro)}.`)}
                 </p>
               )}
@@ -114,10 +115,11 @@ export default function Pagos() {
       <h2 className="subtitulo">Pagos anteriores</h2>
       {d.pagos.length === 0 ? <Vacio>Aún no tienes pagos registrados.</Vacio> : (
         <div className="tabla"><table>
-          <thead><tr><th>Mes</th><th className="num">Monto</th><th className="solo-escritorio">Pagado el</th><th className="solo-escritorio">Medio</th><th className="solo-escritorio">Boleta</th><th>Estado</th></tr></thead>
+          <thead><tr><th>Mes</th>{variasInstalaciones && <th>Instalación</th>}<th className="num">Monto</th><th className="solo-escritorio">Pagado el</th><th className="solo-escritorio">Medio</th><th className="solo-escritorio">Boleta</th><th>Estado</th></tr></thead>
           <tbody>{d.pagos.map((p) => (
             <tr key={p.id}>
               <td>{mesLargo(p.periodo)}</td>
+              {variasInstalaciones && <td>{p.instalacion}</td>}
               <td className="num">{pesos(p.monto)}</td>
               <td className="solo-escritorio">{p.fecha_pago ? fechaCorta(p.fecha_pago) : '—'}</td>
               <td className="solo-escritorio">{MEDIOS[p.medio_pago] ?? p.medio_pago}</td>

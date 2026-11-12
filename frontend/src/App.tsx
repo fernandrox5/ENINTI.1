@@ -10,7 +10,6 @@ import Legal from './pages/acceso/Legal';
 import Proximamente from './pages/Proximamente';
 import InicioPorRol from './pages/InicioPorRol';
 import Suscripciones from './pages/admin/suscripciones/Suscripciones';
-import NuevaSuscripcion from './pages/admin/suscripciones/NuevaSuscripcion';
 import SuscripcionDetalle from './pages/admin/suscripciones/SuscripcionDetalle';
 import Pagos from './pages/admin/pagos/Pagos';
 import RegistrarPago from './pages/admin/pagos/RegistrarPago';
@@ -24,7 +23,6 @@ import MantencionDetalle from './pages/admin/mantenciones/MantencionDetalle';
 import { MantencionesPortal, MantencionPortal } from './pages/portal/Mantenciones';
 import Solicitudes from './pages/admin/solicitudes/Solicitudes';
 import { SolicitudesPortal, SolicitudPortal } from './pages/portal/Solicitudes';
-import Seguimiento from './pages/admin/seguimiento/Seguimiento';
 import InicioAdmin from './pages/admin/Inicio';
 import Configuracion from './pages/admin/configuracion/Configuracion';
 import { PanelTecnico, Visitas, VisitaTecnico } from './pages/tecnico/Tecnico';
@@ -69,14 +67,12 @@ export default function App() {
             <Route path="instalaciones/:id" element={<InstalacionFicha />} />
             <Route path="instalaciones/:id/reemplazar" element={<ReemplazarEquipo />} />
             <Route path="suscripciones" element={<Suscripciones />} />
-            <Route path="suscripciones/nueva" element={<NuevaSuscripcion />} />
             <Route path="suscripciones/:id" element={<SuscripcionDetalle />} />
             <Route path="pagos" element={<Pagos />} />
             <Route path="pagos/registrar" element={<RegistrarPago />} />
             <Route path="mantenciones" element={<Mantenciones />} />
             <Route path="mantenciones/:id" element={<MantencionDetalle />} />
             <Route path="solicitudes" element={<Solicitudes />} />
-            <Route path="seguimiento" element={<Seguimiento />} />
             <Route path="reportes" element={<Reportes />} />
             <Route path="configuracion" element={<Configuracion />} />
           </Route>

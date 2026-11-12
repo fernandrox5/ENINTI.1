@@ -27,7 +27,7 @@ router.get('/', async (req, res) => {
        ORDER BY v.estado = 'vigente' DESC, v.fecha_termino DESC`, [c.id]),
     pool.query(
       `SELECT p.id, p.periodo, p.monto, p.fecha_pago, p.medio_pago, p.estado, p.nro_boleta, p.motivo_rechazo, s.codigo AS suscripcion,
-              p.cobro_id IS NOT NULL AS en_linea
+              coalesce(i.nombre, i.codigo) AS instalacion, p.cobro_id IS NOT NULL AS en_linea
        FROM pagos p JOIN suscripciones s ON s.id = p.suscripcion_id JOIN instalaciones i ON i.id = s.instalacion_id
        WHERE i.cliente_id = $1 ORDER BY coalesce(p.fecha_pago, p.created_at) DESC LIMIT 36`, [c.id]),
   ]);

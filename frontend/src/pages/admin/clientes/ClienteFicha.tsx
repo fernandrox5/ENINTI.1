@@ -5,8 +5,8 @@ import { Copy, Plus, Send } from 'lucide-react';
 import { api } from '../../../api';
 import { useDatos } from '../../../useDatos';
 import { Aviso, Cargando, Etiqueta, Pestanas, Vacio, Volver } from '../../../componentes';
-import { fecha, fechaCorta, fechaHora, iniciales, mes, pesos, MEDIOS, SISTEMAS } from '../../../formato';
-import { ESTADO_PAGO, ESTADO_SOLICITUD, TIPO_SOLICITUD, CANALES, estadoSuscripcion, situacionInstalacion } from '../../../estados';
+import { fecha, fechaCorta, iniciales, mes, pesos, MEDIOS, SISTEMAS } from '../../../formato';
+import { ESTADO_PAGO, ESTADO_SOLICITUD, TIPO_SOLICITUD, CANALES, situacionInstalacion } from '../../../estados';
 import ClienteFormulario from './ClienteFormulario';
 import RegistrarGestion from './RegistrarGestion';
 import { GESTIONES, PORTAL, type Portal } from './Clientes';
@@ -23,13 +23,13 @@ interface Ficha {
   solicitudes: { id: number; tipo: string; estado: string; canal: string; descripcion: string; created_at: string; instalacion: string | null }[];
   gestiones: { id: number; tipo: string; motivo: string; resultado: string | null; fecha: string; realizada_por: string | null }[];
 }
-type Pestana = 'datos' | 'instalaciones' | 'suscripciones' | 'pagos' | 'solicitudes' | 'gestiones' | 'acceso';
+type Pestana = 'resumen' | 'instalaciones' | 'pagos' | 'solicitudes' | 'gestiones';
 
 export default function ClienteFicha() {
   const { id } = useParams();
   const navegar = useNavigate();
   const { datos: c, error, cargando, recargar } = useDatos<Ficha>(`/admin/clientes/${id}`);
-  const [pestana, setPestana] = useState<Pestana>('datos');
+  const [pestana, setPestana] = useState<Pestana>('resumen');
   const [editando, setEditando] = useState(false);
   const [gestion, setGestion] = useState(false);
   const [aviso, setAviso] = useState('');
@@ -73,41 +73,66 @@ export default function ClienteFicha() {
         <div className="ficha-titulo">
           <h1>{c.nombre}</h1>
           <p>
-            {[c.rut ? `RUT ${c.rut}` : 'Sin RUT', c.localidad, `cliente desde ${mes(c.created_at).split(' ')[0].slice(0, 3)} ${c.created_at.slice(0, 4)}`].filter(Boolean).join(' · ')}
-            {' '}{c.resumen.deuda > 0 && <Etiqueta tono="mala" punto>Pago pendiente {pesos(c.resumen.deuda)}</Etiqueta>}
-            {' '}<Etiqueta tono={PORTAL[portal][0]}>{portal === 'activo' ? 'Portal vinculado' : portal === 'invitado' ? 'Invitación enviada' : 'Sin acceso al portal'}</Etiqueta>
+            {[c.localidad, `cliente desde ${mes(c.created_at).split(' ')[0].slice(0, 3)} ${c.created_at.slice(0, 4)}`].filter(Boolean).join(' · ')}
+            {' '}{c.resumen.deuda > 0 && <Etiqueta tono="mala" punto>Pago pendiente</Etiqueta>}
+            {' '}<Etiqueta tono={PORTAL[portal][0]}>{portal === 'activo' ? 'Cuenta activa' : portal === 'invitado' ? 'Invitación enviada' : 'Sin cuenta'}</Etiqueta>
             {' '}{!c.activo && <Etiqueta tono="mala">Inactivo</Etiqueta>}
           </p>
         </div>
         <div className="acciones">
-          <button type="button" className="boton secundario chico" onClick={() => setGestion(true)}>Registrar gestión</button>
-          <Link to={`/admin/pagos/registrar?cliente=${c.id}`} className="boton primario chico">Registrar pago</Link>
+          <button type="button" className="boton suave chico" onClick={() => setEditando(true)}>Editar datos</button>
+          <button type="button" className="boton primario chico" onClick={() => setGestion(true)}>Anotar contacto</button>
         </div>
       </div>
       <Aviso tipo="ok">{aviso}</Aviso>
 
       <Pestanas<Pestana> valor={pestana} cambiar={setPestana} opciones={[
-        ['datos', 'Datos'], ['instalaciones', 'Instalaciones', c.instalaciones.length], ['suscripciones', 'Suscripciones', c.suscripciones.length],
-        ['pagos', 'Pagos'], ['solicitudes', 'Solicitudes', c.solicitudes.length], ['gestiones', 'Gestiones', c.gestiones.length], ['acceso', 'Acceso al portal'],
+        ['resumen', 'Resumen'], ['instalaciones', 'Instalaciones', c.instalaciones.length], ['pagos', 'Pagos'],
+        ['solicitudes', 'Solicitudes', c.solicitudes.length], ['gestiones', 'Contactos', c.gestiones.length],
       ]} />
 
-      {pestana === 'datos' && (
-        <div className="tarjeta">
-          <dl className="datos columnas">
-            <div><dt>Nombre</dt><dd>{c.nombre}</dd></div>
-            <div><dt>RUT</dt><dd>{c.rut || '—'}</dd></div>
-            <div><dt>Correo</dt><dd>{c.email || '—'}</dd></div>
-            <div><dt>Teléfono</dt><dd>{c.telefono ? <a href={`tel:${c.telefono}`}>{c.telefono}</a> : '—'}</dd></div>
-            <div><dt>Dirección</dt><dd>{c.direccion || '—'}</dd></div>
-            <div><dt>Localidad</dt><dd>{c.localidad || '—'}</dd></div>
-            <div><dt>Tipo</dt><dd>{c.es_empresa ? 'Empresa' : 'Persona'}</dd></div>
-            <div><dt>¿Cómo llegó?</dt><dd>{c.origen || '—'}</dd></div>
-            {c.notas && <div className="completo"><dt>Notas</dt><dd>{c.notas}</dd></div>}
-          </dl>
-          <div className="acciones arriba">
-            <button type="button" className="boton secundario mini" onClick={() => setEditando(true)}>Editar</button>
-            <button type="button" className={`boton mini ${c.activo ? 'peligro' : 'suave'}`} onClick={cambiarActivo}>{c.activo ? 'Desactivar cliente' : 'Reactivar cliente'}</button>
-          </div>
+      {pestana === 'resumen' && (
+        <div className="resumen-instalacion">
+          <section className="tarjeta">
+            <h2>Datos de contacto</h2>
+            <div className="mosaico-datos">
+              <div><span>Teléfono</span><strong>{c.telefono ? <a href={`tel:${c.telefono}`}>{c.telefono}</a> : '—'}</strong></div>
+              <div><span>RUT</span><strong>{c.rut || '—'}</strong></div>
+              <div className="ancho"><span>Correo</span><strong>{c.email || '—'}</strong></div>
+              <div className="ancho"><span>Dirección</span><strong>{c.direccion ? (c.localidad && !c.direccion.includes(c.localidad) ? `${c.direccion}, ${c.localidad}` : c.direccion) : c.localidad || '—'}</strong></div>
+              <div><span>Tipo</span><strong>{c.es_empresa ? 'Empresa' : 'Persona'}</strong></div>
+              <div><span>¿Cómo llegó?</span><strong>{c.origen || '—'}</strong></div>
+            </div>
+            {c.notas && <p className="nota-instalacion"><strong>Notas:</strong> {c.notas}</p>}
+          </section>
+
+          <section className="tarjeta">
+            <h2>Cuenta en el portal</h2>
+            <div className="suscripcion-resumen"><Etiqueta tono={PORTAL[portal][0]} punto>{portal === 'activo' ? 'Activa' : portal === 'invitado' ? 'Invitación enviada' : 'Sin cuenta'}</Etiqueta></div>
+            <dl className="datos lineas">
+              <div><dt>Correo de acceso</dt><dd>{c.correo_acceso || c.email || '—'}</dd></div>
+              {c.invitado_en && portal !== 'activo' && <div><dt>Invitación enviada</dt><dd>{fechaCorta(c.invitado_en)}</dd></div>}
+              <div><dt>Último ingreso</dt><dd>{c.ultimo_ingreso ? fechaCorta(c.ultimo_ingreso) : 'Nunca'}</dd></div>
+            </dl>
+            {portal !== 'activo' && (
+              <>
+                <p className="suave">{!c.email ? 'Agrega su correo (Editar datos) para enviarle la invitación.'
+                  : portal === 'invitado' ? 'Aún no activa su cuenta. Puedes reenviarle la invitación.'
+                  : 'Envíale la invitación: le llega un correo para crear su contraseña.'}</p>
+                <div className="acciones">
+                  <button type="button" className="boton primario chico" disabled={!c.email || invitando} onClick={invitar}>
+                    <Send size={16} /> {invitando ? 'Enviando…' : portal === 'invitado' ? 'Reenviar invitación' : 'Enviar invitación'}
+                  </button>
+                  {c.email && (
+                    <button type="button" className="boton suave chico" onClick={() => navigator.clipboard.writeText(mensajeWhatsapp).then(() => setAviso('Mensaje copiado para WhatsApp'))}>
+                      <Copy size={16} /> Copiar aviso para WhatsApp
+                    </button>
+                  )}
+                </div>
+              </>
+            )}
+          </section>
+          <button type="button" className="enlace-peligro" onClick={cambiarActivo}>{c.activo ? 'Desactivar cliente' : 'Reactivar cliente'}</button>
         </div>
       )}
 
@@ -117,12 +142,11 @@ export default function ClienteFicha() {
             <Link to={`/admin/instalaciones/nueva?cliente=${c.id}`} className="boton primario mini"><Plus size={16} /> Agregar instalación</Link></div>
           {c.instalaciones.length === 0 ? <Vacio>Este cliente aún no tiene instalaciones.</Vacio> : (
             <div className="tabla"><table>
-              <thead><tr><th>Código</th><th>Instalación</th><th>Localidad</th><th className="num">Potencia</th><th>Suscripción</th><th /></tr></thead>
+              <thead><tr><th>Instalación</th><th>Localidad</th><th className="num">Potencia</th><th>Suscripción</th><th /></tr></thead>
               <tbody>{c.instalaciones.map((i) => {
                 const [tono, texto] = situacionInstalacion(i);
                 return (
                   <tr key={i.id} className="clic" onClick={() => navegar(`/admin/instalaciones/${i.id}`)}>
-                    <td>{i.codigo}</td>
                     <td><strong>{i.nombre || i.direccion}</strong><small>{i.tipo_sistema ? SISTEMAS[i.tipo_sistema] : i.direccion}</small></td>
                     <td>{i.localidad || '—'}</td>
                     <td className="num">{i.potencia_kwp ? `${Number(i.potencia_kwp).toLocaleString('es-CL')} kWp` : '—'}</td>
@@ -136,33 +160,16 @@ export default function ClienteFicha() {
         </>
       )}
 
-      {pestana === 'suscripciones' && (c.suscripciones.length === 0 ? <Vacio>Sin suscripciones.</Vacio> : (
-        <div className="tabla"><table>
-          <thead><tr><th>Código</th><th>Instalación</th><th>Plan</th><th>Vigencia</th><th>Estado</th><th /></tr></thead>
-          <tbody>{c.suscripciones.map((s) => {
-            const [tono, texto] = estadoSuscripcion(s);
-            return (
-              <tr key={s.id} className="clic" onClick={() => navegar(`/admin/suscripciones/${s.id}`)}>
-                <td>{s.codigo}</td>
-                <td>{s.instalacion_nombre || s.instalacion_codigo}</td>
-                <td>{s.tipo_nombre}</td>
-                <td>{fechaCorta(s.fecha_inicio)} → {fechaCorta(s.fecha_cierre ?? s.fecha_termino)}</td>
-                <td><Etiqueta tono={tono}>{texto}</Etiqueta></td>
-                <td><span className="boton secundario mini">Ver</span></td>
-              </tr>
-            );
-          })}</tbody>
-        </table></div>
-      ))}
-
       {pestana === 'pagos' && (
         <>
+          <div className="encabezado"><span className="suave">Los pagos con tarjeta o por el portal se registran solos.</span>
+            <Link to={`/admin/pagos/registrar?cliente=${c.id}`} className="boton secundario mini"><Plus size={16} /> Registrar pago en efectivo</Link></div>
           <div className="kpis tres">
             <div className="kpi"><span className="kpi-titulo">Total pagado</span><strong className="kpi-valor">{pesos(c.resumen.total_pagado)}</strong></div>
             <div className="kpi"><span className="kpi-titulo">Último pago</span>
               <strong className="kpi-valor">{c.resumen.ultimo_pago ? fechaCorta(c.resumen.ultimo_pago.fecha_pago ?? c.resumen.ultimo_pago.created_at).replace(/ \d{4}$/, '') : '—'}</strong>
               {c.resumen.ultimo_pago && <span className="suave">{pesos(c.resumen.ultimo_pago.monto)} · {ESTADO_PAGO[c.resumen.ultimo_pago.estado][1].toLowerCase()}</span>}</div>
-            <div className={`kpi ${c.resumen.deuda > 0 ? 'mala' : ''}`}><span className="kpi-titulo">Por pagar</span><strong className="kpi-valor">{pesos(c.resumen.deuda)}</strong></div>
+            <div className={`kpi ${c.resumen.deuda > 0 ? 'mala' : ''}`}><span className="kpi-titulo">Pago pendiente</span><strong className="kpi-valor">{c.resumen.deuda > 0 ? pesos(c.resumen.deuda) : 'No'}</strong>{c.resumen.deuda > 0 && <span className="suave">Se cobra solo; si no paga en el plazo, la suscripción se cierra</span>}</div>
           </div>
           {c.pagos.length === 0 ? <Vacio>Sin pagos registrados.</Vacio> : (
             <div className="tabla"><table>
@@ -200,8 +207,8 @@ export default function ClienteFicha() {
       {pestana === 'gestiones' && (
         <>
           <div className="encabezado"><span className="suave">Llamadas, mensajes y visitas</span>
-            <button type="button" className="boton primario mini" onClick={() => setGestion(true)}><Plus size={16} /> Registrar gestión</button></div>
-          {c.gestiones.length === 0 ? <Vacio>Aún no hay gestiones con este cliente.</Vacio> : (
+            <button type="button" className="boton primario mini" onClick={() => setGestion(true)}><Plus size={16} /> Anotar contacto</button></div>
+          {c.gestiones.length === 0 ? <Vacio>Aún no hay contactos anotados con este cliente.</Vacio> : (
             <div className="tabla"><table>
               <thead><tr><th>Fecha</th><th>Tipo</th><th>Motivo</th><th>Resultado</th><th>Por</th></tr></thead>
               <tbody>{c.gestiones.map((g) => (
@@ -214,36 +221,6 @@ export default function ClienteFicha() {
         </>
       )}
 
-      {pestana === 'acceso' && (
-        <div className="tarjeta angosta">
-          <header><h2>Acceso al portal</h2><Etiqueta tono={PORTAL[portal][0]} punto>{PORTAL[portal][1]}</Etiqueta></header>
-          <dl className="datos">
-            <div><dt>Correo de acceso</dt><dd>{c.correo_acceso || c.email || '—'}</dd></div>
-            {c.invitado_en && <div><dt>Invitación enviada</dt><dd>{fechaHora(c.invitado_en)}</dd></div>}
-            <div><dt>Último ingreso</dt><dd>{c.ultimo_ingreso ? fechaHora(c.ultimo_ingreso) : 'Nunca'}</dd></div>
-          </dl>
-          {portal !== 'activo' && (
-            <>
-              <p className="suave nota">
-                {!c.email ? 'Agrega el correo del cliente en Datos para enviarle la invitación.'
-                  : portal === 'invitado' ? 'El cliente aún no activa su cuenta. Puedes reenviarle la invitación: el enlace anterior deja de servir.'
-                  : 'Envía la invitación: al cliente le llega un correo para activar su cuenta y crear su contraseña.'}
-              </p>
-              <div className="acciones">
-                <button type="button" className="boton primario chico" disabled={!c.email || invitando} onClick={invitar}>
-                  <Send size={16} /> {invitando ? 'Enviando…' : portal === 'invitado' ? 'Reenviar invitación' : 'Enviar invitación'}
-                </button>
-                {c.email && (
-                  <button type="button" className="boton secundario chico" onClick={() => navigator.clipboard.writeText(mensajeWhatsapp).then(() => setAviso('Mensaje copiado para WhatsApp'))}>
-                    <Copy size={16} /> Copiar aviso para WhatsApp
-                  </button>
-                )}
-              </div>
-            </>
-          )}
-        </div>
-      )}
-
       {editando && (
         <ClienteFormulario id={c.id} cerrar={() => setEditando(false)} listo={() => { setEditando(false); setAviso('Cambios guardados'); recargar(); }}
           inicial={{
@@ -252,7 +229,7 @@ export default function ClienteFicha() {
           }} />
       )}
       {gestion && <RegistrarGestion clienteId={c.id} clienteNombre={c.nombre} cerrar={() => setGestion(false)}
-        listo={() => { setGestion(false); setPestana('gestiones'); setAviso('Gestión registrada'); recargar(); }} />}
+        listo={() => { setGestion(false); setPestana('gestiones'); setAviso('Contacto anotado'); recargar(); }} />}
     </>
   );
 }

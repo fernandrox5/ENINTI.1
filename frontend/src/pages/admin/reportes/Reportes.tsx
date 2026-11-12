@@ -1,13 +1,13 @@
 // T-35 · Reportes: tablero del negocio con conclusiones en frases simples y gráficos
 // (pagado vs. esperado, planes nuevos y cancelados, medios de pago, cobros con tarjeta,
-// opinión de los clientes, mantenciones, técnicos, instalaciones sin plan y motivos de cancelación).
+// opinión de los clientes, mantenciones, técnicos, instalaciones sin suscripción y motivos de cancelación).
 import { useState, type MouseEvent, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { BarChart3, CreditCard, Lightbulb, Tag, Wrench, Zap } from 'lucide-react';
 import { useDatos } from '../../../useDatos';
 import { Aviso, Cargando, Titulo, Vacio } from '../../../componentes';
 import { MEDIOS, fechaCorta, iniciales, pesos } from '../../../formato';
-import { whatsapp } from '../seguimiento/Seguimiento';
+import { whatsapp } from '../../../contacto';
 
 interface Mes { mes: string; esperado: number; pagado: number; altas: number; bajas: number; a_tiempo: number; tarde: number }
 interface Datos {
@@ -58,7 +58,7 @@ export default function Reportes() {
           <div className="rep-g2">
             <Caja titulo="Pagado vs. esperado" sub="Lo que se pagó de cada mes y lo que debía pagarse"
               pie={<Datos2 d={d} />}><GrafIngresos meses={d.meses} mostrar={mostrar} ocultar={ocultar} /></Caja>
-            <Caja titulo="Planes nuevos y cancelados" sub={`Hoy hay ${d.resumen.activos} ${d.resumen.activos === 1 ? 'plan activo' : 'planes activos'}`}>
+            <Caja titulo="Suscripciones nuevas y canceladas" sub={`Hoy hay ${d.resumen.activos} ${d.resumen.activos === 1 ? 'suscripción activa' : 'suscripciones activas'}`}>
               <GrafAltasBajas meses={d.meses} mostrar={mostrar} ocultar={ocultar} /></Caja>
           </div>
           <div className="rep-g3">
@@ -75,7 +75,7 @@ export default function Reportes() {
             <Caja titulo="Por qué cancelan" sub={d.motivos.length ? `${d.resumen.bajas} ${d.resumen.bajas === 1 ? 'cancelación' : 'cancelaciones'} en el periodo` : 'Sin cancelaciones en el periodo'}>
               {d.motivos.length
                 ? <HBarras filas={d.motivos.map((m) => ({ t: m.motivo, n: m.n }))} color={S2} total={d.motivos.reduce((a, m) => a + m.n, 0)} mostrar={mostrar} ocultar={ocultar} />
-                : <p className="suave">Ningún plan se cerró en este periodo.</p>}
+                : <p className="suave">Ninguna suscripción se cerró en este periodo.</p>}
             </Caja>
           </div>
         </div>
@@ -105,7 +105,7 @@ function Hallazgos({ d }: { d: Datos }) {
       texto: `${n} ${n === 1 ? 'instalación no tiene' : 'instalaciones no tienen'} plan. Si contratan el ${d.plan_base.nombre}, el ingreso mensual pasa de ${pesos(d.resumen.ingreso_mensual)} a ${pesos(d.resumen.ingreso_mensual + extra)}.` });
   }
   const faltante = d.resumen.esperado - d.resumen.pagado;
-  if (faltante > 0) lista.push({ icono: <CreditCard size={18} />, titulo: `Quedaron ${pesos(faltante)} sin pagar`, texto: `Se pagó el ${pct(d.resumen.pagado, d.resumen.esperado)} % de lo esperado en el periodo. Los planes que no pagan se cierran solos al terminar el plazo.` });
+  if (faltante > 0) lista.push({ icono: <CreditCard size={18} />, titulo: `Quedaron ${pesos(faltante)} sin pagar`, texto: `Se pagó el ${pct(d.resumen.pagado, d.resumen.esperado)} % de lo esperado en el periodo. Las suscripciones que no pagan se cierran solas al terminar el plazo.` });
   const t = d.tarjeta, totalT = (t.primer ?? 0) + (t.reintento ?? 0) + (t.fallido ?? 0);
   if (totalT > 0) lista.push({ icono: <CreditCard size={18} />, titulo: 'Cobros con tarjeta', texto: `${t.primer ?? 0} de cada ${totalT} cobros salen al primer intento.` });
   else {
@@ -137,7 +137,7 @@ function Resumen({ d }: { d: Datos }) {
       <div className="kpi rep-kpi"><span className="kpi-titulo">Pagado en el periodo</span><span className="kpi-valor">{pesos(r.pagado)}</span>
         <small className="suave">{pct(r.pagado, r.esperado)} % de lo esperado</small></div>
       <div className="kpi rep-kpi"><span className="kpi-titulo">Clientes que se quedan</span><span className="kpi-valor">{r.retencion === null ? '—' : `${r.retencion} %`}</span>
-        <small className="suave">{r.altas} {r.altas === 1 ? 'plan nuevo' : 'planes nuevos'} · {r.bajas} {r.bajas === 1 ? 'cancelado' : 'cancelados'}</small></div>
+        <small className="suave">{r.altas} {r.altas === 1 ? 'nueva' : 'nuevas'} · {r.bajas} {r.bajas === 1 ? 'cancelada' : 'canceladas'}</small></div>
       <div className="kpi rep-kpi"><span className="kpi-titulo">Nota de los clientes</span><span className="kpi-valor">{r.nota === null ? '—' : r.nota.toLocaleString('es-CL')}</span>
         <small className="suave">{r.opiniones ? `de 5 · ${r.opiniones} ${r.opiniones === 1 ? 'opinión' : 'opiniones'}` : 'Aún sin opiniones'}</small></div>
     </div>
@@ -201,12 +201,12 @@ function GrafAltasBajas({ meses, mostrar, ocultar }: PropsG) {
   const alto = 170, ancho = 420, paso = ancho / meses.length, w = Math.min(paso * 0.45, 34), cero = alto * 0.6, u = (cero - 18) / max;
   return (
     <>
-      <svg viewBox={`-10 -6 ${ancho + 20} ${alto + 28}`} width="100%" role="img" aria-label="Planes nuevos y cancelados por mes">
+      <svg viewBox={`-10 -6 ${ancho + 20} ${alto + 28}`} width="100%" role="img" aria-label="Suscripciones nuevas y canceladas por mes">
         <line x1={0} x2={ancho} y1={cero} y2={cero} stroke="#c9c6bd" />
         {meses.map((m, k) => {
           const x = k * paso + (paso - w) / 2, ha = m.altas * u, hb = m.bajas * u;
           return (
-            <g key={m.mes} className="hov" onMouseMove={(e) => mostrar(e, <><b>{mesLargo(m.mes)}</b><br />Planes nuevos: {m.altas}<br />Cancelados: {m.bajas}</>)} onMouseLeave={ocultar}>
+            <g key={m.mes} className="hov" onMouseMove={(e) => mostrar(e, <><b>{mesLargo(m.mes)}</b><br />Nuevas: {m.altas}<br />Canceladas: {m.bajas}</>)} onMouseLeave={ocultar}>
               <rect x={k * paso} y={0} width={paso} height={alto} fill="transparent" />
               {m.altas > 0 && <><path d={barra(x, cero - 1, w, ha)} fill={S1} /><text x={x + w / 2} y={cero - ha - 6} textAnchor="middle" fontSize="11" fontWeight="600" fill="#1d1d1f">+{m.altas}</text></>}
               {m.bajas > 0 && <><path d={barraAbajo(x, cero + 1, w, hb)} fill={S2} /><text x={x + w / 2} y={cero + hb + 14} textAnchor="middle" fontSize="11" fontWeight="600" fill="#1d1d1f">−{m.bajas}</text></>}
@@ -215,7 +215,7 @@ function GrafAltasBajas({ meses, mostrar, ocultar }: PropsG) {
         })}
         <EjeX meses={meses} alto={alto - 8} paso={paso} />
       </svg>
-      <Leyenda items={[['Planes nuevos', S1], ['Cancelados', S2]]} />
+      <Leyenda items={[['Nuevas', S1], ['Canceladas', S2]]} />
     </>
   );
 }
@@ -325,13 +325,13 @@ function Tecnicos({ d }: { d: Datos }) {
 }
 
 function SinPlan({ d }: { d: Datos }) {
-  const lista = d.sin_plan.slice(0, 6);
+  const lista = d.sin_plan;
   return (
-    <Caja titulo="Instalaciones sin plan" sub={d.sin_plan.length ? `${d.sin_plan.length} · conviene ofrecerles un plan` : 'Todas las instalaciones tienen plan'}
-      pie={d.sin_plan.length > lista.length ? <Link to="/admin/seguimiento" className="enlace">Ver las {d.sin_plan.length} en Seguimiento ›</Link> : null}>
-      {lista.length === 0 ? <p className="suave">No hay instalaciones sin plan.</p> : (
+    <Caja titulo="Instalaciones sin suscripción" sub={d.sin_plan.length ? `${d.sin_plan.length} · conviene ofrecerles una suscripción` : 'Todas las instalaciones tienen suscripción'}
+      >
+      {lista.length === 0 ? <p className="suave">No hay instalaciones sin suscripción.</p> : (
         <ul className="rep-lista">{lista.map((i) => {
-          const wa = whatsapp(i.telefono, `Hola ${i.cliente.split(' ')[0]}, te escribimos de ENINTI. ¿Te gustaría contratar un plan de mantención para ${i.instalacion}?`);
+          const wa = whatsapp(i.telefono, `Hola ${i.cliente.split(' ')[0]}, te escribimos de ENINTI. ¿Te gustaría contratar una suscripción de mantención para ${i.instalacion}?`);
           return (
             <li key={i.instalacion_id}>
               <span className="avatar chico">{iniciales(i.cliente)}</span>

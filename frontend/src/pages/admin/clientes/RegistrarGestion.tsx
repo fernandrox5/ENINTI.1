@@ -25,7 +25,7 @@ export default function RegistrarGestion({ clienteId, clienteNombre, suscripcion
   };
 
   return (
-    <Modal titulo={`Registrar gestión · ${clienteNombre}`} cerrar={cerrar}>
+    <Modal titulo={`Anotar contacto · ${clienteNombre}`} cerrar={cerrar}>
       <form className="formulario" onSubmit={enviar} noValidate>
         <Selector etiqueta="Tipo" value={f.tipo} onChange={(e) => setF({ ...f, tipo: e.target.value })}>
           {Object.entries(GESTIONES).map(([v, t]) => <option key={v} value={v}>{t}</option>)}
@@ -35,7 +35,7 @@ export default function RegistrarGestion({ clienteId, clienteNombre, suscripcion
         <Aviso>{error}</Aviso>
         <div className="botones">
           <button type="button" className="boton secundario chico" onClick={cerrar}>Cancelar</button>
-          <button className="boton primario chico" disabled={enviando}>{enviando ? 'Guardando…' : 'Registrar gestión'}</button>
+          <button className="boton primario chico" disabled={enviando}>{enviando ? 'Guardando…' : 'Anotar contacto'}</button>
         </div>
       </form>
     </Modal>

@@ -11,7 +11,7 @@ import { cobrosDelDia } from '../../services/cobros.js';
 const router = Router();
 
 // Última gestión de cada cliente (tipo y fecha)
-async function ultimasGestiones(ids) {
+export async function ultimasGestiones(ids) {
   if (!ids.length) return {};
   const { rows } = await pool.query(
     `SELECT DISTINCT ON (cliente_id) cliente_id, tipo, fecha, motivo FROM gestiones
@@ -19,7 +19,7 @@ async function ultimasGestiones(ids) {
   return Object.fromEntries(rows.map((g) => [g.cliente_id, g]));
 }
 
-async function pagosPendientes() {
+export async function pagosPendientes() {
   // Con tarjeta, el día del cobro todavía no está pendiente: se cobra sola
   const lista = (await cobrosDelDia()).filter((r) => !(r.tarjeta_id && r.dias_pendiente === 0));
   const { rows: ultimos } = await pool.query(
@@ -34,7 +34,7 @@ async function pagosPendientes() {
   }));
 }
 
-async function porVencer() {
+export async function porVencer() {
   const { rows } = await pool.query(
     `SELECT v.suscripcion_id, v.codigo AS suscripcion, v.tipo_nombre AS plan, v.fecha_termino, v.dias_restantes, v.cliente_id, v.cliente_nombre AS cliente,
             v.cliente_telefono AS telefono, v.instalacion_id, coalesce(v.instalacion_nombre, v.instalacion_codigo) AS instalacion,
@@ -44,7 +44,7 @@ async function porVencer() {
   return rows;
 }
 
-async function aRecuperar() {
+export async function aRecuperar() {
   const { rows } = await pool.query(
     `SELECT instalacion_id, instalacion_codigo, coalesce(instalacion_nombre, instalacion_codigo) AS instalacion, localidad, cliente_id,
             cliente_nombre AS cliente, cliente_telefono AS telefono, situacion, cantidad_suscripciones, ultima_fecha_fin, ultimo_motivo_cierre,

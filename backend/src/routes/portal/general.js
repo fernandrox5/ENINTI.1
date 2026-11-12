@@ -60,15 +60,15 @@ async function avisos(clienteId, lista) {
       // Con tarjeta, el día del cobro todavía no hay nada que avisar: se cobra sola
       if (i.pago_pendiente && !(conTarjeta && i.pago_pendiente.dias === 0)) {
         const q = i.pago_pendiente.quedan_dias;
-        out.push({ tipo: 'deuda', tono: 'mala', texto: `El pago de ${nombre} está pendiente: ${q === 0 ? 'hoy es el último día' : `tienes ${q} ${q === 1 ? 'día' : 'días'}`} para pagar o tu plan se cancelará`, accion: 'Pagar o actualizar mi tarjeta', a: '/portal/pagos' });
+        out.push({ tipo: 'deuda', tono: 'mala', texto: `El pago de ${nombre} está pendiente: ${q === 0 ? 'hoy es el último día' : `tienes ${q} ${q === 1 ? 'día' : 'días'}`} para pagar o tu suscripción se cancelará`, accion: 'Pagar o actualizar mi tarjeta', a: '/portal/pagos' });
       }
-      if (i.dias_restantes <= 30) out.push({ tipo: 'vence', tono: 'alerta', texto: i.dias_restantes <= 0 ? `Tu plan de ${nombre} vence hoy` : `Tu plan de ${nombre} vence en ${i.dias_restantes} ${i.dias_restantes === 1 ? 'día' : 'días'}`, accion: 'Ver mi suscripción', a: `/portal/instalaciones/${i.id}?pestana=suscripcion` });
+      if (i.dias_restantes <= 30) out.push({ tipo: 'vence', tono: 'alerta', texto: i.dias_restantes <= 0 ? `Tu suscripción de ${nombre} vence hoy` : `Tu suscripción de ${nombre} vence en ${i.dias_restantes} ${i.dias_restantes === 1 ? 'día' : 'días'}`, accion: 'Ver mi suscripción', a: `/portal/instalaciones/${i.id}?pestana=suscripcion` });
       if (i.pagos_por_validar > 0) out.push({ tipo: 'revision', tono: 'neutra', texto: `Tienes un pago de ${nombre} en revisión`, accion: 'Ver historial de pagos', a: '/portal/pagos' });
     } else {
       const u = i.ultima_suscripcion;
       out.push(u
-        ? { tipo: 'vencida', tono: 'alerta', texto: `El plan de ${nombre} ${u.estado === 'cerrada' ? 'terminó' : 'venció'} el ${new Date(`${u.fecha_termino}T12:00:00`).toLocaleDateString('es-CL', { day: 'numeric', month: 'long' })}`, accion: 'Quiero renovar', a: `/portal/planes?instalacion=${i.id}` }
-        : { tipo: 'sin_plan', tono: 'info', texto: `${nombre} no tiene un plan de mantención`, accion: 'Conoce los planes', a: `/portal/planes?instalacion=${i.id}` });
+        ? { tipo: 'vencida', tono: 'alerta', texto: `La suscripción de ${nombre} ${u.estado === 'cerrada' ? 'terminó' : 'venció'} el ${new Date(`${u.fecha_termino}T12:00:00`).toLocaleDateString('es-CL', { day: 'numeric', month: 'long' })}`, accion: 'Quiero renovar', a: `/portal/planes?instalacion=${i.id}` }
+        : { tipo: 'sin_plan', tono: 'info', texto: `${nombre} no tiene suscripción de mantención`, accion: 'Conoce los planes', a: `/portal/planes?instalacion=${i.id}` });
     }
     if (i.proxima) {
       const dias = Math.round((Date.parse(i.proxima) - Date.parse(new Date().toISOString().slice(0, 10))) / 864e5);

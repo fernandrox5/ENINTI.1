@@ -61,7 +61,7 @@ function Evento({ m, completo }: { m: FilaMantencion; completo?: boolean }) {
 export default function Mantenciones() {
   const navegar = useNavigate();
   const [params, setParams] = useSearchParams();
-  const [vista, setVista] = useState<Vista>('mes');
+  const [vista, setVista] = useState<Vista>(() => (window.innerWidth < 700 ? 'lista' : 'mes'));
   const [ancla, setAncla] = useState(hoyISO());
   const [tecnico, setTecnico] = useState('');
   const [tipo, setTipo] = useState('');
@@ -95,7 +95,7 @@ export default function Mantenciones() {
         <button type="button" className="icono-boton chico" aria-label="Anterior" onClick={() => mover(-1)}><ChevronLeft size={18} /></button>
         <button type="button" className="boton secundario mini" onClick={() => setAncla(hoyISO())}>Hoy</button>
         <button type="button" className="icono-boton chico" aria-label="Siguiente" onClick={() => mover(1)}><ChevronRight size={18} /></button>
-        <span className="leyenda"><i className="preventiva" />Preventiva <i className="correctiva" />Correctiva <i className="emergencia" />Emergencia <i className="realizada" />Realizada</span>
+        <span className="leyenda"><i className="preventiva" />Preventiva <i className="correctiva" />Reparación <i className="emergencia" />Emergencia <i className="realizada" />Realizada</span>
         <select value={tecnico} onChange={(e) => setTecnico(e.target.value)} aria-label="Técnico">
           <option value="">Todos los técnicos</option><option value="sin">Sin técnico</option>
           {op?.tecnicos.map((t) => <option key={t.id} value={t.id}>{t.nombre}</option>)}
@@ -162,7 +162,7 @@ export default function Mantenciones() {
 
       {nueva && op && (
         <NuevaMantencion op={op} instalacion={params.get('instalacion')} fecha={params.get('fecha')} solicitud={params.get('solicitud')} tipoInicial={params.get('tipo')}
-          cerrar={cerrarNueva} listo={(id, enPlan) => navegar(`/admin/mantenciones/${id}`, { state: { aviso: enPlan ? 'Mantención agendada dentro del plan de la suscripción' : 'Mantención agendada como servicio aparte' } })} />
+          cerrar={cerrarNueva} listo={(id, enPlan) => navegar(`/admin/mantenciones/${id}`, { state: { aviso: enPlan ? 'Mantención agendada dentro del plan' : 'Mantención agendada como servicio aparte' } })} />
       )}
     </>
   );
