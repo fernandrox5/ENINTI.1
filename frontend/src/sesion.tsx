@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useState, type ReactNode } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { api, leerSesion, guardarSesion, type Rol, type Sesion, type Usuario } from './api';
 
 interface ContextoSesion {
@@ -39,9 +39,17 @@ export function ConSesion({ children }: { children: ReactNode }) {
 }
 
 // Ruta solo para un rol; los demás vuelven a su propia área
+// Si llega sin sesión (por ejemplo desde el botón de un correo), se recuerda la página pedida para
+// volver a ella después de ingresar.
+export const DESTINO = 'syntia-destino';
 export function SoloRol({ rol, children }: { rol: Rol; children: ReactNode }) {
   const { usuario } = useSesion();
-  if (!usuario) return <Navigate to="/login" replace />;
+  const { pathname, search } = useLocation();
+  if (!usuario) {
+    try { sessionStorage.setItem(DESTINO, pathname + search); } catch { /* sin almacenamiento: entra al inicio */ }
+    return <Navigate to="/login" replace />;
+  }
   if (usuario.rol !== rol) return <Navigate to="/inicio" replace />;
+  try { sessionStorage.removeItem(DESTINO); } catch { /* nada que limpiar */ }
   return <>{children}</>;
 }

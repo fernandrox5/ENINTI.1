@@ -17,7 +17,10 @@ export function urlApp(req) {
   if (process.env.APP_URL) return process.env.APP_URL.replace(/\/$/, '');
   const proto = req.get('x-forwarded-proto') || req.protocol;
   const candidatos = [req.get('origin'), `${proto}://${req.get('x-forwarded-host') || req.get('host')}`];
-  return candidatos.find((o) => o && PERMITIDOS.some((r) => r.test(o))) ?? PRODUCCION;
+  const elegido = candidatos.find((o) => o && PERMITIDOS.some((r) => r.test(o))) ?? PRODUCCION;
+  // Un enlace a localhost solo abre en este computador: en el correo del cliente va el sitio publicado.
+  // (Para probar un enlace en local, define APP_URL en backend/.env.)
+  return elegido.startsWith('http://localhost') ? PRODUCCION : elegido;
 }
 
 export const urlPermitida = (o) => Boolean(o) && PERMITIDOS.some((r) => r.test(o));

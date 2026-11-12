@@ -156,6 +156,7 @@ export const PLANTILLAS = {
   },
 };
 const ROLES = { cliente: 'Cliente', admin: 'Administrador', tecnico: 'Técnico' };
+const AREA = { cliente: '/portal', admin: '/admin', tecnico: '/tecnico' };
 
 // ---------- Datos de cada evento ----------
 async function emailAdmin() {
@@ -286,8 +287,10 @@ export function ejemplos(req) {
     for (const rol of ['cliente', 'admin', 'tecnico']) {
       if (!p[rol]) continue;
       const c = p[rol]({ ...EJEMPLO, tipo: evento === 'solicitud_nueva' ? 'emergencia' : EJEMPLO.tipo }, u);
+      // Es una muestra con datos inventados: el botón lleva al inicio del panel de quien lo recibe
+      if (c.boton) c.boton = { ...c.boton, url: `${u}${AREA[rol]}` };
       out.push({ evento, rol, para: ROLES[rol], cuando: p.cuando, asunto: c.asunto, correo: c,
-        html: plantilla({ titulo: c.titulo, parrafos: c.parrafos, boton: c.boton }).replace('cid:syntia-logo', '/syntia-logo.png') });
+        html: plantilla({ titulo: c.titulo, parrafos: c.parrafos, boton: c.boton }) });
     }
   }
   return out;

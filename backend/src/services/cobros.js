@@ -24,8 +24,8 @@ export async function plazoPago(db = pool) {
 // Flow solo puede avisar a una URL pública: en local se usa la de desarrollo (misma base de datos)
 export function basePublica(req) {
   if (process.env.FLOW_URL_PUBLICA) return process.env.FLOW_URL_PUBLICA.replace(/\/$/, '');
-  const base = req ? urlApp(req) : process.env.VERCEL_ENV === 'production' ? PRODUCCION : DESARROLLO;
-  return base.startsWith('http://localhost') ? DESARROLLO : base;
+  if (req && /^http:\/\/localhost/.test(req.get('origin') || '')) return DESARROLLO;
+  return req ? urlApp(req) : process.env.VERCEL_ENV === 'production' ? PRODUCCION : DESARROLLO;
 }
 const urlConfirmacion = (req) => `${basePublica(req)}/api/flow/confirmacion`;
 
