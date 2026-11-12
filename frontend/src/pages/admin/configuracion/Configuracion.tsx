@@ -2,7 +2,7 @@
 // (con acceso a su panel), condiciones del servicio y correos enviados.
 import { useEffect, useState, type FormEvent } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { FileText, Plus, Send } from 'lucide-react';
+import { FileText, Plus, Send, Settings } from 'lucide-react';
 import { api } from '../../../api';
 import { useDatos } from '../../../useDatos';
 import { AreaTexto, Aviso, Campo, Cargando, Etiqueta, Modal, Pestanas, Selector, Titulo, Vacio } from '../../../componentes';
@@ -15,7 +15,7 @@ export default function Configuracion() {
   const vista = (params.get('vista') as Vista) || 'general';
   return (
     <>
-      <Titulo fuerte="Configuración" />
+      <Titulo icono={Settings} fuerte="Configuración" />
       <Pestanas<Vista> valor={vista} cambiar={(v) => setParams(v === 'general' ? {} : { vista: v }, { replace: true })} opciones={[
         ['general', 'General'], ['planes', 'Planes'], ['tecnicos', 'Técnicos'], ['condiciones', 'Condiciones del servicio'], ['correos', 'Correos'],
       ]} />

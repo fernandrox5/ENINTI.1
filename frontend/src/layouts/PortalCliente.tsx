@@ -23,7 +23,7 @@ export default function PortalCliente() {
         <nav>
           {MENU.map(({ a, texto, icono: Icono, fin }) => (
             <NavLink key={a} to={a} end={fin} className={({ isActive }) => (isActive ? 'activo' : '')}>
-              <Icono size={21} strokeWidth={1.8} /><span>{texto}</span>
+              <span className="menu-icono"><Icono size={19} strokeWidth={1.9} /></span><span>{texto}</span>
             </NavLink>
           ))}
           <button type="button" className="portal-salir" onClick={salir}><LogOut size={20} /> Cerrar sesión</button>

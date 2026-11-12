@@ -10,6 +10,8 @@ import solicitudes from './solicitudes.js';
 import seguimiento from './seguimiento.js';
 import inicio from './inicio.js';
 import configuracion from './configuracion.js';
+import reportes from './reportes.js';
+import notificaciones from './notificaciones.js';
 
 const router = Router();
 router.use(general);
@@ -22,5 +24,7 @@ router.use('/solicitudes', solicitudes);
 router.use('/seguimiento', seguimiento);
 router.use('/inicio', inicio);
 router.use('/configuracion', configuracion);
+router.use('/reportes', reportes);
+router.use('/notificaciones', notificaciones);
 
 export default router;

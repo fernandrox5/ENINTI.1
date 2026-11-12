@@ -2,7 +2,7 @@
 // calificación con estrellas (una sola vez) y "Pedir cotización" si se recomienda una inversión.
 import { useState, type FormEvent } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { AlertTriangle, Check, ChevronRight, FileText, Star } from 'lucide-react';
+import { AlertTriangle, Check, ChevronRight, FileText, Star, Wrench } from 'lucide-react';
 import { api } from '../../api';
 import { useDatos } from '../../useDatos';
 import { AreaTexto, Aviso, Cargando, Etiqueta, Titulo, Vacio, Volver } from '../../componentes';
@@ -41,7 +41,7 @@ export function MantencionesPortal() {
   const lista = datos ? datos[vista] : [];
   return (
     <div className="pagina-portal angosta">
-      <Titulo fuerte="Mantenciones" />
+      <Titulo icono={Wrench} fuerte="Mantenciones" />
       <div className="segmentos ancho">
         <button type="button" className={vista === 'proximas' ? 'activo' : ''} onClick={() => setParams({}, { replace: true })}>Próximas</button>
         <button type="button" className={vista === 'realizadas' ? 'activo' : ''} onClick={() => setParams({ vista: 'realizadas' }, { replace: true })}>Realizadas</button>

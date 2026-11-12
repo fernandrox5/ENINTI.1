@@ -27,8 +27,8 @@ import { SolicitudesPortal, SolicitudPortal } from './pages/portal/Solicitudes';
 import Seguimiento from './pages/admin/seguimiento/Seguimiento';
 import InicioAdmin from './pages/admin/Inicio';
 import Configuracion from './pages/admin/configuracion/Configuracion';
-import EnConstruccion from './pages/EnConstruccion';
 import { PanelTecnico, Visitas, VisitaTecnico } from './pages/tecnico/Tecnico';
+import Reportes from './pages/admin/reportes/Reportes';
 import PanelAdmin from './layouts/PanelAdmin';
 import PortalCliente from './layouts/PortalCliente';
 import Mas from './pages/portal/Mas';
@@ -77,7 +77,7 @@ export default function App() {
             <Route path="mantenciones/:id" element={<MantencionDetalle />} />
             <Route path="solicitudes" element={<Solicitudes />} />
             <Route path="seguimiento" element={<Seguimiento />} />
-            <Route path="reportes/*" element={<EnConstruccion titulo="Reportes" tarea="T-35" />} />
+            <Route path="reportes" element={<Reportes />} />
             <Route path="configuracion" element={<Configuracion />} />
           </Route>
 

@@ -3,7 +3,7 @@
 // historial de gestiones. Cada fila permite escribir por WhatsApp y registrar la gestión.
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Copy, MessageCircle, Search } from 'lucide-react';
+import { CircleCheck, Copy, MessageCircle, Search } from 'lucide-react';
 import { api } from '../../../api';
 import { useDatos } from '../../../useDatos';
 import { Aviso, Cargando, Etiqueta, Pestanas, Titulo, Vacio } from '../../../componentes';
@@ -67,7 +67,7 @@ export default function Seguimiento() {
   return (
     <>
       <div className="encabezado">
-        <Titulo fuerte="Seguimiento" />
+        <Titulo icono={CircleCheck} fuerte="Seguimiento" />
       </div>
       <Pestanas<Vista> valor={vista} cambiar={cambiar} opciones={[
         ['pendientes', 'Pagos pendientes', datos?.pagos_pendientes.length], ['vencer', 'Por vencer', datos?.por_vencer.length],

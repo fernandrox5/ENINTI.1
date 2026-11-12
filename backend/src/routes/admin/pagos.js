@@ -113,11 +113,15 @@ router.get('/registrar/:suscripcion', async (req, res) => {
             (SELECT t.tipo || ' ···· ' || t.ultimos4 FROM tarjetas t WHERE t.cliente_id = v.cliente_id AND t.estado = 'activa') AS tarjeta
      FROM v_suscripciones_estado v WHERE v.suscripcion_id = $1`, [req.params.suscripcion]);
   if (!s) throw new ErrorHttp(404, 'Suscripción no encontrada');
-  const periodos = (await periodosSinPagar(s.id)).slice(0, 12);
+  // Solo el mes que corresponde pagar: no se adelantan meses (se paga mes a mes, como una suscripción)
+  const periodos = (await periodosSinPagar(s.id)).slice(0, 1);
   res.json({ ...s, periodos });
 });
 
 // Registrar pago manual (efectivo, transferencia directa, depósito o tarjeta presencial): queda "pagado"
+// Días antes de la fecha de pago desde los que se puede registrar un pago en efectivo o transferencia
+const DIAS_ANTES = 7;
+
 router.post('/', async (req, res) => {
   const b = req.body;
   const medio = MEDIOS.includes(b.medio_pago) ? b.medio_pago : null;
@@ -129,9 +133,14 @@ router.post('/', async (req, res) => {
   const fecha = b.fecha_pago && /^\d{4}-\d{2}-\d{2}$/.test(b.fecha_pago) ? b.fecha_pago : null;
   const { rows: [s] } = await pool.query('SELECT id, estado FROM suscripciones WHERE id = $1', [Number(b.suscripcion_id) || 0]);
   if (!s) throw new ErrorHttp(400, 'Elige la suscripción');
-  const validos = new Set((await periodosSinPagar(s.id)).map((p) => p.periodo));
-  const malo = periodos.find((p) => !validos.has(p));
-  if (malo) throw new ErrorHttp(409, `El periodo ${malo.slice(0, 7)} ya está pagado o no pertenece a la suscripción`);
+  // Se registra solo el mes que corresponde pagar (sin adelantos)
+  const prox = (await periodosSinPagar(s.id))[0];
+  const siguiente = prox?.periodo;
+  if (!siguiente) throw new ErrorHttp(409, 'Esta suscripción no tiene meses por pagar');
+  if (periodos.length !== 1 || periodos[0] !== siguiente) throw new ErrorHttp(409, 'Solo se puede registrar el mes que corresponde pagar');
+  // Se puede registrar desde 7 días antes de la fecha de pago
+  const { rows: [{ dias }] } = await pool.query('SELECT ($1::date - fn_hoy())::int AS dias', [prox.inicio]);
+  if (dias > DIAS_ANTES) throw new ErrorHttp(409, `Todavía no corresponde: el próximo pago es en ${dias} días`);
   const db = await pool.connect();
   try {
     await db.query('BEGIN');

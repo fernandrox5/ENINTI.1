@@ -3,7 +3,7 @@
 import { Link } from 'react-router-dom';
 import { AlertTriangle, Battery, Calendar, Clock, CreditCard, MessageCircle, Tag, Wrench, Zap } from 'lucide-react';
 import { useDatos } from '../../useDatos';
-import { Aviso, Cargando, Etiqueta, Titulo, Vacio, type Tono } from '../../componentes';
+import { Aviso, Cargando, Etiqueta, Saludo, Vacio, type Tono } from '../../componentes';
 import { SISTEMAS, fechaCorta } from '../../formato';
 import { situacionInstalacion } from '../../estados';
 import { useWhatsapp } from '../../contacto';
@@ -68,7 +68,7 @@ export default function Inicio() {
   const conPlan = d.instalaciones.some((i) => i.suscripcion_id);
   return (
     <div className="pagina-portal">
-      <Titulo fuerte={`Hola, ${primerNombre}.`}  />
+      <Saludo titulo={`Hola, ${primerNombre}`} texto={d.avisos.length ? `Tienes ${d.avisos.length} ${d.avisos.length === 1 ? 'aviso' : 'avisos'}.` : 'Todo está al día.'} />
       <div className="acciones-rapidas">
         {conPlan && <Link to="/portal/pagos" className="boton primario chico"><CreditCard size={18} /> Pagos</Link>}
         <Link to="/portal/solicitudes?nueva=mantencion" className="boton secundario chico"><Wrench size={18} /> Pedir mantención</Link>

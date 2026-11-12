@@ -1,7 +1,7 @@
 // T-27 · Mockups 009 a 017 y 044: instalaciones del cliente y su ficha (resumen, equipos,
 // documentos visibles y suscripción con su historial).
 import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { Check, ChevronRight, FileText, RefreshCw, Tag } from 'lucide-react';
+import { Check, ChevronRight, FileText, LayoutGrid, RefreshCw, Tag } from 'lucide-react';
 import { api } from '../../api';
 import { useDatos } from '../../useDatos';
 import { Aviso, Cargando, Etiqueta, Pestanas, Titulo, Vacio, Volver } from '../../componentes';
@@ -26,7 +26,7 @@ export function Instalaciones() {
   if (cargando && !datos) return <Cargando />;
   return (
     <div className="pagina-portal">
-      <Titulo fuerte="Mis instalaciones" />
+      <Titulo icono={LayoutGrid} fuerte="Mis instalaciones" />
       <Aviso>{error}</Aviso>
       {datos && (datos.length === 0 ? <Vacio>Aún no tienes instalaciones registradas.</Vacio>
         : <div className="grilla-2">{datos.map((i) => <TarjetaInstalacion key={i.id} i={i} />)}</div>)}

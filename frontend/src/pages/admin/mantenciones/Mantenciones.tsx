@@ -2,7 +2,7 @@
 // y tipo, y el formulario para agendar (también se abre con ?nueva=1&instalacion=).
 import { useCallback, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Check, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { CalendarDays, Check, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { api } from '../../../api';
 import { useDatos } from '../../../useDatos';
 import { AreaTexto, Aviso, Campo, Cargando, Etiqueta, Modal, Selector, Titulo, Vacio } from '../../../componentes';
@@ -88,7 +88,7 @@ export default function Mantenciones() {
   return (
     <>
       <div className="encabezado">
-        <Titulo fuerte="Mantenciones." suave={titulo} />
+        <Titulo icono={CalendarDays} fuerte="Mantenciones." suave={titulo} />
         <button type="button" className="boton primario chico" onClick={() => setParams({ nueva: '1' })}><Plus size={18} /> Nueva mantención</button>
       </div>
       <div className="filtros">

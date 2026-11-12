@@ -1,7 +1,7 @@
 // T-27 · Mockups 040 y 041: perfil del cliente (nombre y teléfono) y cambio de contraseña.
 // RUT, correo y dirección son datos del contrato: los cambia ENINTI.
 import { useEffect, useState, type FormEvent } from 'react';
-import { ChevronRight, Lock } from 'lucide-react';
+import { ChevronRight, Lock, User } from 'lucide-react';
 import { api } from '../../api';
 import { useDatos } from '../../useDatos';
 import { Aviso, Campo, CampoContrasena, Cargando, Modal, Titulo, Volver } from '../../componentes';
@@ -31,7 +31,7 @@ export default function Perfil() {
   return (
     <div className="pagina-portal angosta">
       <Volver />
-      <Titulo fuerte="Mi perfil" />
+      <Titulo icono={User} fuerte="Mi perfil" />
       <h2 className="subtitulo">Tus datos</h2>
       <form className="formulario" onSubmit={guardar} noValidate>
         <Campo etiqueta="Nombre" value={f.nombre} onChange={(e) => setF({ ...f, nombre: e.target.value })} />

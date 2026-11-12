@@ -1,7 +1,7 @@
 // T-24 · Mockup 055: listado de instalaciones con filtros por estado de la suscripción
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, Search } from 'lucide-react';
+import { LayoutGrid, Plus, Search } from 'lucide-react';
 import { useDatos } from '../../../useDatos';
 import { Aviso, Cargando, Etiqueta, Titulo, Vacio } from '../../../componentes';
 import { SISTEMAS, fechaCorta } from '../../../formato';
@@ -35,7 +35,7 @@ export default function Instalaciones() {
   return (
     <>
       <div className="encabezado">
-        <Titulo fuerte="Instalaciones." suave={datos ? `${datos.conteo.todas} en total.` : undefined} />
+        <Titulo icono={LayoutGrid} fuerte="Instalaciones." suave={datos ? `${datos.conteo.todas} en total.` : undefined} />
         <Link to="/admin/instalaciones/nueva" className="boton primario chico"><Plus size={18} /> Nueva instalación</Link>
       </div>
       <div className="filtros">

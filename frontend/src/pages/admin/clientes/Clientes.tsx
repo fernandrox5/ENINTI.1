@@ -1,7 +1,7 @@
 // T-22 · Mockup 047: listado de clientes con búsqueda, localidad y estado
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, Users } from 'lucide-react';
 import { useDatos } from '../../../useDatos';
 import { Aviso, Cargando, Etiqueta, Pestanas, Titulo, Vacio, type Tono } from '../../../componentes';
 import { fechaCorta, pesos } from '../../../formato';
@@ -52,7 +52,7 @@ export default function Clientes() {
   return (
     <>
       <div className="encabezado">
-        <Titulo fuerte="Clientes." suave={datos ? `${datos.conteo.todos} en total.` : undefined} />
+        <Titulo icono={Users} fuerte="Clientes." suave={datos ? `${datos.conteo.todos} en total.` : undefined} />
         <button type="button" className="boton primario chico" onClick={() => setNuevo(true)}><Plus size={18} /> Nuevo cliente</button>
       </div>
 

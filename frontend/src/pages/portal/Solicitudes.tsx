@@ -2,7 +2,7 @@
 // agendada, y nueva solicitud (?nueva=mantencion|emergencia|consulta&instalacion=).
 import { useState, type FormEvent } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { Check, ChevronRight, Info, Wrench, Zap } from 'lucide-react';
+import { Check, ChevronRight, Inbox, Info, Wrench, Zap } from 'lucide-react';
 import { api } from '../../api';
 import { useDatos } from '../../useDatos';
 import { AreaTexto, Aviso, Cargando, Etiqueta, Titulo, Vacio, Volver } from '../../componentes';
@@ -32,7 +32,7 @@ export function SolicitudesPortal() {
   }
   return (
     <div className="pagina-portal angosta">
-      <Titulo fuerte="Solicitudes" />
+      <Titulo icono={Inbox} fuerte="Solicitudes" />
       {enviada && (
         <div className="tarjeta enviada">
           <span className="icono-circulo chico"><Check size={28} /></span>

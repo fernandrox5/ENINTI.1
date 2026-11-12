@@ -1,9 +1,9 @@
 // T-36 · Mockup 046: inicio del administrador. Lo que pide atención hoy: indicadores, visitas de
 // hoy, pagos pendientes y solicitudes nuevas. Cada cosa lleva a la pantalla donde se resuelve.
 import { Link } from 'react-router-dom';
-import { AlertTriangle, Calendar, Inbox, Wrench, Zap } from 'lucide-react';
+import { AlertTriangle, Calendar, Check, CalendarDays, CircleCheck, CreditCard, Inbox, RefreshCw, Wrench, Zap } from 'lucide-react';
 import { useDatos } from '../../useDatos';
-import { Aviso, Cargando, Etiqueta, Kpi, Titulo } from '../../componentes';
+import { Aviso, Cargando, Etiqueta, Kpi, Saludo } from '../../componentes';
 import { TIPOS_MANTENCION, pesos } from '../../formato';
 import { TIPO_SOLICITUD } from '../../estados';
 import { whatsapp } from './seguimiento/Seguimiento';
@@ -34,30 +34,26 @@ export default function Inicio() {
 
   return (
     <>
-      <div className="encabezado">
-        <div>
-          <span className="fecha-hoy">{fechaHoy()}</span>
-          <Titulo fuerte={`${saludo()}, ${nombre}.`} />
-        </div>
+      <Saludo fecha={fechaHoy()} titulo={`${saludo()}, ${nombre}`}
+        texto={alertas.length ? `Hay ${alertas.length} ${alertas.length === 1 ? 'cosa' : 'cosas'} por revisar.` : 'Todo al día. No hay nada urgente.'}>
+        {alertas.length > 0 && (
+          <div className="saludo-alertas">
+            {alertas.map((x) => <Link key={x.texto} to={x.a} className={`pildora-alerta ${x.tono}`}><x.icono size={16} />{x.texto}<span>Revisar ›</span></Link>)}
+          </div>
+        )}
         <Link to="/admin/mantenciones" className="boton secundario chico"><Calendar size={18} /> Ver calendario</Link>
-      </div>
-
-      {alertas.length > 0 && (
-        <div className="alertas-inicio">
-          {alertas.map((x) => <Link key={x.texto} to={x.a} className={`aviso-portal ${x.tono}`}><span className="aviso-icono"><x.icono size={20} /></span><span><strong>{x.texto}</strong><small>Revisar ›</small></span></Link>)}
-        </div>
-      )}
+      </Saludo>
 
       <div className="kpis">
-        <Kpi titulo="Planes activos" valor={d.vigentes} enlace={`${pesos(d.ingreso_mensual)} al mes`} a="/admin/suscripciones" />
-        <Kpi titulo="Cobrado este mes" valor={pesos(d.cobrado_mes)} enlace="Ver pagos" a="/admin/pagos" tono="destacada" />
-        <Kpi titulo="Pagos pendientes" valor={d.pagos_pendientes.length} enlace="Ver seguimiento" a="/admin/seguimiento" tono={d.pagos_pendientes.length ? 'mala' : undefined} />
-        <Kpi titulo="Visitas esta semana" valor={d.semana} enlace={`${d.sin_plan} instalaciones sin plan`} a="/admin/mantenciones" />
+        <Kpi icono={RefreshCw} titulo="Planes activos" valor={d.vigentes} enlace={`${pesos(d.ingreso_mensual)} al mes`} a="/admin/suscripciones" />
+        <Kpi icono={CreditCard} titulo="Cobrado este mes" valor={pesos(d.cobrado_mes)} enlace="Ver pagos" a="/admin/pagos" tono="destacada" />
+        <Kpi icono={CircleCheck} titulo="Pagos pendientes" valor={d.pagos_pendientes.length} enlace="Ver seguimiento" a="/admin/seguimiento" tono={d.pagos_pendientes.length ? 'mala' : undefined} />
+        <Kpi icono={CalendarDays} titulo="Visitas esta semana" valor={d.semana} enlace={`${d.sin_plan} instalaciones sin plan`} a="/admin/mantenciones" />
       </div>
 
-      <div className="grilla-3 arriba-alineado">
+      <div className="grilla-3 arriba-alineado inicio-listas">
         <section className="tarjeta">
-          <header className="tarjeta-cabecera"><h2>Visitas de hoy</h2><Link to="/admin/mantenciones">Calendario ›</Link></header>
+          <header className="tarjeta-cabecera"><h2><span className="cabecera-icono"><CalendarDays size={16} /></span>Visitas de hoy</h2><Link to="/admin/mantenciones">Calendario ›</Link></header>
           {d.hoy.length === 0 ? <p className="suave">No hay visitas hoy.</p> : (
             <ul className="lista-simple">{d.hoy.map((m) => (
               <li key={m.id}><Link to={`/admin/mantenciones/${m.id}`} className="fila-enlace">
@@ -69,8 +65,8 @@ export default function Inicio() {
         </section>
 
         <section className="tarjeta">
-          <header className="tarjeta-cabecera"><h2>Pagos pendientes</h2><Link to="/admin/seguimiento">Ver todos ›</Link></header>
-          {d.pagos_pendientes.length === 0 ? <p className="suave">Todos al día.</p> : (
+          <header className="tarjeta-cabecera"><h2><span className="cabecera-icono"><CreditCard size={16} /></span>Pagos pendientes</h2><Link to="/admin/seguimiento">Ver todos ›</Link></header>
+          {d.pagos_pendientes.length === 0 ? <p className="vacio-ok"><Check size={16} /> Todos al día.</p> : (
             <ul className="lista-simple">{d.pagos_pendientes.slice(0, 5).map((p) => {
               const wa = whatsapp(p.telefono, `Hola ${p.cliente.split(' ')[0]}, te escribimos de ENINTI. Tu pago de este mes de ${p.instalacion} está pendiente.`);
               return (
@@ -85,8 +81,8 @@ export default function Inicio() {
         </section>
 
         <section className="tarjeta">
-          <header className="tarjeta-cabecera"><h2>Solicitudes nuevas</h2><Link to="/admin/solicitudes">Ver todas ›</Link></header>
-          {d.solicitudes.length === 0 ? <p className="suave">No hay solicitudes nuevas.</p> : (
+          <header className="tarjeta-cabecera"><h2><span className="cabecera-icono"><Inbox size={16} /></span>Solicitudes nuevas</h2><Link to="/admin/solicitudes">Ver todas ›</Link></header>
+          {d.solicitudes.length === 0 ? <p className="vacio-ok"><Check size={16} /> No hay solicitudes nuevas.</p> : (
             <ul className="lista-simple">{d.solicitudes.map((s) => (
               <li key={s.id}><Link to={`/admin/solicitudes?id=${s.id}`} className="fila-enlace">
                 <span><strong>{s.cliente}</strong><small className="suave">{s.instalacion ?? 'Sin instalación'}</small></span>

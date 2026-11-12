@@ -1,14 +1,15 @@
 // T-20 · Mockup 046: plantilla del panel de administración (menú lateral, buscador y barra superior)
 import { useEffect, useRef, useState } from 'react';
-import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   Home, Users, LayoutGrid, RefreshCw, CreditCard, CalendarDays, Inbox, CircleCheck, BarChart3, Settings,
-  Search, Bell, Plus, Menu, LogOut, X,
+  Search, Menu, LogOut, X, ChevronDown,
 } from 'lucide-react';
 import { api } from '../api';
 import { useSesion } from '../sesion';
 import { useDatos } from '../useDatos';
 import { iniciales } from '../formato';
+import Notificaciones from './Notificaciones';
 
 interface Contadores { pagos_por_validar: number; solicitudes_nuevas: number; emergencias: number }
 
@@ -47,14 +48,13 @@ export default function PanelAdmin() {
             const n = contador ? contadores?.[contador] ?? 0 : 0;
             return (
               <NavLink key={a} to={a} end={fin} className={({ isActive }) => (isActive ? 'activo' : '')}>
-                <Icono size={21} strokeWidth={1.8} />
+                <span className="menu-icono"><Icono size={19} strokeWidth={1.9} /></span>
                 <span>{texto}</span>
                 {n > 0 && <span className={`insignia ${urgente ? 'roja' : ''}`}>{n}</span>}
               </NavLink>
             );
           })}
         </nav>
-        <button type="button" className="panel-salir" onClick={salir}><LogOut size={20} /> Cerrar sesión</button>
       </aside>
       <div className="panel-fondo" onClick={() => setMenuAbierto(false)} />
 
@@ -62,15 +62,8 @@ export default function PanelAdmin() {
         <header className="panel-barra">
           <button type="button" className="icono-boton solo-celular" onClick={() => setMenuAbierto(true)} aria-label="Abrir menú"><Menu size={24} /></button>
           <Buscador />
-          <Link to="/admin/solicitudes" className="icono-boton campana" aria-label="Solicitudes nuevas">
-            <Bell size={21} />
-            {(contadores?.solicitudes_nuevas ?? 0) > 0 && <i className="punto-rojo" />}
-          </Link>
-          <Link to="/admin/instalaciones/nueva" className="boton primario chico solo-escritorio"><Plus size={18} /> Nueva instalación</Link>
-          <div className="panel-usuario">
-            <span className="avatar">{iniciales(usuario?.nombre)}</span>
-            <span className="solo-escritorio"><strong>{usuario?.nombre}</strong><small>Administración</small></span>
-          </div>
+          <Notificaciones />
+          <MenuUsuario nombre={usuario?.nombre} salir={salir} />
         </header>
         <main className="panel-pagina">
           <Outlet />
@@ -135,6 +128,32 @@ function Buscador() {
               <strong>{s.codigo}</strong><small>{s.cliente} · {s.instalacion} · {s.estado}</small>
             </button>
           ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Usuario en la barra superior: al tocarlo se despliega "Cerrar sesión"
+function MenuUsuario({ nombre, salir }: { nombre?: string; salir: () => void }) {
+  const [abierto, setAbierto] = useState(false);
+  const caja = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const fuera = (e: MouseEvent) => { if (!caja.current?.contains(e.target as Node)) setAbierto(false); };
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') setAbierto(false); };
+    document.addEventListener('mousedown', fuera); document.addEventListener('keydown', esc);
+    return () => { document.removeEventListener('mousedown', fuera); document.removeEventListener('keydown', esc); };
+  }, []);
+  return (
+    <div className="menu-usuario" ref={caja}>
+      <button type="button" className="panel-usuario" onClick={() => setAbierto(!abierto)} aria-expanded={abierto} aria-haspopup="menu">
+        <span className="avatar">{iniciales(nombre)}</span>
+        <span className="solo-escritorio"><strong>{nombre}</strong><small>Administración</small></span>
+        <ChevronDown size={18} className={`flecha ${abierto ? 'arriba' : ''}`} />
+      </button>
+      {abierto && (
+        <div className="menu-usuario-panel" role="menu">
+          <button type="button" role="menuitem" className="menu-usuario-salir" onClick={salir}><LogOut size={18} /> Cerrar sesión</button>
         </div>
       )}
     </div>

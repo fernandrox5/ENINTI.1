@@ -3,7 +3,7 @@
 // o en Flow. Desde ahí el cobro es mensual y automático.
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Check, CreditCard, ExternalLink } from 'lucide-react';
+import { Check, CreditCard, ExternalLink, Tag } from 'lucide-react';
 import { api } from '../../api';
 import { useDatos } from '../../useDatos';
 import { Aviso, Cargando, Etiqueta, Modal, Selector, Titulo, Volver } from '../../componentes';
@@ -25,7 +25,7 @@ export default function Planes() {
   return (
     <div className="pagina-portal">
       <Volver />
-      <Titulo fuerte="Planes" />
+      <Titulo icono={Tag} fuerte="Planes" />
       {pedida && !pedida.suscripcion_id && (
         <p className="nota-info"><span>Eligiendo plan para <strong>{pedida.nombre || pedida.codigo}</strong>{pedida.ultima_suscripcion ? ` (antes tenía el ${pedida.ultima_suscripcion.plan})` : ''}.</span></p>
       )}

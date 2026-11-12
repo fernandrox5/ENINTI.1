@@ -13,7 +13,7 @@ interface Suscripcion {
   id: number; codigo: string; estado: string; tipo_nombre: string; monto_pactado: number; frecuencia_pago: string; fecha_termino: string;
   pagado_hasta: string | null; periodos_adeudados: number; monto_adeudado: number; pagos_por_validar: number;
   pendiente: { desde: string; quedan_dias: number } | null;
-  instalacion_nombre: string | null; instalacion_codigo: string; direccion: string; proximo_cobro: string | null; puede_adelantar: number;
+  instalacion_nombre: string | null; instalacion_codigo: string; direccion: string; proximo_cobro: string | null;
 }
 interface Datos {
   cliente: string; email: string | null; tarjeta: { tipo: string | null; ultimos4: string | null; inscrita_at: string } | null;
@@ -64,7 +64,7 @@ export default function Pagos() {
 
   return (
     <div className="pagina-portal">
-      <Titulo fuerte="Pagos" />
+      <Titulo icono={CreditCard} fuerte="Pagos" />
       {resultado && <Aviso tipo={resultado[0]}>{resultado[1]}</Aviso>}
       <Aviso>{falla}</Aviso>
 
@@ -90,31 +90,19 @@ export default function Pagos() {
               {p ? (
                 <button type="button" className="boton primario" disabled={Boolean(ocupado)} onClick={() => irAFlow(`pagar-${s.id}`, '/portal/pagos/pagar', { suscripcion_id: s.id })}>
                   {ocupado === `pagar-${s.id}` ? 'Abriendo Flow…' : `Pagar ${pesos(s.monto_pactado)}`}</button>
-              ) : s.puede_adelantar > 0 && !d.tarjeta ? (
-                <button type="button" className="boton suave" disabled={Boolean(ocupado)} onClick={() => irAFlow(`pagar-${s.id}`, '/portal/pagos/pagar', { suscripcion_id: s.id })}>
-                  {ocupado === `pagar-${s.id}` ? 'Abriendo Flow…' : 'Adelantar el próximo mes'}</button>
               ) : null}
               <button type="button" className="enlace-suave" onClick={() => setCancelar(s)}>Cancelar suscripción</button>
             </section>
           );
         })}
 
-        {(d.suscripciones.length > 0 || d.tarjeta) && <section className="tarjeta pago-tarjeta">
-          <Etiqueta tono={d.tarjeta ? 'buena' : 'neutra'}>{d.tarjeta ? 'Cobro automático activo' : 'Cobro automático'}</Etiqueta>
-          <h2><CreditCard size={20} /> {d.tarjeta ? `${d.tarjeta.tipo ?? 'Tarjeta'} ···· ${d.tarjeta.ultimos4 ?? ''}` : 'Paga con tarjeta'}</h2>
-          <p className="suave">{d.tarjeta
-            ? `Se cobra sola${d.suscripciones[0] && diaCobro(d.suscripciones[0]) ? ` el día ${diaCobro(d.suscripciones[0])} de cada mes` : ' cada mes'}.`
-            : 'Inscribe tu tarjeta y olvídate de pagar cada mes.'}</p>
-          {d.tarjeta ? (
-            <div className="acciones">
-              <button type="button" className="boton suave chico" disabled={Boolean(ocupado)} onClick={() => irAFlow('tarjeta', '/portal/pagos/tarjeta')}>Cambiar tarjeta</button>
-              <button type="button" className="boton peligro chico" disabled={Boolean(ocupado)} onClick={quitarTarjeta}>Quitar</button>
-            </div>
-          ) : (
-            <button type="button" className="boton primario" disabled={Boolean(ocupado) || !d.email} onClick={() => irAFlow('tarjeta', '/portal/pagos/tarjeta')}>
-              {ocupado === 'tarjeta' ? 'Abriendo Flow…' : 'Inscribir tarjeta'}</button>
-          )}
-          {!d.email && <small className="suave">Para pagar en línea necesitamos tu correo. Escríbenos para agregarlo.</small>}
+        {d.tarjeta && <section className="tarjeta pago-tarjeta">
+          <h2><CreditCard size={20} /> {d.tarjeta.tipo ?? 'Tarjeta'} ···· {d.tarjeta.ultimos4 ?? ''}</h2>
+          <p className="suave">Se cobra sola{d.suscripciones[0] && diaCobro(d.suscripciones[0]) ? ` el día ${diaCobro(d.suscripciones[0])} de cada mes` : ' cada mes'}.</p>
+          <div className="acciones">
+            <button type="button" className="boton suave chico" disabled={Boolean(ocupado)} onClick={() => irAFlow('tarjeta', '/portal/pagos/tarjeta')}>Cambiar tarjeta</button>
+            <button type="button" className="boton peligro chico" disabled={Boolean(ocupado)} onClick={quitarTarjeta}>Quitar</button>
+          </div>
         </section>}
       </div>
       {d.suscripciones.length === 0 && (

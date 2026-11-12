@@ -1,7 +1,7 @@
 // Componentes de interfaz comunes (estilo de los mockups de Syntia)
 import { useEffect, useId, useState, type ReactNode, type InputHTMLAttributes, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ChevronLeft, X, Loader2 } from 'lucide-react';
+import { ChevronLeft, X, Loader2, type LucideIcon } from 'lucide-react';
 
 export function Marca({ sub }: { sub?: string }) {
   return (
@@ -12,13 +12,44 @@ export function Marca({ sub }: { sub?: string }) {
   );
 }
 
-// Título de dos tonos: "Hola, Camila. Así están tus instalaciones."
-export function Titulo({ fuerte, suave, nivel = 1 }: { fuerte: string; suave?: string; nivel?: 1 | 2 }) {
+// Título de la página. Con ícono: encabezado de módulo (ícono amarillo, título y una línea de apoyo).
+// Sin ícono: título de dos tonos ("Hola, Camila. Así están tus instalaciones.")
+export function Titulo({ fuerte, suave, nivel = 1, icono: Icono }: { fuerte: string; suave?: string; nivel?: 1 | 2; icono?: LucideIcon }) {
   const Tag = nivel === 1 ? 'h1' : 'h2';
+  if (Icono) {
+    return (
+      <div className="encabezado-modulo">
+        <span className="icono-modulo"><Icono size={24} strokeWidth={1.9} /></span>
+        <div><Tag className="titulo-modulo">{fuerte.replace(/\.$/, '')}</Tag>{suave && <p className="suave">{suave.replace(/\.$/, '')}</p>}</div>
+      </div>
+    );
+  }
   return (
     <Tag className={nivel === 1 ? 'titulo-grande' : 'titulo-medio'}>
       <strong>{fuerte}</strong>{suave && <> <span>{suave}</span></>}
     </Tag>
+  );
+}
+
+// Saludo del inicio: tarjeta con fecha, saludo, una línea de apoyo y un dibujo de sol y panel
+export function Saludo({ fecha, titulo, texto, children }: { fecha?: string; titulo: string; texto?: ReactNode; children?: ReactNode }) {
+  return (
+    <section className="saludo">
+      <div className="saludo-texto">
+        {fecha && <span className="saludo-fecha">{fecha}</span>}
+        <h1>{titulo}</h1>
+        {texto && <p>{texto}</p>}
+        {children}
+      </div>
+      <svg className="saludo-dibujo" width="170" height="92" viewBox="0 0 190 104" aria-hidden="true">
+        <circle cx="150" cy="34" r="22" fill="#ffd84d" />
+        <g stroke="#ffd84d" strokeWidth="4" strokeLinecap="round"><path d="M150 0v6M150 62v6M116 34h6M178 34h6M126 10l4 4M170 54l4 4M126 58l4-4M170 14l4-4" /></g>
+        <path d="M20 98h150" stroke="#e4e0d6" strokeWidth="3" strokeLinecap="round" />
+        <path d="M30 90 52 54h54L86 90z" fill="#2c2c33" />
+        <g stroke="#ffcc00" strokeWidth="2"><path d="M41 72h55M47 63h54M64 54l-9 36M80 54l-9 36M95 54l-8 36" /></g>
+        <path d="M68 90v8" stroke="#2c2c33" strokeWidth="4" />
+      </svg>
+    </section>
   );
 }
 
@@ -125,10 +156,10 @@ export function Pestanas<T extends string>({ opciones, valor, cambiar }: { opcio
 }
 
 // Tarjeta de indicador del inicio del administrador
-export function Kpi({ titulo, valor, enlace, a, tono }: { titulo: string; valor: ReactNode; enlace?: string; a?: string; tono?: 'alerta' | 'mala' | 'destacada' }) {
+export function Kpi({ titulo, valor, enlace, a, tono, icono: Icono }: { titulo: string; valor: ReactNode; enlace?: string; a?: string; tono?: 'alerta' | 'mala' | 'destacada'; icono?: LucideIcon }) {
   const contenido = (
     <>
-      <span className="kpi-titulo">{tono === 'mala' || tono === 'alerta' ? <i className="punto" /> : null}{titulo}</span>
+      <span className="kpi-titulo">{tono === 'mala' || tono === 'alerta' ? <i className="punto" /> : null}{titulo}{Icono && <span className="kpi-icono"><Icono size={20} strokeWidth={1.9} /></span>}</span>
       <strong className="kpi-valor">{valor}</strong>
       {enlace && <span className="kpi-enlace">{enlace} ›</span>}
     </>

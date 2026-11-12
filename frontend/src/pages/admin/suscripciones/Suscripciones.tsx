@@ -1,7 +1,7 @@
 // T-21 · Mockup 072: listado de suscripciones por estado (vigentes, vencidas, cerradas) y situación de pago
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search } from 'lucide-react';
+import { RefreshCw, Search } from 'lucide-react';
 import { useDatos } from '../../../useDatos';
 import { Aviso, Cargando, Etiqueta, Titulo, Vacio, type Tono } from '../../../componentes';
 import { fechaCorta, mes } from '../../../formato';
@@ -51,7 +51,7 @@ export default function Suscripciones() {
   return (
     <>
       <div className="encabezado">
-        <Titulo fuerte="Suscripciones." suave={datos ? `${datos.conteo.vigente} ${datos.conteo.vigente === 1 ? 'vigente' : 'vigentes'}.` : undefined} />
+        <Titulo icono={RefreshCw} fuerte="Suscripciones." suave={datos ? `${datos.conteo.vigente} ${datos.conteo.vigente === 1 ? 'vigente' : 'vigentes'}.` : undefined} />
         <Link to="/admin/suscripciones/nueva" className="boton secundario chico" title="Lo normal es que el cliente contrate desde su portal">Inscribir manualmente</Link>
       </div>
       <div className="filtros">

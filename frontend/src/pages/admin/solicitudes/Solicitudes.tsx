@@ -3,7 +3,7 @@
 // mantención, resolver o cerrar. "Anotar solicitud" registra las que llegan por teléfono o WhatsApp.
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Info, Plus, Search, Wrench, Zap } from 'lucide-react';
+import { Inbox, Info, Plus, Search, Wrench, Zap } from 'lucide-react';
 import { api } from '../../../api';
 import { useDatos } from '../../../useDatos';
 import { AreaTexto, Aviso, Cargando, Etiqueta, Modal, Selector, Titulo, Vacio, type Tono } from '../../../componentes';
@@ -51,7 +51,7 @@ export default function Solicitudes() {
   return (
     <>
       <div className="encabezado">
-        <Titulo fuerte="Solicitudes" />
+        <Titulo icono={Inbox} fuerte="Solicitudes" />
         <button type="button" className="boton primario chico" onClick={() => setAnotar(true)}><Plus size={18} /> Anotar solicitud</button>
       </div>
       <div className="filtros">

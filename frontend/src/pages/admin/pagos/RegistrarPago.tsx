@@ -2,11 +2,11 @@
 // tarjeta presencial) o generar un enlace de pago de Flow para mandarlo por WhatsApp o correo.
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Check, Copy, CreditCard, Link2, Search } from 'lucide-react';
+import { CalendarDays, Check, Copy, CreditCard, Link2, Search } from 'lucide-react';
 import { api } from '../../../api';
 import { useDatos } from '../../../useDatos';
 import { Aviso, Campo, Cargando, Volver } from '../../../componentes';
-import { FRECUENCIAS, hoyISO, mes, pesos } from '../../../formato';
+import { FRECUENCIAS, fechaCorta, hoyISO, pesos } from '../../../formato';
 import type { FilaSuscripcion } from '../suscripciones/Suscripciones';
 
 interface Datos {
@@ -16,7 +16,13 @@ interface Datos {
   periodos: { inicio: string; periodo: string; vencido: boolean }[];
 }
 const MEDIOS_MANUALES: [string, string][] = [['efectivo', 'Efectivo'], ['transferencia', 'Transferencia'], ['deposito', 'Depósito'], ['tarjeta', 'Tarjeta presencial']];
-const mesLargo = (f: string) => mes(f).replace(/^(\w)/, (l) => l.toUpperCase());
+const MESES_PERIODO: Record<string, number> = { mensual: 1, trimestral: 3, semestral: 6, anual: 12 };
+// Último día que cubre el pago: mismo día del mes siguiente, menos uno
+const finPeriodo = (inicio: string, frecuencia: string) => {
+  const [a, m, dia] = inicio.slice(0, 10).split('-').map(Number);
+  const fin = new Date(Date.UTC(a, m - 1 + (MESES_PERIODO[frecuencia] ?? 1), dia - 1));
+  return fin.toISOString().slice(0, 10);
+};
 
 export default function RegistrarPago() {
   const [params, setParams] = useSearchParams();
@@ -60,7 +66,6 @@ function ElegirSuscripcion({ clienteId, elegir }: { clienteId: string | null; el
 
 function Formulario({ susId, otro }: { susId: string; otro: () => void }) {
   const { datos: d, error } = useDatos<Datos>(`/admin/pagos/registrar/${susId}`);
-  const [elegidos, setElegidos] = useState<string[] | null>(null);
   const [f, setF] = useState({ monto_periodo: '', fecha_pago: hoyISO(), medio_pago: 'efectivo', referencia: '', observaciones: '' });
   const [falla, setFalla] = useState('');
   const [guardando, setGuardando] = useState(false);
@@ -68,27 +73,20 @@ function Formulario({ susId, otro }: { susId: string; otro: () => void }) {
   const [enlace, setEnlace] = useState<{ url: string; monto: number } | null>(null);
   const [copiado, setCopiado] = useState(false);
 
-  // Sugerido: los periodos vencidos (o el próximo si está al día)
-  useEffect(() => {
-    if (!d || elegidos) return;
-    const vencidos = d.periodos.filter((p) => p.vencido).map((p) => p.periodo);
-    setElegidos(vencidos.length ? vencidos : d.periodos.slice(0, 1).map((p) => p.periodo));
-    setF((x) => ({ ...x, monto_periodo: String(d.monto_pactado) }));
-  }, [d, elegidos]);
+  useEffect(() => { if (d) setF((x) => (x.monto_periodo ? x : { ...x, monto_periodo: String(d.monto_pactado) })); }, [d]);
 
   if (!d) return <><Volver a="/admin/pagos" texto="Pagos" />{error ? <Aviso>{error}</Aviso> : <Cargando />}</>;
-  const sel = elegidos ?? [];
-  // Los periodos se pagan en orden: elegir uno marca también los anteriores
-  const alternar = (periodo: string) => {
-    const k = d.periodos.findIndex((p) => p.periodo === periodo);
-    const marcado = sel.includes(periodo);
-    setElegidos(d.periodos.slice(0, marcado ? k : k + 1).map((p) => p.periodo));
-  };
-  const total = (Number(f.monto_periodo) || 0) * sel.length;
+  // Se paga solo el mes que corresponde (sin adelantos)
+  const siguiente = d.periodos[0] ?? null;
+  // Se puede registrar desde 7 días antes de la fecha de pago
+  const faltan = siguiente ? Math.round((new Date(`${siguiente.inicio.slice(0, 10)}T12:00:00`).getTime() - new Date(`${hoyISO()}T12:00:00`).getTime()) / 86400000) : 0;
+  const temprano = faltan > 7;
+  const sel = siguiente ? [siguiente.periodo] : [];
+  const total = Number(f.monto_periodo) || 0;
 
   const registrar = async () => {
     setFalla('');
-    if (!sel.length) return setFalla('Elige al menos un periodo');
+    if (!sel.length) return setFalla('Esta suscripción no tiene meses por pagar');
     setGuardando(true);
     try {
       const r = await api<{ total: number; ids: number[] }>('/admin/pagos', { method: 'POST', body: { ...f, suscripcion_id: d.id, periodos: sel, monto_periodo: Number(f.monto_periodo) } });
@@ -98,7 +96,7 @@ function Formulario({ susId, otro }: { susId: string; otro: () => void }) {
   const generarEnlace = async () => {
     setFalla('');
     setGuardando(true);
-    try { setEnlace(await api<{ url: string; monto: number }>(`/admin/pagos/suscripcion/${d.id}/enlace`, { method: 'POST', body: { cantidad: Math.max(1, sel.length) } })); }
+    try { setEnlace(await api<{ url: string; monto: number }>(`/admin/pagos/suscripcion/${d.id}/enlace`, { method: 'POST', body: { cantidad: 1 } })); }
     catch (e) { setFalla((e as Error).message); } finally { setGuardando(false); }
   };
   const copiar = () => enlace && navigator.clipboard.writeText(enlace.url).then(() => setCopiado(true));
@@ -110,7 +108,7 @@ function Formulario({ susId, otro }: { susId: string; otro: () => void }) {
       <div className="tarjeta asistente centrado">
         <span className="icono-circulo chico"><Check size={30} /></span>
         <h2>Pago registrado</h2>
-        <p className="suave">{pesos(listo.total)} de {d.cliente_nombre} · {listo.n} {listo.n === 1 ? 'periodo' : 'periodos'} de {d.codigo}. Quedó como "Pagado" al instante.</p>
+        <p className="suave">{pesos(listo.total)} de {d.cliente_nombre} · {d.instalacion_nombre || d.codigo}. Quedó como "Pagado" al instante.</p>
         <div className="acciones centro">
           <button type="button" className="boton secundario chico" onClick={otro}>Registrar otro</button>
           <Link to={`/admin/suscripciones/${d.id}`} className="boton secundario chico">Ver suscripción</Link>
@@ -130,19 +128,17 @@ function Formulario({ susId, otro }: { susId: string; otro: () => void }) {
             <span><strong>{d.codigo} · {d.cliente_nombre}</strong><small>{d.instalacion_nombre || d.instalacion_codigo} · {d.tipo_nombre}</small></span>
             <button type="button" className="boton suave mini" onClick={otro}>Cambiar</button>
           </div>
-          <h2>Periodo</h2>
-          {d.periodos.length === 0 ? <p className="suave">Esta suscripción no tiene periodos por pagar.</p> : (
-            <div className="chips grandes">
-              {d.periodos.map((p, k) => (
-                <button key={p.periodo} type="button" className={`chip ${sel.includes(p.periodo) ? 'elegido' : ''}`} onClick={() => alternar(p.periodo)}>
-                  {mesLargo(p.periodo)}{k === 0 ? ' · sugerido' : ''}{p.vencido ? '' : ' · adelanto'}
-                </button>
-              ))}
+          <h2>Mes a pagar</h2>
+          {siguiente ? (
+            <div className={`mes-a-pagar ${siguiente.vencido ? 'pendiente' : ''}`}>
+              <CalendarDays size={20} />
+              <span><strong>Del {fechaCorta(siguiente.inicio)} al {fechaCorta(finPeriodo(siguiente.inicio, d.frecuencia_pago))}</strong>
+                <small>{siguiente.vencido ? 'Pago pendiente' : temprano ? `Al día · se podrá registrar desde 7 días antes (faltan ${faltan} días)` : 'Próximo pago'}</small></span>
             </div>
-          )}
+          ) : <p className="suave">Esta suscripción no tiene meses por pagar.</p>}
           <div className="formulario dos">
-            <Campo etiqueta={`Monto por periodo (plan: ${pesos(d.monto_pactado)} ${FRECUENCIAS[d.frecuencia_pago]})`} type="number" min="1" value={f.monto_periodo}
-              onChange={(e) => setF({ ...f, monto_periodo: e.target.value })} ayuda={sel.length > 1 ? `Total: ${pesos(total)}` : undefined} />
+            <Campo etiqueta={`Monto (plan: ${pesos(d.monto_pactado)} ${FRECUENCIAS[d.frecuencia_pago]})`} type="number" min="1" value={f.monto_periodo}
+              onChange={(e) => setF({ ...f, monto_periodo: e.target.value })} />
             <Campo etiqueta="Fecha de pago" type="date" max={hoyISO()} value={f.fecha_pago} onChange={(e) => setF({ ...f, fecha_pago: e.target.value })} />
           </div>
           <h2>Medio de pago</h2>
@@ -157,7 +153,7 @@ function Formulario({ susId, otro }: { susId: string; otro: () => void }) {
           </div>
           <Aviso>{falla}</Aviso>
           <div className="acciones">
-            <button type="button" className="boton primario" disabled={guardando || !sel.length} onClick={registrar}>
+            <button type="button" className="boton primario" disabled={guardando || !sel.length || temprano} onClick={registrar}>
               {guardando ? 'Guardando…' : `Registrar pago${total ? ` de ${pesos(total)}` : ''}`}</button>
           </div>
         </div>
@@ -166,8 +162,8 @@ function Formulario({ susId, otro }: { susId: string; otro: () => void }) {
           <h2>{d.codigo}</h2>
           <p className="suave">{d.cliente_nombre} · {d.instalacion_nombre || d.instalacion_codigo} · {d.tipo_nombre}</p>
           <dl className="datos lineas">
-            <div><dt>Pagado hasta</dt><dd>{d.pagado_hasta ? mesLargo(d.pagado_hasta) : 'Sin pagos'}</dd></div>
-            <div><dt>Pendiente</dt><dd className={d.periodos_adeudados ? 'texto-malo' : ''}>{d.periodos_adeudados ? `${d.periodos_adeudados} ${d.periodos_adeudados === 1 ? 'periodo' : 'periodos'} · ${pesos(d.monto_adeudado)}` : 'Al día'}</dd></div>
+            <div><dt>Pagado hasta</dt><dd>{d.pagado_hasta ? fechaCorta(d.pagado_hasta) : 'Sin pagos'}</dd></div>
+            {siguiente && <div><dt>{siguiente.vencido ? 'Pendiente desde' : 'Próximo pago'}</dt><dd className={siguiente.vencido ? 'texto-malo' : ''}>{fechaCorta(siguiente.inicio)}</dd></div>}
             <div><dt>Última gestión</dt><dd>{d.ultima_gestion ?? '—'}</dd></div>
             <div><dt>Cobro automático</dt><dd>{d.tarjeta ? <><CreditCard size={14} /> {d.tarjeta}</> : 'Sin tarjeta inscrita'}</dd></div>
           </dl>
@@ -183,7 +179,7 @@ function Formulario({ susId, otro }: { susId: string; otro: () => void }) {
               </div>
             </div>
           ) : (
-            <button type="button" className="boton secundario chico" disabled={guardando || !d.periodos.length} onClick={generarEnlace}><Link2 size={16} /> Generar enlace de pago</button>
+            <button type="button" className="boton secundario chico" disabled={guardando || !d.periodos.length || temprano} onClick={generarEnlace}><Link2 size={16} /> Generar enlace de pago</button>
           )}
         </aside>
       </div>

@@ -2,12 +2,12 @@
 // el detalle para llegar (dirección, mapa, teléfono, equipos, recomendación anterior) y el informe con
 // fotos de la cámara. Lo que guarda lo ve ENINTI en el calendario y el cliente en su portal.
 import { useState, type FormEvent } from 'react';
-import { Link, Outlet, useLocation, useParams } from 'react-router-dom';
-import { Camera, Check, ChevronRight, LogOut, MapPin, Phone } from 'lucide-react';
+import { Link, NavLink, Outlet, useLocation, useParams } from 'react-router-dom';
+import { CalendarDays, Camera, Check, ChevronRight, LogOut, MapPin, Phone } from 'lucide-react';
 import { api } from '../../api';
 import { useSesion } from '../../sesion';
 import { useDatos } from '../../useDatos';
-import { AreaTexto, Aviso, Campo, Cargando, Etiqueta, Titulo, Vacio, Volver } from '../../componentes';
+import { AreaTexto, Aviso, Campo, Cargando, Etiqueta, Saludo, Vacio, Volver } from '../../componentes';
 import { SISTEMAS, TIPOS_EQUIPO, TIPOS_MANTENCION, fechaCorta, hoyISO, pesos } from '../../formato';
 
 interface Visita {
@@ -31,7 +31,16 @@ const mapa = (v: Pick<Visita, 'latitud' | 'longitud' | 'direccion' | 'localidad'
 export function PanelTecnico() {
   const { usuario, salir } = useSesion();
   return (
-    <div className="panel-tecnico">
+    <div className="panel-tecnico con-menu">
+      <aside className="portal-menu solo-escritorio">
+        <div className="portal-marca"><img src="/syntia-icono.png" alt="" className="marca-sol grande" /> <span><strong>Syntia</strong><small className="suave" style={{ display: 'block', fontSize: 13 }}>Técnico</small></span></div>
+        <nav>
+          <NavLink to="/tecnico" end className={({ isActive }) => (isActive ? 'activo' : '')}>
+            <span className="menu-icono"><CalendarDays size={19} strokeWidth={1.9} /></span><span>Mis visitas</span>
+          </NavLink>
+          <button type="button" className="portal-salir" onClick={salir}><LogOut size={20} /> Cerrar sesión</button>
+        </nav>
+      </aside>
       <header className="tecnico-cabecera">
         <Link to="/tecnico" className="portal-marca"><img src="/syntia-icono.png" alt="" className="marca-sol" /> <strong>Syntia</strong> <small className="suave">Técnico</small></Link>
         <span className="suave">{usuario?.nombre.split(' ')[0]}</span>
@@ -76,7 +85,7 @@ export function Visitas() {
   );
   return (
     <>
-      <Titulo fuerte={`Hola, ${datos.tecnico.nombre.split(' ')[0]}.`} suave={deHoy.length ? `Hoy tienes ${deHoy.length} ${deHoy.length === 1 ? 'visita' : 'visitas'}.` : 'Hoy no tienes visitas.'} />
+      <Saludo titulo={`Hola, ${datos.tecnico.nombre.split(' ')[0]}`} texto={`${deHoy.length ? `Hoy tienes ${deHoy.length} ${deHoy.length === 1 ? 'visita' : 'visitas'}.` : 'Hoy no tienes visitas.'}${atrasadas.length ? ` ${atrasadas.length} ${atrasadas.length === 1 ? 'visita pasada está' : 'visitas pasadas están'} sin informe.` : ''}`} />
       <Aviso tipo="ok">{aviso}</Aviso>
       {grupo('Atrasadas · falta el informe', atrasadas)}
       {grupo(`Hoy · ${DIA(hoy)}`, deHoy)}

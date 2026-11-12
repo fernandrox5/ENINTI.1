@@ -65,7 +65,7 @@ export default function Pagos() {
   return (
     <>
       <div className="encabezado">
-        <Titulo fuerte="Pagos" />
+        <Titulo icono={CreditCard} fuerte="Pagos" />
         <div className="acciones">
           <Link to="/admin/pagos/registrar" className="boton primario chico"><Plus size={18} /> Registrar pago</Link>
         </div>
