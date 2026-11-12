@@ -1,13 +1,14 @@
 // T-22 · Mockups 048 a 054: ficha del cliente con sus pestañas
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { Copy, Plus, Send } from 'lucide-react';
+import { MessageCircle, Plus, Send } from 'lucide-react';
 import { api } from '../../../api';
 import { useDatos } from '../../../useDatos';
 import { Aviso, Cargando, Etiqueta, Pestanas, Vacio, Volver } from '../../../componentes';
 import { fecha, fechaCorta, iniciales, mes, pesos, MEDIOS, SISTEMAS } from '../../../formato';
 import { ESTADO_PAGO, ESTADO_SOLICITUD, TIPO_SOLICITUD, CANALES, situacionInstalacion } from '../../../estados';
 import ClienteFormulario from './ClienteFormulario';
+import { whatsapp } from '../../../contacto';
 import RegistrarGestion from './RegistrarGestion';
 import { GESTIONES, PORTAL, type Portal } from './Clientes';
 
@@ -123,10 +124,10 @@ export default function ClienteFicha() {
                   <button type="button" className="boton primario chico" disabled={!c.email || invitando} onClick={invitar}>
                     <Send size={16} /> {invitando ? 'Enviando…' : portal === 'invitado' ? 'Reenviar invitación' : 'Enviar invitación'}
                   </button>
-                  {c.email && (
-                    <button type="button" className="boton suave chico" onClick={() => navigator.clipboard.writeText(mensajeWhatsapp).then(() => setAviso('Mensaje copiado para WhatsApp'))}>
-                      <Copy size={16} /> Copiar aviso para WhatsApp
-                    </button>
+                  {c.email && whatsapp(c.telefono, mensajeWhatsapp) && (
+                    <a href={whatsapp(c.telefono, mensajeWhatsapp)!} target="_blank" rel="noreferrer" className="boton suave chico">
+                      <MessageCircle size={16} /> Avisarle por WhatsApp
+                    </a>
                   )}
                 </div>
               </>

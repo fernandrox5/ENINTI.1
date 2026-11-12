@@ -4,6 +4,7 @@
 import { Router } from 'express';
 import { pool } from '../../config/db.js';
 import { ErrorHttp } from '../../utils/validar.js';
+import { notificar } from '../../services/notificar.js';
 
 const router = Router();
 const POR_PAGINA = 20;
@@ -90,6 +91,7 @@ router.post('/:id/cerrar', async (req, res) => {
   const { rows: [{ antes }] } = await pool.query(
     "SELECT count(*)::int AS antes FROM mantenciones WHERE suscripcion_id = $1 AND estado = 'cancelada'", [s.id]);
   await pool.query('SELECT fn_cerrar_suscripcion($1, $2, $3::date)', [s.id, motivo, fecha]);
+  await notificar('suscripcion_cerrada', { suscripcion_id: s.id }, req);
   const { rows: [{ despues }] } = await pool.query(
     "SELECT count(*)::int AS despues FROM mantenciones WHERE suscripcion_id = $1 AND estado = 'cancelada'", [s.id]);
   res.json({ ok: true, mantenciones_canceladas: despues - antes });

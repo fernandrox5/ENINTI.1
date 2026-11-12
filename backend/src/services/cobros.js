@@ -9,6 +9,7 @@ import * as flow from './flow.js';
 import { ESTADO_FLOW } from './flow.js';
 import { PRODUCCION, urlApp } from './invitaciones.js';
 import { ErrorHttp } from '../utils/validar.js';
+import { notificar } from './notificar.js';
 
 const DESARROLLO = 'https://syntia-git-develop-fernandos-projects-7f551f0e.vercel.app';
 const DIAS_ENLACE = 7;
@@ -82,6 +83,7 @@ export async function aplicarResultado(cobroId, respuesta) {
       }
     }
     await db.query('COMMIT');
+    if (estado === 'pagado') await notificar('pago_recibido', { suscripcion_id: c.suscripcion_id }, null, { monto: c.monto, fecha_evento: String(c.periodo).slice(0, 10) });
     return estado;
   } catch (err) {
     await db.query('ROLLBACK').catch(() => {});
@@ -195,6 +197,9 @@ export async function cobrarConTarjeta(suscripcionId, { origen = 'automatico', p
   }
 }
 
+// Último día para pagar un mes pendiente: el día del cobro más los días de plazo
+const limitePago = (r) => { const d = new Date(`${String(r.inicio).slice(0, 10)}T12:00:00`); d.setDate(d.getDate() + (r.plazo ?? 7)); return d.toISOString().slice(0, 10); };
+
 // Suscripciones vigentes con un periodo vencido sin pagar y qué se haría con cada una
 export async function cobrosDelDia() {
   const { rows: [{ valor }] } = await pool.query("SELECT coalesce((SELECT valor FROM configuracion WHERE clave = 'reintentos_cobro'), '3') AS valor");
@@ -247,9 +252,11 @@ export async function ejecutarCobros({ req = null, perfilId = null, origen = 'au
     try {
       if (r.accion === 'cobrar_tarjeta') {
         const x = await cobrarConTarjeta(r.id, { origen, perfilId });
+        if (x.estado === 'rechazado') await notificar('cobro_fallido', { suscripcion_id: r.id }, req, { tarjeta: true, monto: r.monto_pactado, limite: limitePago(r), fecha_evento: r.inicio });
         resultado.push({ suscripcion: r.codigo, accion: 'tarjeta', ...x });
       } else if (r.accion === 'crear_enlace') {
         const c = await crearEnlacePago(req, r.id, { cantidad: 1, origen, perfilId });
+        await notificar('cobro_fallido', { suscripcion_id: r.id }, req, { tarjeta: false, monto: r.monto_pactado, limite: limitePago(r), fecha_evento: r.inicio });
         resultado.push({ suscripcion: r.codigo, accion: 'enlace', estado: c.estado });
       } else if (r.accion === 'cerrar') {
         // Primero se revisa si alcanzó a pagar en Flow; si no, se cierra desde el día en que dejó de estar cubierta
@@ -257,6 +264,7 @@ export async function ejecutarCobros({ req = null, perfilId = null, origen = 'au
         if (estado === 'pagado') { resultado.push({ suscripcion: r.codigo, accion: 'revisar_enlace', estado }); continue; }
         if (r.pendiente) await pool.query("UPDATE cobros SET estado = 'expirado', error = 'Venció el plazo de pago' WHERE id = $1 AND estado = 'pendiente'", [r.pendiente.id]);
         await pool.query('SELECT fn_cerrar_suscripcion($1, $2, $3::date)', [r.id, 'Falta de pago', r.inicio]);
+        await notificar('suscripcion_cerrada', { suscripcion_id: r.id }, req);
         resultado.push({ suscripcion: r.codigo, accion: 'cerrar', estado: 'cerrada' });
       } else if (r.accion === 'enlace_enviado' && r.pendiente) {
         const estado = await actualizarCobro(r.pendiente);

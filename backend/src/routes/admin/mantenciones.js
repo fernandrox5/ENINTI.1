@@ -5,6 +5,7 @@ import { Router } from 'express';
 import { pool } from '../../config/db.js';
 import { ErrorHttp } from '../../utils/validar.js';
 import { guardarInforme } from '../../services/informe.js';
+import { notificar } from '../../services/notificar.js';
 
 const router = Router();
 const TIPOS = ['preventiva', 'correctiva', 'emergencia'];
@@ -121,12 +122,17 @@ router.post('/', async (req, res) => {
     if (!s) throw new ErrorHttp(400, 'La solicitud no es del cliente de esta instalación');
     solicitud = s.id;
   }
+  // Dentro de la suscripción, cada mantención pedida lleva su número (1 de 2, 2 de 2...); las emergencias no cuentan
+  const { rows: [{ n }] } = i.suscripcion_id && d.tipo !== 'emergencia'
+    ? await pool.query("SELECT count(*)::int + 1 AS n FROM mantenciones WHERE suscripcion_id = $1 AND estado <> 'cancelada' AND tipo <> 'emergencia'", [i.suscripcion_id])
+    : { rows: [{ n: null }] };
   const { rows: [m] } = await pool.query(
-    `INSERT INTO mantenciones (instalacion_id, suscripcion_id, solicitud_id, tipo, estado, fecha_programada, hora_inicio, tecnico_id, valor_servicio, notas)
-     VALUES ($1, $2, $3, $4, 'programada', $5, $6, $7, $8, $9) RETURNING id`,
-    [i.id, i.suscripcion_id, solicitud, d.tipo, d.fecha, d.hora, d.tecnico, d.valor, d.notas]);
+    `INSERT INTO mantenciones (instalacion_id, suscripcion_id, solicitud_id, numero_en_plan, tipo, estado, fecha_programada, hora_inicio, tecnico_id, valor_servicio, notas)
+     VALUES ($1, $2, $3, $4, $5, 'programada', $6, $7, $8, $9, $10) RETURNING id`,
+    [i.id, i.suscripcion_id, solicitud, n, d.tipo, d.fecha, d.hora, d.tecnico, d.valor, d.notas]);
   // La solicitud que originó la visita queda en proceso (ya tiene mantención agendada)
   if (solicitud) await pool.query("UPDATE solicitudes SET estado = 'en_proceso', atendida_por = $2, atendida_at = coalesce(atendida_at, now()) WHERE id = $1 AND estado = 'nueva'", [solicitud, req.usuario.id]);
+  await notificar('mantencion_agendada', { mantencion_id: m.id }, req);
   res.status(201).json({ id: m.id, en_plan: Boolean(i.suscripcion_id) });
 });
 
@@ -139,6 +145,7 @@ router.put('/:id', async (req, res) => {
     `UPDATE mantenciones SET fecha_programada = $2, hora_inicio = $3, tecnico_id = $4, valor_servicio = COALESCE($5, valor_servicio), notas = $6
      WHERE id = $1 AND estado = 'programada'`, [req.params.id, d.fecha, d.hora, d.tecnico, d.valor, d.notas]);
   if (!rowCount) throw new ErrorHttp(409, 'Solo se pueden cambiar mantenciones programadas');
+  await notificar('mantencion_agendada', { mantencion_id: Number(req.params.id) }, req);
   res.json({ ok: true });
 });
 

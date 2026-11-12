@@ -1,13 +1,21 @@
 // Notificaciones de la campana del administrador: lo que pasó en los últimos 30 días
 // (emergencias y pedidos, pagos por revisar, pagos en línea, cobros rechazados, planes contratados
 // y cerrados, informes de visitas, calificaciones y cuentas activadas). Cada una lleva a su pantalla.
-// Lo leído se guarda en el navegador de cada administrador.
+// Lo leído queda guardado por usuario en notificaciones_leidas (se marca una vez y sirve en todas partes).
 import { Router } from 'express';
 import { pool } from '../../config/db.js';
 
 const router = Router();
 
-router.get('/', async (_req, res) => {
+// Claves que este usuario ya leyó (sin el script 10, la tabla no existe: nada queda leído en la base)
+async function leidas(perfilId) {
+  try {
+    const { rows } = await pool.query('SELECT clave FROM notificaciones_leidas WHERE perfil_id = $1', [perfilId]);
+    return new Set(rows.map((r) => r.clave));
+  } catch { return null; }
+}
+
+router.get('/', async (req, res) => {
   const { rows } = await pool.query(
     `SELECT * FROM (
        SELECT 'sol-' || s.id AS clave, s.tipo::text AS tipo, s.created_at AS fecha,
@@ -80,7 +88,22 @@ router.get('/', async (_req, res) => {
      ) n
      WHERE fecha IS NOT NULL
      ORDER BY fecha DESC LIMIT 40`);
-  res.json(rows);
+  const vistas = await leidas(req.usuario.id);
+  res.json(rows.map((n) => ({ ...n, leida: vistas ? vistas.has(n.clave) : false })));
+});
+
+// Marcar como leídas (una o todas)
+router.post('/leidas', async (req, res) => {
+  const claves = (Array.isArray(req.body.claves) ? req.body.claves : []).map(String).filter((c) => /^[a-z]+-\d+$/.test(c)).slice(0, 200);
+  if (!claves.length) return res.json({ ok: true, marcadas: 0 });
+  try {
+    await pool.query(
+      `INSERT INTO notificaciones_leidas (perfil_id, clave) SELECT $1, unnest($2::text[]) ON CONFLICT DO NOTHING`, [req.usuario.id, claves]);
+    res.json({ ok: true, marcadas: claves.length });
+  } catch (err) {
+    if (err.code === '42P01') return res.json({ ok: false, marcadas: 0 }); // falta el script 10: queda solo en el navegador
+    throw err;
+  }
 });
 
 export default router;

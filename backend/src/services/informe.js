@@ -2,6 +2,7 @@
 // administrador y el técnico desde su panel; lo ve el cliente en su portal.
 import { pool } from '../config/db.js';
 import { ErrorHttp } from '../utils/validar.js';
+import { notificar } from './notificar.js';
 
 const vacio = (v) => (v === '' || v === undefined ? null : v);
 const fechaValida = (f) => /^\d{4}-\d{2}-\d{2}$/.test(f || '') && !Number.isNaN(Date.parse(f));
@@ -34,6 +35,7 @@ export async function guardarInforme(id, b, { tecnicoId = null } = {}) {
     [id, fecha, hi, hf, tecnico, trabajo, vacio(String(b.hallazgos || '').trim()), vacio(String(b.recomendaciones || '').trim()),
      inversion, inversion ? detalle : null, Number(costo)]);
   if (!rowCount) throw new ErrorHttp(409, tecnicoId ? 'Esta visita no está asignada a ti o fue cancelada' : 'Una mantención cancelada no lleva informe');
+  await notificar('informe_listo', { mantencion_id: Number(id) });
   // La solicitud que originó la visita queda atendida al enviar el informe
   await pool.query(
     `UPDATE solicitudes SET estado = 'resuelta', atendida_at = coalesce(atendida_at, now())

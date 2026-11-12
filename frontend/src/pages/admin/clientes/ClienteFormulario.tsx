@@ -51,7 +51,7 @@ export default function ClienteFormulario({ id, inicial, cerrar, listo }: {
           <input type="checkbox" checked={f.es_empresa} onChange={(e) => setF({ ...f, es_empresa: e.target.checked })} />
           <span>Es empresa</span>
         </label>
-        <Campo etiqueta="Correo" type="email" value={f.email} onChange={cambiar('email')} ayuda="Con este correo el cliente se vincula al portal." />
+        <Campo etiqueta="Correo" type="email" value={f.email} onChange={cambiar('email')} ayuda="Para darle acceso al portal" />
         <Campo etiqueta="Teléfono" type="tel" placeholder="+56 9 1234 5678" value={f.telefono} onChange={cambiar('telefono')} />
         <Campo etiqueta="Dirección" value={f.direccion} onChange={cambiar('direccion')} />
         <Selector etiqueta="Localidad" value={f.localidad_id} onChange={cambiar('localidad_id')}>

@@ -6,6 +6,7 @@ import { pool } from '../../config/db.js';
 import { supabase, clienteAuth } from '../../config/supabase.js';
 import { ErrorHttp } from '../../utils/validar.js';
 import { cobrarConTarjeta, crearEnlacePago, plazoPago } from '../../services/cobros.js';
+import { notificar } from '../../services/notificar.js';
 
 const router = Router();
 
@@ -182,6 +183,7 @@ router.post('/planes/contratar', async (req, res) => {
   const { rows: [s] } = await pool.query(
     `INSERT INTO suscripciones (instalacion_id, tipo_suscripcion_id, fecha_inicio, condiciones_id, creada_por)
      VALUES ($1, $2, fn_hoy(), $3, $4) RETURNING id, codigo`, [i.id, plan.id, cond?.id ?? null, req.usuario.id]);
+  await notificar('suscripcion_contratada', { suscripcion_id: s.id }, req);
   // Primer mes: con la tarjeta inscrita se cobra ahora; si no, se abre el pago en Flow
   if (req.body.medio === 'tarjeta') {
     const r = await cobrarConTarjeta(s.id, { origen: 'cliente', perfilId: req.usuario.id });

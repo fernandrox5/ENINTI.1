@@ -874,3 +874,8 @@ button.kpi { text-align: left; font: inherit; color: inherit; cursor: pointer; }
 .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 @media (min-width: 1100px) { .kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 @media (max-width: 640px) { .kpi { padding: 14px; } .kpi-valor { font-size: 26px; } .kpi-titulo { font-size: 13.5px; } .kpi-icono { width: 30px; height: 30px; } }
+/* Correos automáticos: vista previa y envío de ejemplos */
+.vista-correo { width: 100%; height: 70vh; border: 1px solid #ece8de; border-radius: 12px; background: #f5f5f7; }
+.enviar-ejemplos { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+.enviar-ejemplos .campo-flotante, .enviar-ejemplos > label { flex: 1; min-width: 240px; }
+.elegir-cliente { display: grid; gap: 10px; }

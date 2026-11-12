@@ -49,7 +49,7 @@ export function TarjetaInstalacion({ i }: { i: InstalacionPortal }) {
           </>
         ) : null}
         <div className="vigencia-fechas"><span className="suave">Próxima mantención</span>
-          <strong>{i.proxima ? fechaCorta(i.proxima) : i.suscripcion_id ? 'Por agendar' : '—'}</strong></div>
+          <strong>{i.proxima ? fechaCorta(i.proxima) : i.suscripcion_id ? 'Pídela cuando quieras' : '—'}</strong></div>
         {i.ultima_mantencion && <div className="vigencia-fechas"><span className="suave">Última mantención</span><strong>{fechaCorta(i.ultima_mantencion)}</strong></div>}
         {i.suscripcion_id
           ? <Link to={`/portal/instalaciones/${i.id}`} className="boton suave">Ver instalación</Link>

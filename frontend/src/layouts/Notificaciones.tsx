@@ -1,12 +1,12 @@
 // Campana de notificaciones del administrador: contador de no leídas y panel desplegable.
-// Lo leído se guarda en este navegador (por usuario). Se actualiza cada minuto y al cambiar de página.
+// Lo leído se guarda en la base por usuario (y en el navegador como respaldo). Se actualiza cada minuto y al cambiar de página.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Bell } from 'lucide-react';
 import { api } from '../api';
 import { useSesion } from '../sesion';
 
-interface Notificacion { clave: string; tipo: string; fecha: string; titulo: string; detalle: string | null; enlace: string; importante: boolean }
+interface Notificacion { clave: string; tipo: string; fecha: string; titulo: string; detalle: string | null; enlace: string; importante: boolean; leida: boolean }
 
 // Solo cuentan como nuevas las de los últimos 7 días que no se han abierto
 const DIAS_NUEVA = 7;
@@ -49,9 +49,14 @@ export default function Notificaciones() {
   }, []);
 
   const limite = Date.now() - DIAS_NUEVA * 86400000;
-  const esNueva = (n: Notificacion) => !leidas.includes(n.clave) && new Date(n.fecha).getTime() > limite;
+  const esNueva = (n: Notificacion) => !n.leida && !leidas.includes(n.clave) && new Date(n.fecha).getTime() > limite;
   const nuevas = lista.filter(esNueva).length;
-  const marcar = (claves: string[]) => { const todas = [...new Set([...leidas, ...claves])]; setLeidas(todas); guardar(almacen, todas); };
+  const marcar = (claves: string[]) => {
+    const todas = [...new Set([...leidas, ...claves])];
+    setLeidas(todas); guardar(almacen, todas);
+    setLista((l) => l.map((n) => (claves.includes(n.clave) ? { ...n, leida: true } : n)));
+    api('/admin/notificaciones/leidas', { method: 'POST', body: { claves } }).catch(() => {});
+  };
   const abrir = (n: Notificacion) => { marcar([n.clave]); setAbierto(false); navegar(n.enlace); };
 
   return (

@@ -3,7 +3,8 @@
 import { Router } from 'express';
 import { pool } from '../../config/db.js';
 import { supabase } from '../../config/supabase.js';
-import { ErrorHttp, correoValido } from '../../utils/validar.js';
+import { ErrorHttp, correoValido, normalizarRut } from '../../utils/validar.js';
+import { ejemplos, enviarEjemplos } from '../../services/notificar.js';
 import { enviarCorreo } from '../../services/correo.js';
 import { estadoAcceso, primerNombre, urlApp } from '../../services/invitaciones.js';
 
@@ -114,14 +115,16 @@ function datosTecnico(b) {
   const email = String(b.email || '').trim().toLowerCase();
   if (email && !correoValido(email)) throw new ErrorHttp(400, 'El correo no es válido');
   const empresa = String(b.empresa || '').trim() || 'ENINTI';
-  return { nombre, empresa, telefono: vacio(String(b.telefono || '').trim()), email: email || null, es_subcontratista: empresa.toUpperCase() !== 'ENINTI' };
+  const rut = b.rut ? normalizarRut(b.rut) : null;
+  if (b.rut && !rut) throw new ErrorHttp(400, 'El RUT no es válido');
+  return { nombre, empresa, rut, telefono: vacio(String(b.telefono || '').trim()), email: email || null, es_subcontratista: empresa.toUpperCase() !== 'ENINTI' };
 }
 router.post('/tecnicos', async (req, res) => {
   const d = datosTecnico(req.body);
   try {
     const { rows: [t] } = await pool.query(
-      'INSERT INTO tecnicos (nombre, empresa, telefono, email, es_subcontratista) VALUES ($1, $2, $3, $4, $5) RETURNING id',
-      [d.nombre, d.empresa, d.telefono, d.email, d.es_subcontratista]);
+      'INSERT INTO tecnicos (nombre, empresa, rut, telefono, email, es_subcontratista) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
+      [d.nombre, d.empresa, d.rut, d.telefono, d.email, d.es_subcontratista]);
     res.status(201).json(t);
   } catch (err) {
     if (err.code === '23505') throw new ErrorHttp(409, 'Ya existe un técnico con ese correo');
@@ -131,8 +134,8 @@ router.post('/tecnicos', async (req, res) => {
 router.put('/tecnicos/:id', async (req, res) => {
   const d = datosTecnico(req.body);
   const { rowCount } = await pool.query(
-    'UPDATE tecnicos SET nombre = $2, empresa = $3, telefono = $4, email = $5, es_subcontratista = $6 WHERE id = $1',
-    [Number(req.params.id) || 0, d.nombre, d.empresa, d.telefono, d.email, d.es_subcontratista]);
+    'UPDATE tecnicos SET nombre = $2, empresa = $3, rut = $4, telefono = $5, email = $6, es_subcontratista = $7 WHERE id = $1',
+    [Number(req.params.id) || 0, d.nombre, d.empresa, d.rut, d.telefono, d.email, d.es_subcontratista]);
   if (!rowCount) throw new ErrorHttp(404, 'Técnico no encontrado');
   res.json({ ok: true });
 });
@@ -212,9 +215,19 @@ router.post('/condiciones', async (req, res) => {
 // ---------- Correos enviados ----------
 router.get('/correos', async (req, res) => {
   const { rows } = await pool.query(
-    `SELECT n.id, n.tipo_evento, n.asunto, n.destinatario, n.estado, n.intentos, n.ultimo_error, n.fecha_generacion, n.enviada_at, c.nombre AS cliente
-     FROM notificaciones n LEFT JOIN clientes c ON c.id = n.cliente_id ORDER BY coalesce(n.enviada_at, n.created_at) DESC LIMIT 100`);
+    `SELECT n.*, c.nombre AS cliente
+     FROM notificaciones n LEFT JOIN clientes c ON c.id = n.cliente_id WHERE n.estado <> 'descartada'
+     ORDER BY coalesce(n.enviada_at, n.created_at) DESC LIMIT 100`);
   res.json({ correos: rows, automaticos: process.env.MAIL_ENABLED !== 'false' });
+});
+// Los correos automáticos con un ejemplo de cada uno (para revisarlos o mostrarlos)
+router.get('/correos/ejemplos', (req, res) => res.json(ejemplos(req)));
+// Envía un ejemplo de cada correo automático a una dirección (para mostrarlos sin esperar a que ocurran)
+router.post('/correos/ejemplos', async (req, res) => {
+  const para = String(req.body.para || '').trim().toLowerCase();
+  if (!correoValido(para)) throw new ErrorHttp(400, 'Escribe un correo válido');
+  const n = await enviarEjemplos(req, para);
+  res.json({ enviados: n, para });
 });
 
 export default router;

@@ -2,7 +2,7 @@
 // historial y tarjetas inscritas. Todo lo que cobra Flow aparece aquí sin entrar a Flow.
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Copy, CreditCard, Download, Plus, RefreshCw, Search, Zap } from 'lucide-react';
+import { CreditCard, Download, Plus, RefreshCw, Search, Zap } from 'lucide-react';
 import { api, descargar } from '../../../api';
 import { useDatos } from '../../../useDatos';
 import { AreaTexto, Aviso, Campo, Cargando, Etiqueta, Modal, Pestanas, Titulo, Vacio, type Tono } from '../../../componentes';
@@ -212,7 +212,6 @@ function Cobros({ version, listo }: { version: number; listo: (m: string) => voi
     try { const r = await api<{ revisados: number; actualizados: number }>('/admin/pagos/cobros/revisar', { method: 'POST' }); listo(`Se revisaron ${r.revisados} cobros en Flow; ${r.actualizados} cambiaron de estado`); }
     catch (e) { window.alert((e as Error).message); } finally { setRevisando(false); }
   };
-  const copiar = (url: string) => navigator.clipboard.writeText(url).then(() => listo('Enlace copiado: puedes mandarlo por WhatsApp o correo'));
   return (
     <>
       <div className="filtros">
@@ -224,9 +223,9 @@ function Cobros({ version, listo }: { version: number; listo: (m: string) => voi
         <button type="button" className="boton secundario chico empujar" disabled={revisando} onClick={revisar}><RefreshCw size={16} /> {revisando ? 'Revisando…' : 'Actualizar estados'}</button>
       </div>
       <Aviso>{error}</Aviso>
-      {cargando && !datos ? <Cargando /> : datos && (datos.length === 0 ? <Vacio>Aún no hay cobros en línea. Usa "Cobrar ahora" o espera a que un cliente pague desde el portal.</Vacio> : (
+      {cargando && !datos ? <Cargando /> : datos && (datos.length === 0 ? <Vacio>Aún no hay cobros en línea. Aquí aparecen los cobros con tarjeta y los pagos que hacen los clientes desde su portal.</Vacio> : (
         <div className="tabla"><table>
-          <thead><tr><th>Fecha</th><th>Cliente</th><th>Suscripción</th><th>Periodo</th><th>Cómo</th><th className="num">Monto</th><th>Estado</th><th /></tr></thead>
+          <thead><tr><th>Fecha</th><th>Cliente</th><th>Suscripción</th><th>Periodo</th><th>Cómo</th><th className="num">Monto</th><th>Estado</th></tr></thead>
           <tbody>{datos.map((k) => (
             <tr key={k.id}>
               <td>{fechaCorta(k.created_at)}</td>
@@ -236,7 +235,6 @@ function Cobros({ version, listo }: { version: number; listo: (m: string) => voi
               <td>{k.canal === 'tarjeta' ? `Tarjeta · intento ${k.intento}` : 'Enlace de pago'}<small>{ORIGEN[k.origen]}{k.medio_flow ? ` · ${k.medio_flow}` : ''}</small></td>
               <td className="num">{pesos(k.monto)}</td>
               <td><Etiqueta tono={ESTADO_COBRO[k.estado][0]}>{ESTADO_COBRO[k.estado][1]}</Etiqueta>{k.error && k.estado !== 'pagado' && <small>{k.error}</small>}</td>
-              <td>{k.estado === 'pendiente' && k.url_pago && <button type="button" className="boton secundario mini" onClick={() => copiar(k.url_pago!)}><Copy size={14} /> Copiar enlace</button>}</td>
             </tr>
           ))}</tbody>
         </table></div>

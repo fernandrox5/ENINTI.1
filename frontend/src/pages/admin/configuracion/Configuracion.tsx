@@ -2,7 +2,7 @@
 // (con acceso a su panel), condiciones del servicio y correos enviados.
 import { useEffect, useState, type FormEvent } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { FileText, Plus, Send, Settings } from 'lucide-react';
+import { FileText, Mail, Plus, Send, Settings } from 'lucide-react';
 import { api } from '../../../api';
 import { useDatos } from '../../../useDatos';
 import { AreaTexto, Aviso, Campo, Cargando, Etiqueta, Modal, Pestanas, Selector, Titulo, Vacio } from '../../../componentes';
@@ -145,7 +145,7 @@ function EditarPlan({ plan, cerrar, listo }: { plan: Plan | null; cerrar: () => 
 }
 
 // ---------- Técnicos ----------
-interface Tecnico { id: number; nombre: string; empresa: string | null; telefono: string | null; email: string | null; activo: boolean; pendientes: number; realizadas: number; calificacion: string | null; acceso: 'sin_cuenta' | 'invitado' | 'activo' | 'sin_correo' }
+interface Tecnico { id: number; nombre: string; rut: string | null; empresa: string | null; telefono: string | null; email: string | null; activo: boolean; pendientes: number; realizadas: number; calificacion: string | null; acceso: 'sin_cuenta' | 'invitado' | 'activo' | 'sin_correo' }
 const ACCESO: Record<Tecnico['acceso'], [('buena' | 'alerta' | 'neutra'), string]> = { activo: ['buena', 'Usa el panel'], invitado: ['alerta', 'Invitado'], sin_cuenta: ['neutra', 'Sin acceso'], sin_correo: ['neutra', 'Sin correo'] };
 function Tecnicos() {
   const [version, setVersion] = useState(0);
@@ -164,12 +164,13 @@ function Tecnicos() {
       <Aviso tipo="ok">{aviso}</Aviso>
       {datos.length === 0 ? <Vacio>Aún no hay técnicos.</Vacio> : (
         <div className="tabla"><table>
-          <thead><tr><th>Técnico</th><th>Empresa</th><th>Contacto</th><th>Visitas</th><th>Panel</th><th /></tr></thead>
+          <thead><tr><th>Técnico</th><th>RUT</th><th>Teléfono</th><th>Correo</th><th>Visitas</th><th>Panel</th><th /></tr></thead>
           <tbody>{datos.map((t) => (
             <tr key={t.id} className={t.activo ? '' : 'retirado'}>
-              <td><strong>{t.nombre}</strong>{!t.activo && <small>Desactivado</small>}</td>
-              <td>{t.empresa ?? 'ENINTI'}</td>
-              <td>{t.telefono ?? '—'}{t.email && <small>{t.email}</small>}</td>
+              <td><strong>{t.nombre}</strong><small>{t.empresa ?? 'ENINTI'}{!t.activo ? ' · desactivado' : ''}</small></td>
+              <td className="sin-corte">{t.rut ?? '—'}</td>
+              <td className="sin-corte">{t.telefono ?? '—'}</td>
+              <td>{t.email ?? '—'}</td>
               <td>{t.pendientes} pendientes<small>{t.realizadas} realizadas{t.calificacion ? ` · ★ ${t.calificacion}` : ''}</small></td>
               <td><Etiqueta tono={ACCESO[t.acceso][0]}>{ACCESO[t.acceso][1]}</Etiqueta></td>
               <td><div className="acciones sin-corte">
@@ -188,7 +189,7 @@ function Tecnicos() {
   );
 }
 function EditarTecnico({ t, cerrar, listo }: { t: Tecnico | null; cerrar: () => void; listo: (m: string) => void }) {
-  const [f, setF] = useState({ nombre: t?.nombre ?? '', empresa: t?.empresa ?? 'ENINTI', telefono: t?.telefono ?? '', email: t?.email ?? '' });
+  const [f, setF] = useState({ nombre: t?.nombre ?? '', rut: t?.rut ?? '', empresa: t?.empresa ?? 'ENINTI', telefono: t?.telefono ?? '', email: t?.email ?? '' });
   const [error, setError] = useState('');
   const c = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement>) => setF({ ...f, [k]: e.target.value });
   const enviar = async (e: FormEvent) => {
@@ -200,6 +201,7 @@ function EditarTecnico({ t, cerrar, listo }: { t: Tecnico | null; cerrar: () => 
     <Modal titulo={t ? `Editar ${t.nombre}` : 'Nuevo técnico'} cerrar={cerrar}>
       <form className="formulario" onSubmit={enviar} noValidate>
         <Campo etiqueta="Nombre" value={f.nombre} onChange={c('nombre')} />
+        <Campo etiqueta="RUT" value={f.rut} onChange={c('rut')} placeholder="12.345.678-9" />
         <Campo etiqueta="Empresa" value={f.empresa} onChange={c('empresa')} ayuda="ENINTI o la empresa externa" />
         <Campo etiqueta="Teléfono" type="tel" value={f.telefono} onChange={c('telefono')} />
         <Campo etiqueta="Correo" type="email" value={f.email} onChange={c('email')} ayuda="Para enviarle el acceso a su panel" />
@@ -278,26 +280,65 @@ function NuevaVersion({ cerrar, listo }: { cerrar: () => void; listo: () => void
 }
 
 // ---------- Correos ----------
-interface Correo { id: number; tipo_evento: string; asunto: string; destinatario: string; estado: string; intentos: number; ultimo_error: string | null; fecha_generacion: string; enviada_at: string | null; cliente: string | null }
-const ESTADO_CORREO: Record<string, ['buena' | 'alerta' | 'mala' | 'neutra', string]> = { enviada: ['buena', 'Enviado'], pendiente: ['alerta', 'En cola'], error: ['mala', 'Con error'], omitida: ['neutra', 'Omitido'] };
+interface Correo { id: number; tipo_evento: string; asunto: string; destinatario: string; para: string | null; estado: string; ultimo_error: string | null; fecha_generacion: string; enviada_at: string | null; cliente: string | null }
+interface Ejemplo { evento: string; rol: string; para: string; cuando: string; asunto: string; html: string }
+const ESTADO_CORREO: Record<string, ['buena' | 'alerta' | 'mala' | 'neutra', string]> = { enviada: ['buena', 'Enviado'], pendiente: ['alerta', 'En cola'], error: ['mala', 'Con error'], descartada: ['neutra', 'Descartado'] };
+const PARA: Record<string, string> = { cliente: 'Cliente', admin: 'Administrador', tecnico: 'Técnico' };
 function Correos() {
   const { datos, error } = useDatos<{ correos: Correo[]; automaticos: boolean }>('/admin/configuracion/correos');
+  const { datos: ej } = useDatos<Ejemplo[]>('/admin/configuracion/correos/ejemplos');
+  const [ver, setVer] = useState<Ejemplo | null>(null);
+  const [para, setPara] = useState('');
+  const [enviando, setEnviando] = useState(false);
+  const [aviso, setAviso] = useState('');
+  const [falla, setFalla] = useState('');
   if (!datos) return error ? <Aviso>{error}</Aviso> : <Cargando />;
+  const enviar = async () => {
+    setFalla(''); setAviso(''); setEnviando(true);
+    try { const r = await api<{ enviados: number; para: string }>('/admin/configuracion/correos/ejemplos', { method: 'POST', body: { para } }); setAviso(`Listo: se enviaron ${r.enviados} correos de ejemplo a ${r.para}.`); }
+    catch (e) { setFalla((e as Error).message); } finally { setEnviando(false); }
+  };
+  // Agrupa los ejemplos por evento: cuándo se envía y a quién
+  const eventos = ej ? [...new Set(ej.map((e) => e.evento))].map((ev) => ej.filter((e) => e.evento === ev)) : [];
   return (
     <>
-      <p className="nota-info"><span>Correos automáticos (vencimientos y recordatorios): <strong>{datos.automaticos ? 'activos' : 'apagados'}</strong>. Los de cuenta (invitación y contraseña) se envían siempre.</span></p>
+      <p className="nota-info"><span>Correos automáticos: <strong>{datos.automaticos ? 'activos' : 'apagados'}</strong>. Syntia manda un correo por cada cosa que pasa, una sola vez. Los de cuenta (invitación y contraseña) se envían siempre.</span></p>
+      <section className="tarjeta">
+        <header className="tarjeta-cabecera"><h2>Qué correos se envían</h2></header>
+        <div className="tabla"><table>
+          <thead><tr><th>Cuándo</th><th>Le llega a (toca para ver el correo)</th></tr></thead>
+          <tbody>{eventos.map((grupo) => (
+            <tr key={grupo[0].evento}>
+              <td><strong>{grupo[0].cuando}</strong></td>
+              <td><div className="acciones">{grupo.map((e) => <button key={e.rol} type="button" className="boton secundario mini" onClick={() => setVer(e)}><Mail size={14} /> {e.para}</button>)}</div></td>
+            </tr>
+          ))}</tbody>
+        </table></div>
+        <div className="enviar-ejemplos">
+          <Campo etiqueta="Enviar un ejemplo de cada correo a" type="email" placeholder="profesor@correo.cl" value={para} onChange={(e) => setPara(e.target.value)} />
+          <button type="button" className="boton primario chico" disabled={enviando || !para.includes('@')} onClick={enviar}><Send size={16} /> {enviando ? 'Enviando…' : 'Enviar ejemplos'}</button>
+        </div>
+        <Aviso tipo="ok">{aviso}</Aviso><Aviso>{falla}</Aviso>
+      </section>
+
+      <h2 className="subtitulo">Enviados</h2>
       {datos.correos.length === 0 ? <Vacio>Aún no se han enviado correos automáticos.</Vacio> : (
         <div className="tabla"><table>
           <thead><tr><th>Fecha</th><th>Para</th><th>Asunto</th><th>Estado</th></tr></thead>
           <tbody>{datos.correos.map((c) => (
             <tr key={c.id}>
               <td>{c.enviada_at ? fechaHora(c.enviada_at) : fechaCorta(c.fecha_generacion)}</td>
-              <td>{c.cliente ?? c.destinatario}{c.cliente && <small>{c.destinatario}</small>}</td>
+              <td>{c.para ? PARA[c.para] ?? c.para : c.cliente ?? 'Cliente'}<small>{c.destinatario}</small></td>
               <td>{c.asunto}</td>
               <td><Etiqueta tono={(ESTADO_CORREO[c.estado] ?? ['neutra', c.estado])[0]}>{(ESTADO_CORREO[c.estado] ?? ['neutra', c.estado])[1]}</Etiqueta>{c.ultimo_error && <small>{c.ultimo_error}</small>}</td>
             </tr>
           ))}</tbody>
         </table></div>
+      )}
+      {ver && (
+        <Modal titulo={`${ver.asunto} · para ${ver.para.toLowerCase()}`} cerrar={() => setVer(null)} ancho={640}>
+          <iframe title="Vista previa del correo" className="vista-correo" srcDoc={ver.html} />
+        </Modal>
       )}
     </>
   );

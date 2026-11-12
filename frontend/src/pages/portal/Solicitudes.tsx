@@ -15,7 +15,7 @@ interface Solicitud {
   instalacion_id: number | null; instalacion: string | null;
   mantencion: { id: number; estado: string; fecha_programada: string | null; fecha_realizada: string | null; hora_inicio: string | null; tecnico: string | null } | null;
 }
-interface Datos { solicitudes: Solicitud[]; instalaciones: { id: number; nombre: string; con_plan: boolean }[] }
+interface Datos { solicitudes: Solicitud[]; instalaciones: { id: number; nombre: string; con_plan: boolean; incluidas: number | null; usadas: number }[] }
 const ICONO = { emergencia: Zap, mantencion: Wrench, consulta: Info } as const;
 const ESTADO_CLIENTE: Record<string, string> = { nueva: 'Recibida', en_proceso: 'En proceso', resuelta: 'Resuelta', cerrada: 'Cerrada' };
 
@@ -97,7 +97,7 @@ function Nueva({ datos, tipoInicial, instalacion, volver, listo }: {
       <div className="opciones-tarjeta">
         {datos.instalaciones.map((i) => (
           <button key={i.id} type="button" className={f.instalacion_id === String(i.id) ? 'elegida' : ''} onClick={() => setF({ ...f, instalacion_id: String(i.id) })}>
-            <strong>{i.nombre}</strong><small>{i.con_plan ? 'Con plan de mantención' : 'Sin suscripción'}</small>
+            <strong>{i.nombre}</strong><small>{i.con_plan ? `Suscripción · quedan ${Math.max(0, (i.incluidas ?? 0) - i.usadas)} de ${i.incluidas} mantenciones` : 'Sin suscripción'}</small>
           </button>
         ))}
       </div>
@@ -108,9 +108,11 @@ function Nueva({ datos, tipoInicial, instalacion, volver, listo }: {
       {f.tipo === 'emergencia' && (
         <p className="nota-peligro"><Zap size={16} /> ¿Es muy urgente? {wa ? <>Escríbenos también por <a href={wa} target="_blank" rel="noreferrer">WhatsApp</a>.</> : 'Llámanos también.'}</p>
       )}
-      {f.tipo === 'mantencion' && elegida && !elegida.con_plan && (
-        <p className="nota-info"><span>Sin suscripción: la visita se cobra aparte.</span></p>
-      )}
+      {f.tipo === 'mantencion' && elegida && (!elegida.con_plan
+        ? <p className="nota-info"><span>Sin suscripción: la visita se cobra aparte.</span></p>
+        : (elegida.incluidas ?? 0) > elegida.usadas
+          ? <p className="nota-info"><span>Te quedan <strong>{(elegida.incluidas ?? 0) - elegida.usadas} de {elegida.incluidas}</strong> mantenciones incluidas en tu suscripción.</span></p>
+          : <p className="nota-info"><span>Ya usaste las {elegida.incluidas} mantenciones incluidas en tu suscripción: esta visita se cobra aparte.</span></p>)}
       {wa && <p className="suave">¿Solo quieres hacer una consulta? Escríbenos por <a href={wa} target="_blank" rel="noreferrer">WhatsApp</a>.</p>}
       <AreaTexto etiqueta="¿Qué está pasando?"
         placeholder={f.tipo === 'emergencia' ? 'El inversor muestra una luz roja y no tenemos energía desde la mañana.' : f.tipo === 'mantencion' ? 'Los paneles están con mucho polvo, ¿pueden venir a limpiarlos?' : 'Quiero saber si conviene agregar una batería.'}

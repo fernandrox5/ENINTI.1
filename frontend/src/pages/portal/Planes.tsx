@@ -37,7 +37,7 @@ export default function Planes() {
               <header className="tarjeta-cabecera"><h2>{p.nombre}</h2>{mios.length > 0 && <Etiqueta tono="alerta">Tu plan</Etiqueta>}</header>
               <strong className="pago-monto">{pesos(p.monto_clp)} <small>{FRECUENCIAS[p.frecuencia_pago]}</small></strong>
               <ul className="beneficios">
-                <li><Check size={18} /> {p.mantenciones_por_anio} {p.mantenciones_por_anio === 1 ? 'mantención preventiva' : 'mantenciones preventivas'} al año</li>
+                <li><Check size={18} /> {p.mantenciones_por_anio} {p.mantenciones_por_anio === 1 ? 'mantención' : 'mantenciones'} al año, cuando las pidas</li>
                 <li><Check size={18} /> Cobro automático mensual, sin trámites</li>
                 {p.incluye_reposicion_equipos && <li><Check size={18} /> Incluye reposición de equipos</li>}
                 {p.tiempo_respuesta_horas && <li><Check size={18} /> Respuesta en {p.tiempo_respuesta_horas} horas</li>}
@@ -90,7 +90,7 @@ function Contratar({ plan, datos, inicial, cerrar }: { plan: Plan; datos: Datos;
           <div><dt>Plan</dt><dd>{plan.nombre}</dd></div>
           <div><dt>Hoy pagas</dt><dd><strong>{pesos(plan.monto_clp)}</strong></dd></div>
           <div><dt>Después</dt><dd>{pesos(plan.monto_clp)} {FRECUENCIAS[plan.frecuencia_pago]}, el día {dia} de cada mes, automático</dd></div>
-          <div><dt>Incluye</dt><dd>{plan.mantenciones_por_anio} mantenciones al año (se agendan solas)</dd></div>
+          <div><dt>Incluye</dt><dd>{plan.mantenciones_por_anio} mantenciones al año (las pides cuando las necesites)</dd></div>
         </dl>
         <h3 className="subtitulo">¿Cómo pagas?</h3>
         <div className="opciones-radio">

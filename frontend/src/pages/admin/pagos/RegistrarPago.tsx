@@ -47,7 +47,7 @@ function ElegirSuscripcion({ clienteId, elegir }: { clienteId: string | null; el
       <h1 className="titulo-pagina">Registrar pago</h1>
       <div className="tarjeta asistente">
         <label className="buscador-icono"><Search size={18} />
-          <input className="buscador" type="search" placeholder="Cliente, código o instalación" value={q} onChange={(e) => setQ(e.target.value)} autoFocus /></label>
+          <input className="buscador" type="search" placeholder="Buscar cliente o instalación" value={q} onChange={(e) => setQ(e.target.value)} autoFocus /></label>
         {cargando && !datos ? <Cargando /> : (
           <div className="opciones-tarjeta">
             {datos?.suscripciones.map((s) => (

@@ -54,8 +54,9 @@ export default function SuscripcionDetalle() {
 
   const [tonoEstado, textoEstado] = estadoSuscripcion(s);
   const [tonoPago, textoPago] = situacionPago(s);
-  const realizadas = s.mantenciones.filter((m) => m.estado === 'realizada').length;
-  const delPlan = s.mantenciones.filter((m) => m.estado !== 'cancelada').length;
+  // Incluidas en la suscripción y cuántas ha pedido el cliente (las emergencias no cuentan)
+  const incluidas = Math.ceil((s.mantenciones_por_anio * s.duracion_meses) / 12);
+  const pedidas = s.mantenciones.filter((m) => m.estado !== 'cancelada' && m.tipo !== 'emergencia').length;
   const porValidar = s.pagos.find((p) => p.estado === 'pendiente');
   // Hasta dónde llegó: hoy si está vigente; la fecha de cierre si se cerró
   const transcurrido = avance(s.fecha_inicio, s.fecha_termino, s.fecha_cierre ?? undefined);
@@ -87,7 +88,7 @@ export default function SuscripcionDetalle() {
             <dl className="datos lineas">
               <div><dt>Plan</dt><dd>{s.tipo_nombre}</dd></div>
               <div><dt>Monto pactado</dt><dd>{pesos(s.monto_pactado)} {FRECUENCIAS[s.frecuencia_pago]}{s.monto_pactado !== s.monto_plan && <small className="suave"> (plan: {pesos(s.monto_plan)})</small>}</dd></div>
-              <div><dt>Mantenciones</dt><dd>{s.mantenciones_por_anio} al año · dura {s.duracion_meses} meses</dd></div>
+              <div><dt>Mantenciones</dt><dd>{s.mantenciones_por_anio} al año, a pedido · dura {s.duracion_meses} meses</dd></div>
             </dl>
           </section>
 
@@ -127,7 +128,7 @@ export default function SuscripcionDetalle() {
 
         <div className="columna">
           <section className="tarjeta">
-            <header className="tarjeta-cabecera"><h2>Mantenciones del plan</h2>{delPlan > 0 && <span className="suave">{realizadas} de {delPlan} realizadas</span>}</header>
+            <header className="tarjeta-cabecera"><h2>Mantenciones</h2><span className="suave">Pedidas {pedidas} de {incluidas} incluidas</span></header>
             {s.mantenciones.length === 0 ? <p className="suave">Esta suscripción no tiene mantenciones agendadas.</p> : (
               <ul className="lista-simple">
                 {s.mantenciones.map((m) => (

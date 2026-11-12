@@ -4,6 +4,7 @@
 import { Router } from 'express';
 import { pool } from '../../config/db.js';
 import { ErrorHttp } from '../../utils/validar.js';
+import { notificar } from '../../services/notificar.js';
 
 const router = Router();
 const TIPOS = ['mantencion', 'emergencia', 'consulta'];
@@ -29,8 +30,12 @@ router.get('/', async (req, res) => {
     pool.query(`SELECT ${COLUMNAS} FROM solicitudes s LEFT JOIN instalaciones i ON i.id = s.instalacion_id
                 WHERE s.cliente_id = $1 ORDER BY s.estado IN ('nueva', 'en_proceso') DESC, s.created_at DESC LIMIT 100`, [cliente]),
     pool.query(
-      `SELECT i.id, coalesce(i.nombre, i.codigo) AS nombre, EXISTS (SELECT 1 FROM suscripciones s WHERE s.instalacion_id = i.id AND s.estado = 'vigente') AS con_plan
-       FROM instalaciones i WHERE i.cliente_id = $1 AND i.activa ORDER BY i.codigo`, [cliente]),
+      `SELECT i.id, coalesce(i.nombre, i.codigo) AS nombre, s.id IS NOT NULL AS con_plan, ceil(t.mantenciones_por_anio * t.duracion_meses / 12.0)::int AS incluidas,
+              (SELECT count(*)::int FROM mantenciones m WHERE m.suscripcion_id = s.id AND m.estado <> 'cancelada' AND m.tipo <> 'emergencia') AS usadas
+       FROM instalaciones i
+       LEFT JOIN suscripciones s ON s.instalacion_id = i.id AND s.estado = 'vigente'
+       LEFT JOIN tipos_suscripcion t ON t.id = s.tipo_suscripcion_id
+       WHERE i.cliente_id = $1 AND i.activa ORDER BY i.codigo`, [cliente]),
   ]);
   res.json({ solicitudes: lista.rows, instalaciones: instalaciones.rows });
 });
@@ -60,6 +65,7 @@ router.post('/', async (req, res) => {
     `INSERT INTO solicitudes (cliente_id, instalacion_id, tipo, prioridad, descripcion, canal)
      VALUES ($1, $2, $3, $4, $5, 'plataforma') RETURNING id`,
     [cliente, i?.id ?? null, tipo, PRIORIDAD[tipo], descripcion]);
+  await notificar('solicitud_nueva', { solicitud_id: s.id }, req);
   res.status(201).json({ id: s.id });
 });
 

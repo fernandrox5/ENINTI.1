@@ -167,6 +167,7 @@ function Anotar({ cerrar, listo }: { cerrar: () => void; listo: (id: number) => 
   const { datos: ficha } = useDatos<{ instalaciones: { id: number; codigo: string; nombre: string | null }[] }>(f.cliente_id ? `/admin/clientes/${f.cliente_id}` : null);
   const [error, setError] = useState('');
   const [guardando, setGuardando] = useState(false);
+  const elegido = clientes?.clientes.find((c) => String(c.id) === f.cliente_id) ?? null;
   useEffect(() => { if (ficha?.instalaciones.length === 1) setF((x) => ({ ...x, instalacion_id: String(ficha.instalaciones[0].id) })); }, [ficha]);
   const enviar = async (e: FormEvent) => {
     e.preventDefault();
@@ -178,15 +179,28 @@ function Anotar({ cerrar, listo }: { cerrar: () => void; listo: (id: number) => 
   return (
     <Modal titulo="Anotar solicitud" cerrar={cerrar} ancho={680}>
       <form className="formulario dos" onSubmit={enviar} noValidate>
-        <label className="buscador-icono completo"><Search size={18} />
-          <input className="buscador" type="search" placeholder="Buscar cliente por nombre o RUT" value={q} onChange={(e) => setQ(e.target.value)} autoFocus /></label>
-        <Selector etiqueta="Cliente" value={f.cliente_id} onChange={(e) => setF({ ...f, cliente_id: e.target.value, instalacion_id: '' })}>
-          <option value="">Elige el cliente</option>
-          {clientes?.clientes.map((c) => <option key={c.id} value={c.id}>{c.nombre}{c.rut ? ` · ${c.rut}` : ''}</option>)}
-        </Selector>
+        {elegido ? (
+          <div className="completo fila-suscripcion">
+            <span><strong>{elegido.nombre}</strong><small>{elegido.rut ?? 'Sin RUT'}</small></span>
+            <button type="button" className="boton suave mini" onClick={() => setF({ ...f, cliente_id: '', instalacion_id: '' })}>Cambiar</button>
+          </div>
+        ) : (
+          <div className="completo elegir-cliente">
+            <label className="buscador-icono"><Search size={18} />
+              <input className="buscador" type="search" placeholder="Escribe el nombre o RUT del cliente" value={q} onChange={(e) => setQ(e.target.value)} autoFocus /></label>
+            <div className="opciones-tarjeta">
+              {clientes?.clientes.slice(0, 6).map((c) => (
+                <button key={c.id} type="button" onClick={() => setF({ ...f, cliente_id: String(c.id), instalacion_id: '' })}>
+                  <strong>{c.nombre}</strong><small>{c.rut ?? 'Sin RUT'}</small>
+                </button>
+              ))}
+              {clientes && clientes.clientes.length === 0 && <p className="suave">No hay clientes que coincidan.</p>}
+            </div>
+          </div>
+        )}
         <Selector etiqueta="Instalación" value={f.instalacion_id} onChange={(e) => setF({ ...f, instalacion_id: e.target.value })} disabled={!ficha}>
           <option value="">Elige la instalación</option>
-          {ficha?.instalaciones.map((i) => <option key={i.id} value={i.id}>{i.nombre || i.codigo} · {i.codigo}</option>)}
+          {ficha?.instalaciones.map((i) => <option key={i.id} value={i.id}>{i.nombre || i.codigo}</option>)}
         </Selector>
         <div className="completo segmentos">
           {Object.entries(TIPO_SOLICITUD).filter(([v]) => v !== 'consulta').map(([v, t]) => <button key={v} type="button" className={f.tipo === v ? 'activo' : ''} onClick={() => setF({ ...f, tipo: v })}>{t}</button>)}

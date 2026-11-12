@@ -41,7 +41,7 @@ export default function Instalaciones() {
       <div className="filtros">
         <label className="buscador-icono">
           <Search size={18} />
-          <input className="buscador" type="search" placeholder="Código, instalación o cliente" value={q} onChange={(e) => setQ(e.target.value)} />
+          <input className="buscador" type="search" placeholder="Buscar instalación o cliente" value={q} onChange={(e) => setQ(e.target.value)} />
         </label>
         <div className="segmentos" role="tablist">
           {FILTROS.map(([v, t]) => (

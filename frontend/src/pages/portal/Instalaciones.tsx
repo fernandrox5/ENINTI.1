@@ -109,7 +109,7 @@ export function FichaInstalacion() {
             <section className="tarjeta">
               <header className="tarjeta-cabecera"><h2>{i.detalle_plan.nombre}</h2><strong>{pesos(i.monto_pactado)} <small className="suave">{FRECUENCIAS[i.frecuencia_pago ?? 'mensual']}</small></strong></header>
               <ul className="beneficios">
-                <li><Check size={18} /> {i.detalle_plan.mantenciones_por_anio} {i.detalle_plan.mantenciones_por_anio === 1 ? 'mantención preventiva' : 'mantenciones preventivas'} al año</li>
+                <li><Check size={18} /> {i.detalle_plan.mantenciones_por_anio} {i.detalle_plan.mantenciones_por_anio === 1 ? 'mantención' : 'mantenciones'} al año</li>
                 {i.detalle_plan.incluye_reposicion_equipos && <li><Check size={18} /> Incluye reposición de equipos</li>}
                 {i.detalle_plan.tiempo_respuesta_horas && <li><Check size={18} /> Respuesta en {i.detalle_plan.tiempo_respuesta_horas} horas</li>}
               </ul>
@@ -163,7 +163,7 @@ function SinPlan({ i }: { i: InstalacionPortal }) {
   return (
     <section className="tarjeta destacada">
       <h2>{i.ultima_suscripcion ? `El plan de ${i.nombre || i.codigo} ${i.ultima_suscripcion.estado === 'cerrada' ? 'terminó' : 'venció'}` : `${i.nombre || i.codigo} no tiene plan de mantención`}</h2>
-      <p>Con un plan, ENINTI agenda tus mantenciones preventivas y tus paneles rinden todo el año.</p>
+      <p>Con una suscripción tienes mantenciones incluidas: las pides cuando las necesites y tus paneles rinden todo el año.</p>
       <Link to={`/portal/planes?instalacion=${i.id}`} className="boton secundario">{i.ultima_suscripcion ? 'Quiero renovar' : 'Conoce los planes'}</Link>
     </section>
   );

@@ -6,6 +6,7 @@ import { pool } from '../../config/db.js';
 import { supabase } from '../../config/supabase.js';
 import { ErrorHttp } from '../../utils/validar.js';
 import { cobrarConTarjeta, crearEnlacePago, periodosSinPagar, revisarPendientes } from '../../services/cobros.js';
+import { notificar } from '../../services/notificar.js';
 
 const router = Router();
 const POR_PAGINA = 25;
@@ -155,6 +156,7 @@ router.post('/', async (req, res) => {
     // Si había un enlace de pago pendiente para esos periodos, ya no corresponde
     await db.query("UPDATE cobros SET estado = 'anulado', error = 'Pagado de forma manual' WHERE suscripcion_id = $1 AND estado = 'pendiente' AND periodo = ANY($2::date[])", [s.id, periodos]);
     await db.query('COMMIT');
+    await notificar('pago_recibido', { suscripcion_id: s.id }, req, { monto: monto * ids.length, fecha_evento: periodos[0] });
     res.status(201).json({ ids, total: monto * ids.length });
   } catch (err) {
     await db.query('ROLLBACK').catch(() => {});
@@ -192,6 +194,8 @@ router.post('/:id/validar', async (req, res) => {
       "UPDATE pagos SET estado = 'pagado', validado_por = $2, fecha_pago = COALESCE(fecha_pago, now()) WHERE id = $1 AND estado = 'pendiente'",
       [req.params.id, req.usuario.id]);
     if (!rowCount) throw new ErrorHttp(409, 'El pago ya no está por validar');
+    const { rows: [p] } = await pool.query('SELECT suscripcion_id, monto, periodo::text FROM pagos WHERE id = $1', [req.params.id]);
+    await notificar('pago_recibido', { suscripcion_id: p.suscripcion_id }, req, { monto: p.monto, fecha_evento: p.periodo });
   } catch (err) {
     if (err.code === '23505') throw new ErrorHttp(409, 'Ese periodo ya tiene un pago registrado. Rechaza este comprobante.');
     throw err;

@@ -8,6 +8,9 @@
 //   6. 05_plazo_pago.sql  días de plazo antes de cerrar por falta de pago
 //   7. 06_mantenciones    motivo de cancelación y notas de la mantención
 //   8. 07_pago_pendiente  un solo criterio de pago pendiente (sin días de gracia)
+//   9. 08_avisos          avisos por correo: un correo por cada cosa que pasa
+//  10. 09_mantenciones_a_pedido  las mantenciones las pide el cliente (no se agendan solas)
+//  11. 10_notificaciones_leidas   lo leído en la campana queda guardado por usuario
 //   5. usuarios de prueba en Supabase Auth (el trigger los vincula por correo)
 import { readFile } from 'node:fs/promises';
 
@@ -76,6 +79,9 @@ try {
   await pool.query(await sql('schema/05_plazo_pago.sql'));
   await pool.query(await sql('schema/06_mantenciones.sql'));
   await pool.query(await sql('schema/07_pago_pendiente.sql'));
+  await pool.query(await sql('schema/08_avisos.sql'));
+  await pool.query(await sql('schema/09_mantenciones_a_pedido.sql'));
+  await pool.query(await sql('schema/10_notificaciones_leidas.sql'));
 
   for (const u of USUARIOS) {
     const { data, error } = await supabase.auth.admin.createUser({

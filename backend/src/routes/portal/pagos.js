@@ -6,6 +6,7 @@ import { ErrorHttp } from '../../utils/validar.js';
 import * as flow from '../../services/flow.js';
 import { clienteFlow, crearEnlacePago, periodosSinPagar, plazoPago } from '../../services/cobros.js';
 import { urlApp } from '../../services/invitaciones.js';
+import { notificar } from '../../services/notificar.js';
 
 const router = Router();
 
@@ -93,6 +94,7 @@ router.post('/cancelar', async (req, res) => {
     'SELECT greatest(fn_hoy(), least(coalesce($1::date + 1, fn_hoy()), $2::date))::text AS cierre', [s.pagado_hasta, s.fecha_termino]);
   await pool.query("UPDATE cobros SET estado = 'anulado', error = 'El cliente canceló la suscripción' WHERE suscripcion_id = $1 AND estado = 'pendiente'", [s.id]);
   await pool.query('SELECT fn_cerrar_suscripcion($1, $2, $3::date)', [s.id, `Cancelada por el cliente: ${motivo}`, cierre]);
+  await notificar('suscripcion_cerrada', { suscripcion_id: s.id }, req);
   res.json({ ok: true, cubierta_hasta: cierre });
 });
 

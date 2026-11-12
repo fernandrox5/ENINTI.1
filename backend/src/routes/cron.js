@@ -1,7 +1,8 @@
 // Tareas programadas. Vercel Cron llama a /api/cron/avisos una vez al día enviando
 // "Authorization: Bearer <CRON_SECRET>"; sin ese secreto la ruta no responde.
 import { Router } from 'express';
-import { enviarAvisos, procesoDiario } from '../services/avisos.js';
+import { procesoDiario } from '../services/avisos.js';
+import { avisosDelDia } from '../services/notificar.js';
 import { ejecutarCobros, revisarPendientes } from '../services/cobros.js';
 
 const router = Router();
@@ -14,11 +15,11 @@ router.use((req, res, next) => {
   next();
 });
 
-// ?generar=1 ejecuta antes fn_proceso_diario() (en producción ya lo hace pg_cron a las 08:00)
+// Una vez al día: actualiza estados (vencidas) y manda los avisos del día
 router.get('/avisos', async (req, res) => {
-  const proceso = req.query.generar === '1' ? await procesoDiario() : null;
-  const envio = await enviarAvisos();
-  res.json({ proceso, envio });
+  const proceso = await procesoDiario();
+  const avisos = await avisosDelDia();
+  res.json({ proceso, avisos });
 });
 
 // Cobros automáticos del día (tarjetas inscritas y enlaces de pago). Se activan con COBROS_AUTOMATICOS=true
