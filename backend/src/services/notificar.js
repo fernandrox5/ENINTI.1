@@ -292,8 +292,9 @@ export function ejemplos(req) {
   }
   return out;
 }
-export async function enviarEjemplos(req, para) {
-  const lista = ejemplos(req);
+export async function enviarEjemplos(req, para, { evento, rol } = {}) {
+  // Uno solo (el que se eligió) o todos
+  const lista = ejemplos(req).filter((e) => (!evento || e.evento === evento) && (!rol || e.rol === rol));
   for (const e of lista) {
     await enviarCorreo({ para, asunto: `[Ejemplo · ${e.para}] ${e.asunto}`, titulo: e.correo.titulo, parrafos: e.correo.parrafos, boton: e.correo.boton });
   }

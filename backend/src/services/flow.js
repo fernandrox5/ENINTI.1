@@ -27,7 +27,9 @@ async function llamar(metodo, ruta, datos = {}) {
     res = metodo === 'GET'
       ? await fetch(`${url}${ruta}?${cuerpo}`, { signal: AbortSignal.timeout(20000) })
       : await fetch(`${url}${ruta}`, { method: 'POST', body: cuerpo, headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, signal: AbortSignal.timeout(20000) });
-  } catch {
+  } catch (err) {
+    // Flow se queda sin responder cuando el correo del cliente no existe (por ejemplo, un dominio inventado)
+    if (err?.name === 'TimeoutError') throw new ErrorHttp(502, 'Flow no respondió. Revisa que el correo del cliente sea un correo real e intenta de nuevo.');
     throw new ErrorHttp(502, 'No se pudo conectar con Flow. Intenta de nuevo en unos minutos.');
   }
   const json = await res.json().catch(() => ({}));

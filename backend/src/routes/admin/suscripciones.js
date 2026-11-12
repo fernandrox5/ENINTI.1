@@ -28,7 +28,7 @@ router.get('/', async (req, res) => {
   const pagina = Math.max(1, Number(req.query.pagina) || 1);
   const params = [];
   let busqueda = 'TRUE';
-  if (q) { params.push(`%${q}%`); busqueda = '(v.codigo ILIKE $1 OR v.cliente_nombre ILIKE $1 OR v.instalacion_nombre ILIKE $1 OR v.instalacion_codigo ILIKE $1)'; }
+  if (q) { params.push(`%${q}%`, `%${q.replace(/[.\s]/g, '')}%`); busqueda = '(v.codigo ILIKE $1 OR v.cliente_nombre ILIKE $1 OR v.instalacion_nombre ILIKE $1 OR v.instalacion_codigo ILIKE $1 OR EXISTS (SELECT 1 FROM clientes x WHERE x.id = v.cliente_id AND x.rut ILIKE $2))'; }
   if (/^\d+$/.test(req.query.cliente || '')) busqueda += ` AND v.cliente_id = ${Number(req.query.cliente)}`;
   const { rows: [conteo] } = await pool.query(
     `SELECT ${Object.entries(VISTAS).map(([k, w]) => `count(*) FILTER (WHERE ${w})::int AS ${k}`).join(', ')}

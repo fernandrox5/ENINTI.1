@@ -4,6 +4,7 @@ import { api } from '../../../api';
 import { useDatos } from '../../../useDatos';
 import { AreaTexto, Aviso, Campo, Modal, Selector } from '../../../componentes';
 import type { Localidad } from './Clientes';
+import { formatearRut } from '../../../formato';
 
 export interface DatosCliente {
   rut: string; nombre: string; es_empresa: boolean; email: string; telefono: string; direccion: string;
@@ -46,7 +47,7 @@ export default function ClienteFormulario({ id, inicial, cerrar, listo }: {
     <Modal titulo={id ? 'Editar cliente' : 'Nuevo cliente'} cerrar={cerrar} ancho={640}>
       <form className="formulario dos" onSubmit={enviar} noValidate>
         <div className="completo"><Campo etiqueta="Nombre completo o razón social" value={f.nombre} onChange={cambiar('nombre')} required autoFocus /></div>
-        <Campo etiqueta="RUT" placeholder="12.345.678-9" value={f.rut} onChange={cambiar('rut')} />
+        <Campo etiqueta="RUT" placeholder="12.345.678-K" value={f.rut} onChange={cambiar('rut')} onBlur={() => setF({ ...f, rut: formatearRut(f.rut) })} ayuda="Obligatorio. Puede terminar en K" />
         <label className="check centrar-vertical">
           <input type="checkbox" checked={f.es_empresa} onChange={(e) => setF({ ...f, es_empresa: e.target.checked })} />
           <span>Es empresa</span>

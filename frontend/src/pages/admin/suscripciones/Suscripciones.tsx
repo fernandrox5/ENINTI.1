@@ -69,7 +69,7 @@ export default function Suscripciones() {
         </div>
         <label className="buscador-icono">
           <Search size={18} />
-          <input className="buscador" type="search" placeholder="Buscar cliente o instalación" value={q} onChange={(e) => setQ(e.target.value)} />
+          <input className="buscador" type="search" placeholder="Buscar cliente, RUT o instalación" value={q} onChange={(e) => setQ(e.target.value)} />
         </label>
       </div>
 

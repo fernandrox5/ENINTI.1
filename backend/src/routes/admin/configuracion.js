@@ -3,7 +3,7 @@
 import { Router } from 'express';
 import { pool } from '../../config/db.js';
 import { supabase } from '../../config/supabase.js';
-import { ErrorHttp, correoValido, normalizarRut } from '../../utils/validar.js';
+import { ErrorHttp, correoLibre, correoReal, correoValido, rutLibre, rutValido, telefonoValido } from '../../utils/validar.js';
 import { ejemplos, enviarEjemplos } from '../../services/notificar.js';
 import { enviarCorreo } from '../../services/correo.js';
 import { estadoAcceso, primerNombre, urlApp } from '../../services/invitaciones.js';
@@ -109,18 +109,21 @@ router.get('/tecnicos', async (req, res) => {
   for (const t of rows) t.acceso = t.email ? (await estadoAcceso(t.email)).estado : 'sin_correo';
   res.json(rows);
 });
-function datosTecnico(b) {
+// Técnico: RUT real (acepta K) y no repetido, correo que existe y que no use otra persona, teléfono chileno
+async function datosTecnico(b, id = null) {
   const nombre = String(b.nombre || '').trim();
   if (nombre.length < 3) throw new ErrorHttp(400, 'Escribe el nombre del técnico');
-  const email = String(b.email || '').trim().toLowerCase();
-  if (email && !correoValido(email)) throw new ErrorHttp(400, 'El correo no es válido');
+  const { rows: [antes] } = id ? await pool.query('SELECT rut FROM tecnicos WHERE id = $1', [id]) : { rows: [] };
+  const rut = rutValido(b.rut, { actual: antes?.rut });
+  const email = await correoReal(b.email);
+  const telefono = telefonoValido(b.telefono);
+  await rutLibre(rut, 'tecnicos', id);
+  await correoLibre(email, { tecnicoId: id });
   const empresa = String(b.empresa || '').trim() || 'ENINTI';
-  const rut = b.rut ? normalizarRut(b.rut) : null;
-  if (b.rut && !rut) throw new ErrorHttp(400, 'El RUT no es válido');
-  return { nombre, empresa, rut, telefono: vacio(String(b.telefono || '').trim()), email: email || null, es_subcontratista: empresa.toUpperCase() !== 'ENINTI' };
+  return { nombre, empresa, rut, telefono, email, es_subcontratista: empresa.toUpperCase() !== 'ENINTI' };
 }
 router.post('/tecnicos', async (req, res) => {
-  const d = datosTecnico(req.body);
+  const d = await datosTecnico(req.body);
   try {
     const { rows: [t] } = await pool.query(
       'INSERT INTO tecnicos (nombre, empresa, rut, telefono, email, es_subcontratista) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
@@ -132,7 +135,7 @@ router.post('/tecnicos', async (req, res) => {
   }
 });
 router.put('/tecnicos/:id', async (req, res) => {
-  const d = datosTecnico(req.body);
+  const d = await datosTecnico(req.body, Number(req.params.id) || 0);
   const { rowCount } = await pool.query(
     'UPDATE tecnicos SET nombre = $2, empresa = $3, rut = $4, telefono = $5, email = $6, es_subcontratista = $7 WHERE id = $1',
     [Number(req.params.id) || 0, d.nombre, d.empresa, d.rut, d.telefono, d.email, d.es_subcontratista]);
@@ -222,11 +225,12 @@ router.get('/correos', async (req, res) => {
 });
 // Los correos automáticos con un ejemplo de cada uno (para revisarlos o mostrarlos)
 router.get('/correos/ejemplos', (req, res) => res.json(ejemplos(req)));
-// Envía un ejemplo de cada correo automático a una dirección (para mostrarlos sin esperar a que ocurran)
+// Envía el ejemplo de un correo automático (el que se eligió) a una dirección, para mostrarlo sin esperar a que ocurra
 router.post('/correos/ejemplos', async (req, res) => {
   const para = String(req.body.para || '').trim().toLowerCase();
   if (!correoValido(para)) throw new ErrorHttp(400, 'Escribe un correo válido');
-  const n = await enviarEjemplos(req, para);
+  const n = await enviarEjemplos(req, para, { evento: req.body.evento, rol: req.body.rol });
+  if (!n) throw new ErrorHttp(400, 'Elige qué correo enviar');
   res.json({ enviados: n, para });
 });
 

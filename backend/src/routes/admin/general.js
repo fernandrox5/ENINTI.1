@@ -21,16 +21,16 @@ router.get('/buscar', async (req, res) => {
     pool.query(
       `SELECT i.id, i.codigo, i.nombre, i.direccion, c.nombre AS cliente
        FROM instalaciones i JOIN clientes c ON c.id = i.cliente_id
-       WHERE i.codigo ILIKE $1 OR i.nombre ILIKE $1 OR i.direccion ILIKE $1
+       WHERE i.codigo ILIKE $1 OR i.nombre ILIKE $1 OR i.direccion ILIKE $1 OR c.rut ILIKE $2
        ORDER BY i.codigo LIMIT 6`,
-      [patron]
+      [patron, rutLimpio]
     ),
     pool.query(
       `SELECT s.id, s.codigo, s.estado, i.nombre AS instalacion, c.nombre AS cliente
        FROM suscripciones s JOIN instalaciones i ON i.id = s.instalacion_id JOIN clientes c ON c.id = i.cliente_id
-       WHERE s.codigo ILIKE $1
+       WHERE s.codigo ILIKE $1 OR c.rut ILIKE $2
        ORDER BY s.fecha_inicio DESC LIMIT 6`,
-      [patron]
+      [patron, rutLimpio]
     ),
   ]);
   res.json({ clientes: clientes.rows, instalaciones: instalaciones.rows, suscripciones: suscripciones.rows });

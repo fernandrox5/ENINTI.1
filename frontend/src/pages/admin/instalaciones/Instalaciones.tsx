@@ -26,9 +26,12 @@ export default function Instalaciones() {
   const [q, setQ] = useState('');
   const [busqueda, setBusqueda] = useState('');
   const [pagina, setPagina] = useState(1);
+  const [tecnico, setTecnico] = useState('');
+  const { datos: op } = useDatos<{ tecnicos: { id: number; nombre: string }[] }>('/admin/instalaciones/opciones');
   useEffect(() => { const t = setTimeout(() => { setBusqueda(q.trim()); setPagina(1); }, 300); return () => clearTimeout(t); }, [q]);
   const params = new URLSearchParams({ filtro, pagina: String(pagina) });
   if (busqueda) params.set('q', busqueda);
+  if (tecnico) params.set('tecnico', tecnico);
   const { datos, error, cargando } = useDatos<Listado>(`/admin/instalaciones?${params}`);
   const paginas = datos ? Math.max(1, Math.ceil(datos.total / datos.por_pagina)) : 1;
 
@@ -41,8 +44,12 @@ export default function Instalaciones() {
       <div className="filtros">
         <label className="buscador-icono">
           <Search size={18} />
-          <input className="buscador" type="search" placeholder="Buscar instalación o cliente" value={q} onChange={(e) => setQ(e.target.value)} />
+          <input className="buscador" type="search" placeholder="Buscar instalación, cliente o RUT" value={q} onChange={(e) => setQ(e.target.value)} />
         </label>
+        <select className="selector-filtro" value={tecnico} onChange={(e) => { setTecnico(e.target.value); setPagina(1); }} aria-label="Técnico">
+          <option value="">Todos los técnicos</option>
+          {op?.tecnicos.map((t) => <option key={t.id} value={t.id}>{t.nombre}</option>)}
+        </select>
         <div className="segmentos" role="tablist">
           {FILTROS.map(([v, t]) => (
             <button key={v} type="button" role="tab" aria-selected={filtro === v} className={filtro === v ? 'activo' : ''}

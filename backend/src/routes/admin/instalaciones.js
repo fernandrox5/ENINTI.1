@@ -3,7 +3,7 @@
 import { Router } from 'express';
 import { pool } from '../../config/db.js';
 import { supabase } from '../../config/supabase.js';
-import { normalizarRut, correoValido, ErrorHttp } from '../../utils/validar.js';
+import { ErrorHttp, correoLibre, correoReal, rutLibre, rutValido, telefonoValido } from '../../utils/validar.js';
 import { estadoAcceso, invitarCliente, primerNombre, urlApp } from '../../services/invitaciones.js';
 import { enviarCorreo } from '../../services/correo.js';
 
@@ -60,7 +60,7 @@ router.get('/opciones', async (req, res) => {
   res.json({ localidades: localidades.rows, tecnicos: tecnicos.rows, planes: planes.rows, condiciones: condiciones.rows[0] ?? null });
 });
 
-// Listado (055): ?q= código, nombre, dirección o cliente · ?filtro=todas|al_dia|deuda|por_vencer|sin · ?pagina=
+// Listado (055): ?q= código, nombre, dirección, cliente o RUT · ?tecnico= (lo instaló o lo visita) · ?filtro=todas|al_dia|deuda|por_vencer|sin · ?pagina=
 router.get('/', async (req, res) => {
   const q = String(req.query.q || '').trim();
   const filtros = {
@@ -74,7 +74,11 @@ router.get('/', async (req, res) => {
   const pagina = Math.max(1, Number(req.query.pagina) || 1);
   const params = [];
   let busqueda = 'TRUE';
-  if (q) { params.push(`%${q}%`); busqueda = '(i.codigo ILIKE $1 OR i.nombre ILIKE $1 OR i.direccion ILIKE $1 OR c.nombre ILIKE $1)'; }
+  if (q) { params.push(`%${q}%`, `%${q.replace(/[.\s]/g, '')}%`); busqueda = '(i.codigo ILIKE $1 OR i.nombre ILIKE $1 OR i.direccion ILIKE $1 OR c.nombre ILIKE $1 OR c.rut ILIKE $2)'; }
+  if (/^\d+$/.test(req.query.tecnico || '')) {
+    params.push(Number(req.query.tecnico));
+    busqueda += ` AND (i.instalador_id = $${params.length} OR EXISTS (SELECT 1 FROM mantenciones m WHERE m.instalacion_id = i.id AND m.tecnico_id = $${params.length} AND m.estado <> 'cancelada'))`;
+  }
   const base = `
     FROM instalaciones i
     JOIN clientes c ON c.id = i.cliente_id
@@ -273,15 +277,16 @@ router.post('/alta', async (req, res) => {
       if (!c.activo) throw new ErrorHttp(400, 'El cliente elegido está desactivado');
       clienteId = c.id;
     } else {
-      const rut = cliente?.rut ? normalizarRut(cliente.rut) : null;
-      if (cliente?.rut && !rut) throw new ErrorHttp(400, 'El RUT del cliente no es válido');
-      if (!cliente?.nombre?.trim()) throw new ErrorHttp(400, 'El nombre del cliente es obligatorio');
-      const email = cliente.email ? String(cliente.email).trim().toLowerCase() : null;
-      if (email && !correoValido(email)) throw new ErrorHttp(400, 'El correo del cliente no es válido');
+      if (!cliente?.nombre?.trim() || cliente.nombre.trim().length < 3) throw new ErrorHttp(400, 'Escribe el nombre completo del cliente o la razón social');
+      const rut = rutValido(cliente.rut);
+      const email = await correoReal(cliente.email);
+      const telefono = telefonoValido(cliente.telefono);
+      await rutLibre(rut, 'clientes');
+      await correoLibre(email);
       try {
         const c = await insertar(db, 'clientes', {
           rut, nombre: cliente.nombre.trim(), es_empresa: cliente.es_empresa === true, email,
-          telefono: vacio(cliente.telefono?.trim()), direccion: vacio(cliente.direccion?.trim()),
+          telefono, direccion: vacio(cliente.direccion?.trim()),
           localidad_id: vacio(cliente.localidad_id), origen: vacio(cliente.origen?.trim()), notas: vacio(cliente.notas?.trim()),
         });
         clienteId = c.id;

@@ -183,19 +183,29 @@ router.post('/planes/contratar', async (req, res) => {
   const { rows: [s] } = await pool.query(
     `INSERT INTO suscripciones (instalacion_id, tipo_suscripcion_id, fecha_inicio, condiciones_id, creada_por)
      VALUES ($1, $2, fn_hoy(), $3, $4) RETURNING id, codigo`, [i.id, plan.id, cond?.id ?? null, req.usuario.id]);
-  await notificar('suscripcion_contratada', { suscripcion_id: s.id }, req);
-  // Primer mes: con la tarjeta inscrita se cobra ahora; si no, se abre el pago en Flow
+  // Primer mes: con la tarjeta inscrita se cobra ahora; si no, se abre el pago en Flow.
+  // Si el primer pago no se puede hacer (tarjeta rechazada o Flow no responde), la suscripción no queda:
+  // nunca empezó, así que se deshace para que el cliente pueda intentarlo de nuevo.
+  const deshacer = async () => {
+    await pool.query('DELETE FROM cobros WHERE suscripcion_id = $1', [s.id]);
+    await pool.query("DELETE FROM mantenciones WHERE suscripcion_id = $1 AND estado = 'programada'", [s.id]);
+    await pool.query('DELETE FROM suscripciones WHERE id = $1 AND NOT EXISTS (SELECT 1 FROM pagos WHERE suscripcion_id = $1)', [s.id]);
+  };
   if (req.body.medio === 'tarjeta') {
     const r = await cobrarConTarjeta(s.id, { origen: 'cliente', perfilId: req.usuario.id });
-    return res.status(201).json({ suscripcion: s, pagado: r.estado === 'pagado', error: r.error ?? null });
+    if (r.estado === 'rechazado') { await deshacer(); throw new ErrorHttp(402, 'Tu tarjeta no pasó, así que no se activó la suscripción. Prueba con otra tarjeta o paga con Flow.'); }
+    await notificar('suscripcion_contratada', { suscripcion_id: s.id }, req);
+    return res.status(201).json({ suscripcion: s, pagado: r.estado === 'pagado' });
   }
+  let cobro;
   try {
-    const cobro = await crearEnlacePago(req, s.id, { origen: 'cliente', perfilId: req.usuario.id });
-    res.status(201).json({ suscripcion: s, url: cobro.url_pago });
+    cobro = await crearEnlacePago(req, s.id, { origen: 'cliente', perfilId: req.usuario.id });
   } catch (err) {
-    // La suscripción queda creada: puede pagar después desde Pagos dentro del plazo
-    res.status(201).json({ suscripcion: s, error: err.message });
+    await deshacer();
+    throw err;
   }
+  await notificar('suscripcion_contratada', { suscripcion_id: s.id }, req);
+  res.status(201).json({ suscripcion: s, url: cobro.url_pago });
 });
 
 // Perfil (040, 041): nombre y teléfono; RUT, correo y dirección los cambia ENINTI

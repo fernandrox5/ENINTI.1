@@ -6,7 +6,7 @@ import { FileText, Mail, Plus, Send, Settings } from 'lucide-react';
 import { api } from '../../../api';
 import { useDatos } from '../../../useDatos';
 import { AreaTexto, Aviso, Campo, Cargando, Etiqueta, Modal, Pestanas, Selector, Titulo, Vacio } from '../../../componentes';
-import { fechaCorta, fechaHora, pesos } from '../../../formato';
+import { fechaCorta, fechaHora, formatearRut, pesos } from '../../../formato';
 
 type Vista = 'general' | 'planes' | 'tecnicos' | 'condiciones' | 'correos';
 
@@ -201,7 +201,7 @@ function EditarTecnico({ t, cerrar, listo }: { t: Tecnico | null; cerrar: () => 
     <Modal titulo={t ? `Editar ${t.nombre}` : 'Nuevo técnico'} cerrar={cerrar}>
       <form className="formulario" onSubmit={enviar} noValidate>
         <Campo etiqueta="Nombre" value={f.nombre} onChange={c('nombre')} />
-        <Campo etiqueta="RUT" value={f.rut} onChange={c('rut')} placeholder="12.345.678-9" />
+        <Campo etiqueta="RUT" value={f.rut} onChange={c('rut')} onBlur={() => setF({ ...f, rut: formatearRut(f.rut) })} placeholder="12.345.678-K" />
         <Campo etiqueta="Empresa" value={f.empresa} onChange={c('empresa')} ayuda="ENINTI o la empresa externa" />
         <Campo etiqueta="Teléfono" type="tel" value={f.telefono} onChange={c('telefono')} />
         <Campo etiqueta="Correo" type="email" value={f.email} onChange={c('email')} ayuda="Para enviarle el acceso a su panel" />
@@ -293,10 +293,11 @@ function Correos() {
   const [aviso, setAviso] = useState('');
   const [falla, setFalla] = useState('');
   if (!datos) return error ? <Aviso>{error}</Aviso> : <Cargando />;
-  const enviar = async () => {
+  // Envía solo el correo que se está viendo
+  const enviar = async (e: Ejemplo) => {
     setFalla(''); setAviso(''); setEnviando(true);
-    try { const r = await api<{ enviados: number; para: string }>('/admin/configuracion/correos/ejemplos', { method: 'POST', body: { para } }); setAviso(`Listo: se enviaron ${r.enviados} correos de ejemplo a ${r.para}.`); }
-    catch (e) { setFalla((e as Error).message); } finally { setEnviando(false); }
+    try { await api('/admin/configuracion/correos/ejemplos', { method: 'POST', body: { para, evento: e.evento, rol: e.rol } }); setAviso(`Enviado a ${para}: "${e.asunto}" (para ${e.para.toLowerCase()}).`); return true; }
+    catch (err) { setFalla((err as Error).message); return false; } finally { setEnviando(false); }
   };
   // Agrupa los ejemplos por evento: cuándo se envía y a quién
   const eventos = ej ? [...new Set(ej.map((e) => e.evento))].map((ev) => ej.filter((e) => e.evento === ev)) : [];
@@ -310,15 +311,15 @@ function Correos() {
           <tbody>{eventos.map((grupo) => (
             <tr key={grupo[0].evento}>
               <td><strong>{grupo[0].cuando}</strong></td>
-              <td><div className="acciones">{grupo.map((e) => <button key={e.rol} type="button" className="boton secundario mini" onClick={() => setVer(e)}><Mail size={14} /> {e.para}</button>)}</div></td>
+              <td><div className="acciones">{grupo.map((e) => <button key={e.rol} type="button" className="boton secundario mini" onClick={() => { setFalla(''); setVer(e); }}><Mail size={14} /> {e.para}</button>)}</div></td>
             </tr>
           ))}</tbody>
         </table></div>
         <div className="enviar-ejemplos">
-          <Campo etiqueta="Enviar un ejemplo de cada correo a" type="email" placeholder="profesor@correo.cl" value={para} onChange={(e) => setPara(e.target.value)} />
-          <button type="button" className="boton primario chico" disabled={enviando || !para.includes('@')} onClick={enviar}><Send size={16} /> {enviando ? 'Enviando…' : 'Enviar ejemplos'}</button>
+          <Campo etiqueta="Correo para enviar ejemplos" type="email" placeholder="profesor@correo.cl" value={para} onChange={(e) => setPara(e.target.value)}
+            ayuda="Abre un correo de la lista y envíalo: llega solo ese, uno por uno." />
         </div>
-        <Aviso tipo="ok">{aviso}</Aviso><Aviso>{falla}</Aviso>
+        <Aviso tipo="ok">{aviso}</Aviso>
       </section>
 
       <h2 className="subtitulo">Enviados</h2>
@@ -338,6 +339,12 @@ function Correos() {
       {ver && (
         <Modal titulo={`${ver.asunto} · para ${ver.para.toLowerCase()}`} cerrar={() => setVer(null)} ancho={640}>
           <iframe title="Vista previa del correo" className="vista-correo" srcDoc={ver.html} />
+          <Aviso>{falla}</Aviso>
+          <div className="botones">
+            <button type="button" className="boton suave chico" onClick={() => setVer(null)}>Cerrar</button>
+            <button type="button" className="boton primario chico" disabled={enviando || !para.includes('@')} onClick={() => enviar(ver).then((ok) => ok && setVer(null))}>
+              <Send size={16} /> {enviando ? 'Enviando…' : para.includes('@') ? `Enviar este correo a ${para}` : 'Escribe arriba el correo de destino'}</button>
+          </div>
         </Modal>
       )}
     </>

@@ -6,7 +6,7 @@ import { Check, Plus, Search, Trash2 } from 'lucide-react';
 import { api } from '../../../api';
 import { useDatos } from '../../../useDatos';
 import { Aviso, Campo, Selector, Volver } from '../../../componentes';
-import { TIPOS_EQUIPO, hoyISO } from '../../../formato';
+import { TIPOS_EQUIPO, formatearRut, hoyISO } from '../../../formato';
 import { CamposEquipo, EQUIPO_VACIO, SISTEMAS_LARGO, describirEquipo, equipoParaApi, type DatosEquipo, type Opciones } from './comun';
 import { CamposInstalacion, type DatosInstalacion } from './InstalacionFicha';
 import { Pasos } from './ReemplazarEquipo';
@@ -123,7 +123,7 @@ export default function NuevaInstalacion() {
           {modoCliente === 'nuevo' ? (
             <div className="formulario tres">
               <Campo etiqueta="Nombre o razón social" value={cliente.nombre} onChange={(e) => setCliente({ ...cliente, nombre: e.target.value })} />
-              <Campo etiqueta="RUT" placeholder="16.432.778-1" value={cliente.rut} onChange={(e) => setCliente({ ...cliente, rut: e.target.value })} />
+              <Campo etiqueta="RUT" placeholder="16.432.778-1" value={cliente.rut} onChange={(e) => setCliente({ ...cliente, rut: e.target.value })} onBlur={() => setCliente({ ...cliente, rut: formatearRut(cliente.rut) })} />
               <Campo etiqueta="Correo" type="email" value={cliente.email} onChange={(e) => setCliente({ ...cliente, email: e.target.value })} ayuda="Para enviarle el acceso al portal" />
               <Campo etiqueta="Teléfono" type="tel" placeholder="+56 9 8765 4321" value={cliente.telefono} onChange={(e) => setCliente({ ...cliente, telefono: e.target.value })} />
               <Campo etiqueta="Dirección" value={cliente.direccion} onChange={(e) => setCliente({ ...cliente, direccion: e.target.value })} />

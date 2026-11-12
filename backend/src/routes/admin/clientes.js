@@ -1,7 +1,7 @@
 // T-22 · RF-03: clientes — listado con filtros, alta, edición, ficha y acceso al portal (mockups 047 a 054)
 import { Router } from 'express';
 import { pool } from '../../config/db.js';
-import { normalizarRut, correoValido, ErrorHttp } from '../../utils/validar.js';
+import { ErrorHttp, correoLibre, correoReal, rutLibre, rutValido, telefonoValido } from '../../utils/validar.js';
 import { invitarCliente } from '../../services/invitaciones.js';
 
 const router = Router();
@@ -25,13 +25,16 @@ const RESUMEN = `
     SELECT DISTINCT ON (cliente_id) cliente_id, tipo, fecha FROM gestiones ORDER BY cliente_id, fecha DESC
   )`;
 
-function datosCliente(b) {
-  const rut = b.rut ? normalizarRut(b.rut) : null;
-  if (b.rut && !rut) throw new ErrorHttp(400, 'El RUT no es válido');
-  if (!b.nombre?.trim()) throw new ErrorHttp(400, 'El nombre es obligatorio');
-  const email = b.email ? String(b.email).trim().toLowerCase() : null;
-  if (email && !correoValido(email)) throw new ErrorHttp(400, 'El correo no es válido');
-  return [rut, b.nombre.trim(), b.es_empresa === true, email, b.telefono?.trim() || null, b.direccion?.trim() || null,
+// Valida los datos del cliente: RUT real y obligatorio (acepta K), correo que existe y no repetido, teléfono chileno
+async function datosCliente(b, id = null) {
+  if (!b.nombre?.trim() || b.nombre.trim().length < 3) throw new ErrorHttp(400, 'Escribe el nombre completo o la razón social');
+  const { rows: [antes] } = id ? await pool.query('SELECT rut FROM clientes WHERE id = $1', [id]) : { rows: [] };
+  const rut = rutValido(b.rut, { actual: antes?.rut });
+  const email = await correoReal(b.email);
+  const telefono = telefonoValido(b.telefono);
+  await rutLibre(rut, 'clientes', id);
+  await correoLibre(email, { clienteId: id });
+  return [rut, b.nombre.trim(), b.es_empresa === true, email, telefono, b.direccion?.trim() || null,
     b.localidad_id || null, b.origen?.trim() || null, b.notas?.trim() || null];
 }
 
@@ -147,7 +150,7 @@ router.post('/', async (req, res) => {
     const { rows: [c] } = await pool.query(
       `INSERT INTO clientes (rut, nombre, es_empresa, email, telefono, direccion, localidad_id, origen, notas)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`,
-      datosCliente(req.body)
+      await datosCliente(req.body)
     );
     res.status(201).json(c);
   } catch (err) {
@@ -161,7 +164,7 @@ router.put('/:id', async (req, res) => {
       `UPDATE clientes SET rut = $1, nombre = $2, es_empresa = $3, email = $4, telefono = $5, direccion = $6,
               localidad_id = $7, origen = $8, notas = $9
        WHERE id = $10`,
-      [...datosCliente(req.body), req.params.id]
+      [...(await datosCliente(req.body, Number(req.params.id))), req.params.id]
     );
     if (!rowCount) throw new ErrorHttp(404, 'Cliente no encontrado');
     res.json({ ok: true });

@@ -74,9 +74,9 @@ router.get('/', async (req, res) => {
   if (req.query.origen === 'manual') filtros.push('p.cobro_id IS NULL');
   const q = String(req.query.q || '').trim();
   if (q) {
-    params.push(`%${q}%`);
-    const n = `$${params.length}`;
-    filtros.push(`(c.nombre ILIKE ${n} OR s.codigo ILIKE ${n} OR i.nombre ILIKE ${n} OR p.nro_boleta ILIKE ${n})`);
+    params.push(`%${q}%`, `%${q.replace(/[.\s]/g, '')}%`);
+    const n = `$${params.length - 1}`;
+    filtros.push(`(c.nombre ILIKE ${n} OR s.codigo ILIKE ${n} OR i.nombre ILIKE ${n} OR p.nro_boleta ILIKE ${n} OR c.rut ILIKE $${params.length})`);
   }
   if (/^\d+$/.test(req.query.suscripcion || '')) agregar('s.id = $?', Number(req.query.suscripcion));
   const donde = filtros.length ? `WHERE ${filtros.join(' AND ')}` : '';

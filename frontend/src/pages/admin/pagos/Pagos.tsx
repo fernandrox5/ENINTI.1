@@ -301,7 +301,7 @@ function Historial({ version, listo }: { version: number; listo: (m: string) => 
     <>
       <div className="filtros">
         <label className="buscador-icono"><Search size={18} />
-          <input className="buscador" type="search" placeholder="Cliente o N° de boleta" value={q} onChange={(e) => setQ(e.target.value)} /></label>
+          <input className="buscador" type="search" placeholder="Cliente, RUT o N° de boleta" value={q} onChange={(e) => setQ(e.target.value)} /></label>
         <select value={f.estado} onChange={sel('estado')} aria-label="Estado">
           <option value="">Todos los estados</option>
           {Object.entries(ESTADO_PAGO).map(([v, [, t]]) => <option key={v} value={v}>{t}</option>)}
