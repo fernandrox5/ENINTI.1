@@ -122,6 +122,9 @@ p { margin: 0; }
 .girar { animation: girar 1s linear infinite; }
 @keyframes girar { to { transform: rotate(360deg); } }
 .vacio { padding: 28px 20px; text-align: center; color: var(--gris); border: 1px dashed var(--linea); border-radius: var(--radio-grande); }
+.sin-instalaciones { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.sin-instalaciones strong { color: var(--texto); font-size: 17px; }
+.sin-instalaciones p { margin: 0; max-width: 420px; }
 .vacio-chico { padding: 12px; color: var(--gris); font-size: 14px; }
 
 .etiqueta { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; font-size: 13px; font-weight: 500; white-space: nowrap; }

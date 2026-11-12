@@ -45,7 +45,9 @@ export default function Planes() {
               {mios.length > 0 && <p className="suave">Activo en {mios.map((i) => i.nombre || i.codigo).join(', ')}</p>}
               {libres.length > 0
                 ? <button type="button" className="boton primario" onClick={() => setElegido(p)}>{libres.length === 1 ? `Contratar para ${libres[0].nombre || libres[0].codigo}` : 'Contratar'}</button>
-                : <p className="suave">Todas tus instalaciones tienen una suscripción vigente.</p>}
+                : <p className="suave">{datos.instalaciones.length === 0
+                  ? 'Podrás contratar cuando ENINTI registre tu instalación.'
+                  : 'Todas tus instalaciones tienen una suscripción vigente.'}</p>}
             </section>
           );
         })}

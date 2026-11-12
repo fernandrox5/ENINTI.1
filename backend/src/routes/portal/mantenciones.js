@@ -4,16 +4,13 @@ import { Router } from 'express';
 import { pool } from '../../config/db.js';
 import { supabase } from '../../config/supabase.js';
 import { ErrorHttp } from '../../utils/validar.js';
+import { clienteDeSesion } from '../../utils/clienteSesion.js';
 
 const router = Router();
 
 router.param('id', (req, res, next, id) => (/^\d+$/.test(id) ? next() : next(new ErrorHttp(404, 'Mantención no encontrada'))));
 
-async function miCliente(req) {
-  const { rows: [c] } = await pool.query('SELECT id FROM clientes WHERE perfil_id = $1', [req.usuario.id]);
-  if (!c) throw new ErrorHttp(404, 'Tu cuenta no está asociada a un cliente. Escríbenos para revisarlo.');
-  return c.id;
-}
+const miCliente = async (req) => (await clienteDeSesion(req)).id;
 
 const COLUMNAS = `m.id, m.tipo, m.estado, m.fecha_programada, m.fecha_realizada, m.hora_inicio, m.hora_fin, m.numero_en_plan,
   m.calificacion_cliente, m.requiere_inversion, t.nombre AS tecnico, t.empresa AS tecnico_empresa,

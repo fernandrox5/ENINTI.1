@@ -3,7 +3,7 @@
 import { Link } from 'react-router-dom';
 import { AlertTriangle, Battery, Calendar, Clock, CreditCard, MessageCircle, Tag, Wrench, Zap } from 'lucide-react';
 import { useDatos } from '../../useDatos';
-import { Aviso, Cargando, Etiqueta, Saludo, Vacio, type Tono } from '../../componentes';
+import { Aviso, Cargando, Etiqueta, Saludo, type Tono } from '../../componentes';
 import { SISTEMAS, fechaCorta } from '../../formato';
 import { situacionInstalacion } from '../../estados';
 import { useWhatsapp } from '../../contacto';
@@ -72,8 +72,10 @@ export default function Inicio() {
       <Saludo titulo={`Hola, ${primerNombre}`} texto={d.avisos.length ? `Tienes ${d.avisos.length} ${d.avisos.length === 1 ? 'aviso' : 'avisos'}.` : 'Todo está al día.'} />
       <div className="acciones-rapidas">
         {conPlan && <Link to="/portal/pagos" className="boton primario chico"><CreditCard size={18} /> Pagos</Link>}
-        <Link to="/portal/solicitudes?nueva=mantencion" className="boton secundario chico"><Wrench size={18} /> Pedir mantención</Link>
-        <Link to="/portal/solicitudes?nueva=emergencia" className="boton peligro chico"><Zap size={18} /> Reportar emergencia</Link>
+        {d.instalaciones.length > 0 && <>
+          <Link to="/portal/solicitudes?nueva=mantencion" className="boton secundario chico"><Wrench size={18} /> Pedir mantención</Link>
+          <Link to="/portal/solicitudes?nueva=emergencia" className="boton peligro chico"><Zap size={18} /> Reportar emergencia</Link>
+        </>}
         {wa && <a href={wa} target="_blank" rel="noreferrer" className="boton suave chico"><MessageCircle size={18} /> WhatsApp</a>}
       </div>
 
@@ -95,9 +97,22 @@ export default function Inicio() {
       )}
 
       <h2 className="subtitulo">{d.instalaciones.length === 1 ? 'Tu instalación' : 'Tus instalaciones'}</h2>
-      {d.instalaciones.length === 0 ? <Vacio>Aún no tienes instalaciones registradas. Escríbenos si crees que es un error.</Vacio> : (
+      {d.instalaciones.length === 0 ? <SinInstalaciones /> : (
         <div className="grilla-2">{d.instalaciones.map((i) => <TarjetaInstalacion key={i.id} i={i} />)}</div>
       )}
+    </div>
+  );
+}
+
+// Cliente recién registrado, todavía sin instalaciones: se le explica qué verá aquí
+export function SinInstalaciones() {
+  const wsp = useWhatsapp('Hola, quiero consultar por mi instalación en Syntia');
+  return (
+    <div className="vacio sin-instalaciones">
+      <span className="icono-circulo chico"><Zap size={26} /></span>
+      <strong>Aquí aparecerán tus instalaciones</strong>
+      <p>Cuando ENINTI registre tu sistema solar lo verás aquí, con sus equipos, mantenciones y suscripción.</p>
+      {wsp && <a className="boton chico" href={wsp} target="_blank" rel="noreferrer"><MessageCircle size={16} /> Escríbenos</a>}
     </div>
   );
 }

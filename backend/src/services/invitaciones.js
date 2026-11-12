@@ -55,8 +55,9 @@ export async function invitarCliente(req, clienteId, { instalacion = null } = {}
   if (error) throw error;
   const tipo = acceso.estado === 'sin_cuenta' ? 'invite' : 'email';
 
-  // La ficha queda vinculada al perfil desde ya (el trigger crea el perfil al crear el usuario)
-  await pool.query('UPDATE clientes SET perfil_id = $1 WHERE id = $2 AND perfil_id IS NULL', [data.user.id, c.id]);
+  // La ficha queda vinculada desde ya a la cuenta de su correo actual (el trigger crea el perfil al crear
+  // el usuario). Si antes apuntaba a la cuenta de un correo corregido, se cambia a esta.
+  await pool.query('UPDATE clientes SET perfil_id = $1 WHERE id = $2 AND perfil_id IS DISTINCT FROM $1', [data.user.id, c.id]);
 
   const url = `${urlApp(req)}/activar?token=${encodeURIComponent(data.properties.hashed_token)}&t=${tipo}`;
   // Si viene de una instalación nueva, el correo la nombra

@@ -66,8 +66,8 @@ router.post('/activar', async (req, res) => {
     if (upd.error.code === 'weak_password') throw new ErrorHttp(400, 'La contraseña es muy débil, prueba con otra');
     throw upd.error;
   }
-  // Vincula la ficha con ese correo (si la invitación no la dejó vinculada)
-  await pool.query('UPDATE clientes SET perfil_id = $1 WHERE perfil_id IS NULL AND lower(email) = lower($2)', [user.id, user.email]);
+  // Vincula la ficha con ese correo (si no quedó vinculada o apuntaba a la cuenta de un correo anterior)
+  await pool.query('UPDATE clientes SET perfil_id = $1 WHERE lower(email) = lower($2) AND perfil_id IS DISTINCT FROM $1', [user.id, user.email]);
   const respuesta = await sesion(data.session);
 
   // Confirmación "Tu cuenta quedó activa" (si falla el envío, la activación igual queda hecha)

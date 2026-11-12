@@ -5,6 +5,7 @@ import { Router } from 'express';
 import { pool } from '../../config/db.js';
 import { supabase, clienteAuth } from '../../config/supabase.js';
 import { ErrorHttp } from '../../utils/validar.js';
+import { clienteDeSesion } from '../../utils/clienteSesion.js';
 import { cobrarConTarjeta, crearEnlacePago, plazoPago } from '../../services/cobros.js';
 import { notificar } from '../../services/notificar.js';
 
@@ -12,13 +13,7 @@ const router = Router();
 
 router.param('id', (req, res, next, id) => (/^\d+$/.test(id) ? next() : next(new ErrorHttp(404, 'Instalación no encontrada'))));
 
-async function miCliente(req) {
-  const { rows: [c] } = await pool.query(
-    `SELECT c.id, c.nombre, c.rut, c.email, c.telefono, c.direccion, l.nombre AS localidad
-     FROM clientes c LEFT JOIN localidades l ON l.id = c.localidad_id WHERE c.perfil_id = $1`, [req.usuario.id]);
-  if (!c) throw new ErrorHttp(404, 'Tu cuenta no está asociada a un cliente. Escríbenos para revisarlo.');
-  return c;
-}
+const miCliente = (req) => clienteDeSesion(req, 'c.id, c.nombre, c.rut, c.email, c.telefono, c.direccion, l.nombre AS localidad');
 
 // Instalaciones del cliente con su suscripción vigente (si tiene) y sus mantenciones
 async function instalaciones(clienteId, soloId = null) {

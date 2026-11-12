@@ -4,6 +4,7 @@
 import { Router } from 'express';
 import { pool } from '../../config/db.js';
 import { ErrorHttp } from '../../utils/validar.js';
+import { clienteDeSesion } from '../../utils/clienteSesion.js';
 import { notificar } from '../../services/notificar.js';
 
 const router = Router();
@@ -12,11 +13,7 @@ const PRIORIDAD = { emergencia: 'alta', mantencion: 'media', consulta: 'baja' };
 
 router.param('id', (req, res, next, id) => (/^\d+$/.test(id) ? next() : next(new ErrorHttp(404, 'Solicitud no encontrada'))));
 
-async function miCliente(req) {
-  const { rows: [c] } = await pool.query('SELECT id FROM clientes WHERE perfil_id = $1', [req.usuario.id]);
-  if (!c) throw new ErrorHttp(404, 'Tu cuenta no está asociada a un cliente. Escríbenos para revisarlo.');
-  return c.id;
-}
+const miCliente = async (req) => (await clienteDeSesion(req)).id;
 
 const COLUMNAS = `s.id, s.tipo, s.descripcion, s.canal, s.estado, s.respuesta, s.created_at, s.updated_at,
   i.id AS instalacion_id, coalesce(i.nombre, i.codigo) AS instalacion,

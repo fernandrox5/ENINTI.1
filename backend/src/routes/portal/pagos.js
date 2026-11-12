@@ -3,6 +3,7 @@
 import { Router } from 'express';
 import { pool } from '../../config/db.js';
 import { ErrorHttp } from '../../utils/validar.js';
+import { clienteDeSesion } from '../../utils/clienteSesion.js';
 import * as flow from '../../services/flow.js';
 import { clienteFlow, crearEnlacePago, periodosSinPagar, plazoPago } from '../../services/cobros.js';
 import { urlApp } from '../../services/invitaciones.js';
@@ -10,11 +11,7 @@ import { notificar } from '../../services/notificar.js';
 
 const router = Router();
 
-async function miCliente(req) {
-  const { rows: [c] } = await pool.query('SELECT id, nombre, email, flow_customer_id FROM clientes WHERE perfil_id = $1', [req.usuario.id]);
-  if (!c) throw new ErrorHttp(404, 'Tu cuenta no está asociada a un cliente. Escríbenos para revisarlo.');
-  return c;
-}
+const miCliente = (req) => clienteDeSesion(req, 'c.id, c.nombre, c.email, c.flow_customer_id');
 
 router.get('/', async (req, res) => {
   const c = await miCliente(req);

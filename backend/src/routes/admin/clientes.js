@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { pool } from '../../config/db.js';
 import { ErrorHttp, correoLibre, correoReal, rutLibre, rutValido, telefonoValido } from '../../utils/validar.js';
 import { invitarCliente } from '../../services/invitaciones.js';
+import { supabase } from '../../config/supabase.js';
 
 const router = Router();
 const POR_PAGINA = 20;
@@ -36,6 +37,24 @@ async function datosCliente(b, id = null) {
   await correoLibre(email, { clienteId: id });
   return [rut, b.nombre.trim(), b.es_empresa === true, email, telefono, b.direccion?.trim() || null,
     b.localidad_id || null, b.origen?.trim() || null, b.notas?.trim() || null];
+}
+
+// Si cambia el correo de un cliente que ya tiene cuenta:
+// - cuenta activa: su correo de ingreso pasa a ser el nuevo
+// - invitación sin usar: la ficha se desvincula y la próxima invitación crea la cuenta con el correo nuevo
+async function cambioDeCorreo(id, nuevo) {
+  const { rows: [a] } = await pool.query(
+    `SELECT c.perfil_id, u.email, u.email_confirmed_at FROM clientes c LEFT JOIN auth.users u ON u.id = c.perfil_id WHERE c.id = $1`, [id]);
+  if (!a?.perfil_id || (a.email || '').toLowerCase() === (nuevo || '').toLowerCase()) return;
+  if (!a.email_confirmed_at || !nuevo) {
+    await pool.query('UPDATE clientes SET perfil_id = NULL WHERE id = $1', [id]);
+    return;
+  }
+  const { rows: [otra] } = await pool.query('SELECT 1 FROM auth.users WHERE lower(email) = $1 AND id <> $2', [nuevo, a.perfil_id]);
+  if (otra) throw new ErrorHttp(409, 'Ya hay una cuenta de acceso con ese correo. Escríbenos para revisarlo.');
+  const { error } = await supabase.auth.admin.updateUserById(a.perfil_id, { email: nuevo, email_confirm: true });
+  if (error) throw new ErrorHttp(400, 'No se pudo cambiar el correo de ingreso del cliente. Intenta de nuevo.');
+  await pool.query('UPDATE perfiles SET email = $1 WHERE id = $2', [nuevo, a.perfil_id]);
 }
 
 function duplicado(err) {
@@ -160,11 +179,13 @@ router.post('/', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
   try {
+    const datos = await datosCliente(req.body, Number(req.params.id));
+    await cambioDeCorreo(Number(req.params.id), datos[3]);
     const { rowCount } = await pool.query(
       `UPDATE clientes SET rut = $1, nombre = $2, es_empresa = $3, email = $4, telefono = $5, direccion = $6,
               localidad_id = $7, origen = $8, notas = $9
        WHERE id = $10`,
-      [...(await datosCliente(req.body, Number(req.params.id))), req.params.id]
+      [...datos, req.params.id]
     );
     if (!rowCount) throw new ErrorHttp(404, 'Cliente no encontrado');
     res.json({ ok: true });

@@ -8,7 +8,7 @@ import { Aviso, Cargando, Etiqueta, Pestanas, Titulo, Vacio, Volver } from '../.
 import { FRECUENCIAS, TIPOS_EQUIPO, fechaCorta, mes, pesos } from '../../formato';
 import { describirEquipo, vidaUtil } from '../admin/instalaciones/comun';
 import { SISTEMAS_LARGO } from '../admin/instalaciones/comun';
-import { TarjetaInstalacion, situacionPortal, type InstalacionPortal } from './Inicio';
+import { SinInstalaciones, TarjetaInstalacion, situacionPortal, type InstalacionPortal } from './Inicio';
 
 interface Ficha extends InstalacionPortal {
   equipos: { id: number; tipo: string; marca: string | null; modelo: string | null; cantidad: number; potencia_unitaria_w: string | null; capacidad_kwh: string | null;
@@ -28,7 +28,7 @@ export function Instalaciones() {
     <div className="pagina-portal">
       <Titulo icono={LayoutGrid} fuerte="Mis instalaciones" />
       <Aviso>{error}</Aviso>
-      {datos && (datos.length === 0 ? <Vacio>Aún no tienes instalaciones registradas.</Vacio>
+      {datos && (datos.length === 0 ? <SinInstalaciones />
         : <div className="grilla-2">{datos.map((i) => <TarjetaInstalacion key={i.id} i={i} />)}</div>)}
     </div>
   );
