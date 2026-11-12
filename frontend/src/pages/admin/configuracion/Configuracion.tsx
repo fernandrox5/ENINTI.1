@@ -281,7 +281,8 @@ function NuevaVersion({ cerrar, listo }: { cerrar: () => void; listo: () => void
 
 // ---------- Correos ----------
 interface Correo { id: number; tipo_evento: string; asunto: string; destinatario: string; para: string | null; estado: string; ultimo_error: string | null; fecha_generacion: string; enviada_at: string | null; cliente: string | null }
-interface Ejemplo { evento: string; rol: string; para: string; cuando: string; asunto: string; html: string }
+interface Ejemplo { evento: string; rol: string; dias: number | null; para: string; cuando: string; asunto: string; html: string }
+const DIA_AVISO = (n: number) => (n === 0 ? 'El mismo día' : n === 1 ? '1 día antes' : `${n} días antes`);
 const ESTADO_CORREO: Record<string, ['buena' | 'alerta' | 'mala' | 'neutra', string]> = { enviada: ['buena', 'Enviado'], pendiente: ['alerta', 'En cola'], error: ['mala', 'Con error'], descartada: ['neutra', 'Descartado'] };
 const PARA: Record<string, string> = { cliente: 'Cliente', admin: 'Administrador', tecnico: 'Técnico' };
 function Correos() {
@@ -292,15 +293,18 @@ function Correos() {
   const [enviando, setEnviando] = useState(false);
   const [aviso, setAviso] = useState('');
   const [falla, setFalla] = useState('');
+  const [dias, setDias] = useState(3);
   if (!datos) return error ? <Aviso>{error}</Aviso> : <Cargando />;
   // Envía solo el correo que se está viendo
   const enviar = async (e: Ejemplo) => {
     setFalla(''); setAviso(''); setEnviando(true);
-    try { await api('/admin/configuracion/correos/ejemplos', { method: 'POST', body: { para, evento: e.evento, rol: e.rol } }); setAviso(`Enviado a ${para}: "${e.asunto}" (para ${e.para.toLowerCase()}).`); return true; }
+    try { await api('/admin/configuracion/correos/ejemplos', { method: 'POST', body: { para, evento: e.evento, rol: e.rol, dias: e.dias } }); setAviso(`Enviado a ${para}: "${e.asunto}" (para ${e.para.toLowerCase()}).`); return true; }
     catch (err) { setFalla((err as Error).message); return false; } finally { setEnviando(false); }
   };
   // Agrupa los ejemplos por evento: cuándo se envía y a quién
-  const eventos = ej ? [...new Set(ej.map((e) => e.evento))].map((ev) => ej.filter((e) => e.evento === ev)) : [];
+  // (el de vencimiento muestra el día elegido)
+  const eventos = ej ? [...new Set(ej.map((e) => e.evento))].map((ev) => ej.filter((e) => e.evento === ev && (e.dias === null || e.dias === dias))) : [];
+  const diasAviso = ej ? [...new Set(ej.filter((e) => e.dias !== null).map((e) => e.dias as number))] : [];
   return (
     <>
       <p className="nota-info"><span>Correos automáticos: <strong>{datos.automaticos ? 'activos' : 'apagados'}</strong>. Syntia manda un correo por cada cosa que pasa, una sola vez. Los de cuenta (invitación y contraseña) se envían siempre.</span></p>
@@ -310,7 +314,15 @@ function Correos() {
           <thead><tr><th>Cuándo</th><th>Le llega a (toca para ver el correo)</th></tr></thead>
           <tbody>{eventos.map((grupo) => (
             <tr key={grupo[0].evento}>
-              <td><strong>{grupo[0].cuando}</strong></td>
+              <td><strong>{grupo[0].cuando}</strong>
+                {grupo[0].dias !== null && (
+                  <div className="campo-dias">
+                    <label htmlFor="dias-aviso">Ver el aviso de</label>
+                    <select id="dias-aviso" value={dias} onChange={(e) => setDias(Number(e.target.value))}>
+                      {diasAviso.map((n) => <option key={n} value={n}>{DIA_AVISO(n)}</option>)}
+                    </select>
+                  </div>
+                )}</td>
               <td><div className="acciones">{grupo.map((e) => <button key={e.rol} type="button" className="boton secundario mini" onClick={() => { setFalla(''); setVer(e); }}><Mail size={14} /> {e.para}</button>)}</div></td>
             </tr>
           ))}</tbody>

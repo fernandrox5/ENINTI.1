@@ -1,6 +1,6 @@
 // Avisos automáticos por correo: un correo por cada cosa que pasa, una sola vez.
 //   Al cliente:        suscripción activa, pago recibido, pago pendiente, suscripción cerrada,
-//                      por vencer (15 días antes), vencida, mantención agendada, recordatorio del día
+//                      por vencer (3, 2 y 1 día antes), vencida, mantención agendada, recordatorio del día
 //                      anterior e informe listo.
 //   Al administrador:  suscripción nueva, pago pendiente, suscripción cerrada, por vencer, vencida y
 //                      solicitud nueva (además de la campana de Syntia).
@@ -23,6 +23,9 @@ const pesos = (n) => '$' + Number(n || 0).toLocaleString('es-CL');
 const fecha = (f) => (f ? new Date(`${String(f).slice(0, 10)}T12:00:00`).toLocaleDateString('es-CL', { day: 'numeric', month: 'long' }) : '');
 const fechaLarga = (f) => (f ? new Date(`${String(f).slice(0, 10)}T12:00:00`).toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long' }) : '');
 const hora = (h) => (h ? ` a las ${String(h).slice(0, 5)}` : '');
+// Días antes del término en que se avisa que la suscripción vence
+export const DIAS_AVISO = [3, 2, 1];
+const cuanto = (n) => (n === 0 ? 'hoy' : n === 1 ? 'mañana' : `en ${n} días`);
 const TIPO_VISITA = { preventiva: 'Mantención preventiva', correctiva: 'Reparación', emergencia: 'Visita de emergencia' };
 
 // ---------- Plantillas: cada evento dice a quién le llega y qué dice ----------
@@ -84,15 +87,16 @@ export const PLANTILLAS = {
     }),
   },
   vencimiento_proximo: {
-    cuando: '15 días antes de que venza la suscripción',
+    cuando: '3, 2 y 1 día antes de que venza la suscripción',
     cliente: (d, u) => ({
-      asunto: 'Tu suscripción vence pronto', titulo: 'Tu suscripción vence pronto',
-      parrafos: [`La suscripción de ${d.instalacion} vence el ${fecha(d.fecha_termino)}.`, 'Para seguir con tus mantenciones, renuévala desde tu portal.'],
+      asunto: `Tu suscripción vence ${cuanto(d.dias ?? 3)}`, titulo: `Tu suscripción vence ${cuanto(d.dias ?? 3)}`,
+      parrafos: [`La suscripción de ${d.instalacion} vence el ${fecha(d.fecha_termino)}.`,
+        (d.dias ?? 3) <= 3 ? 'Renuévala ahora desde tu portal para no quedarte sin tus mantenciones.' : 'Para seguir con tus mantenciones, renuévala desde tu portal.'],
       boton: { texto: 'Renovar', url: `${u}/portal/planes` },
     }),
     admin: (d, u) => ({
-      asunto: `Vence en 15 días: ${d.cliente}`, titulo: 'Suscripción por vencer',
-      parrafos: [`La suscripción de ${d.cliente} (${d.instalacion}) vence el ${fecha(d.fecha_termino)}. Conviene llamarlo para que la renueve.`],
+      asunto: `Vence ${cuanto(d.dias ?? 3)}: ${d.cliente}`, titulo: 'Suscripción por vencer',
+      parrafos: [`La suscripción de ${d.cliente} (${d.instalacion}) vence el ${fecha(d.fecha_termino)}. Conviene llamar al cliente para que la renueve.`],
       boton: { texto: 'Ver al cliente', url: `${u}/admin/clientes/${d.cliente_id}` },
     }),
   },
@@ -260,9 +264,11 @@ export async function notificar(evento, ids, req = null, extra = {}) {
 export async function avisosDelDia() {
   const hechos = [];
   const { rows: vencer } = await pool.query(
-    `SELECT suscripcion_id, fecha_termino::text FROM v_suscripciones_estado v WHERE v.estado = 'vigente' AND v.fecha_termino = fn_hoy() + 15
-       AND NOT EXISTS (SELECT 1 FROM suscripciones n WHERE n.suscripcion_anterior_id = v.suscripcion_id)`);
-  for (const s of vencer) hechos.push(...await notificar('vencimiento_proximo', { suscripcion_id: s.suscripcion_id }, null, { fecha_evento: s.fecha_termino }));
+    `SELECT suscripcion_id, (v.fecha_termino - fn_hoy())::int AS dias, fn_hoy()::text AS hoy FROM v_suscripciones_estado v
+     WHERE v.estado = 'vigente' AND (v.fecha_termino - fn_hoy()) = ANY($1::int[])
+       AND NOT EXISTS (SELECT 1 FROM suscripciones n WHERE n.suscripcion_anterior_id = v.suscripcion_id)`, [DIAS_AVISO]);
+  // Uno por cada día marcado (la fecha del aviso es hoy, así no se repite el mismo día)
+  for (const s of vencer) hechos.push(...await notificar('vencimiento_proximo', { suscripcion_id: s.suscripcion_id }, null, { fecha_evento: s.hoy, dias: s.dias }));
   const { rows: vencidas } = await pool.query(
     `SELECT s.id, s.fecha_termino::text FROM suscripciones s WHERE s.estado = 'vencida' AND s.fecha_termino BETWEEN fn_hoy() - 3 AND fn_hoy()
        AND NOT EXISTS (SELECT 1 FROM suscripciones n WHERE n.instalacion_id = s.instalacion_id AND n.estado = 'vigente')`);
@@ -286,18 +292,21 @@ export function ejemplos(req) {
   for (const [evento, p] of Object.entries(PLANTILLAS)) {
     for (const rol of ['cliente', 'admin', 'tecnico']) {
       if (!p[rol]) continue;
-      const c = p[rol]({ ...EJEMPLO, tipo: evento === 'solicitud_nueva' ? 'emergencia' : EJEMPLO.tipo }, u);
-      // Es una muestra con datos inventados: el botón lleva al inicio del panel de quien lo recibe
-      if (c.boton) c.boton = { ...c.boton, url: `${u}${AREA[rol]}` };
-      out.push({ evento, rol, para: ROLES[rol], cuando: p.cuando, asunto: c.asunto, correo: c,
-        html: plantilla({ titulo: c.titulo, parrafos: c.parrafos, boton: c.boton }) });
+      // El aviso de vencimiento tiene una muestra por cada día en que se envía
+      for (const dias of evento === 'vencimiento_proximo' ? DIAS_AVISO : [null]) {
+        const c = p[rol]({ ...EJEMPLO, tipo: evento === 'solicitud_nueva' ? 'emergencia' : EJEMPLO.tipo, ...(dias !== null && { dias }) }, u);
+        // Es una muestra con datos inventados: el botón lleva al inicio del panel de quien lo recibe
+        if (c.boton) c.boton = { ...c.boton, url: `${u}${AREA[rol]}` };
+        out.push({ evento, rol, dias, para: ROLES[rol], cuando: p.cuando, asunto: c.asunto, correo: c,
+          html: plantilla({ titulo: c.titulo, parrafos: c.parrafos, boton: c.boton }) });
+      }
     }
   }
   return out;
 }
-export async function enviarEjemplos(req, para, { evento, rol } = {}) {
-  // Uno solo (el que se eligió) o todos
-  const lista = ejemplos(req).filter((e) => (!evento || e.evento === evento) && (!rol || e.rol === rol));
+export async function enviarEjemplos(req, para, { evento, rol, dias } = {}) {
+  // Solo el que se eligió (en el de vencimiento, también el día)
+  const lista = ejemplos(req).filter((e) => e.evento === evento && e.rol === rol && (e.dias === null || e.dias === Number(dias ?? 3)));
   for (const e of lista) {
     await enviarCorreo({ para, asunto: `[Ejemplo · ${e.para}] ${e.asunto}`, titulo: e.correo.titulo, parrafos: e.correo.parrafos, boton: e.correo.boton });
   }

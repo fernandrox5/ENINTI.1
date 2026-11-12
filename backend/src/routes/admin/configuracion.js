@@ -229,7 +229,7 @@ router.get('/correos/ejemplos', (req, res) => res.json(ejemplos(req)));
 router.post('/correos/ejemplos', async (req, res) => {
   const para = String(req.body.para || '').trim().toLowerCase();
   if (!correoValido(para)) throw new ErrorHttp(400, 'Escribe un correo válido');
-  const n = await enviarEjemplos(req, para, { evento: req.body.evento, rol: req.body.rol });
+  const n = await enviarEjemplos(req, para, { evento: req.body.evento, rol: req.body.rol, dias: req.body.dias });
   if (!n) throw new ErrorHttp(400, 'Elige qué correo enviar');
   res.json({ enviados: n, para });
 });
