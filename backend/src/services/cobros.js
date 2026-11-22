@@ -29,16 +29,18 @@ export function basePublica(req) {
 }
 const urlConfirmacion = (req) => `${basePublica(req)}/api/flow/confirmacion`;
 
+// Fechas de cobro de una suscripción: cada una se cuenta desde la fecha de inicio (inicio + n meses), no desde la
+// anterior. Así un contrato del 31 cobra el 28 o 29 en febrero y vuelve al 31 en marzo, sin correrse ni sumar un mes extra.
+const PERIODOS = `SELECT (s.fecha_inicio + make_interval(months => s.meses_gratis + n * fn_meses_periodo(s.frecuencia_pago)))::date AS inicio
+  FROM generate_series(0, ((coalesce(s.fecha_cierre, s.fecha_termino) - s.fecha_inicio) / 28)) n`;
+
 // Periodos sin pagar de una suscripción (con su fecha de inicio real); "vencido" = ya corresponde cobrarlo
 export async function periodosSinPagar(suscripcionId, db = pool) {
   const { rows } = await db.query(
     `SELECT g.inicio::date::text AS inicio, date_trunc('month', g.inicio)::date AS periodo, g.inicio::date <= fn_hoy() AS vencido
      FROM suscripciones s
-     CROSS JOIN LATERAL generate_series(
-       (s.fecha_inicio + make_interval(months => s.meses_gratis))::timestamp,
-       (coalesce(s.fecha_cierre, s.fecha_termino) - 1)::timestamp,
-       make_interval(months => fn_meses_periodo(s.frecuencia_pago))) g(inicio)
-     WHERE s.id = $1
+     CROSS JOIN LATERAL (${PERIODOS}) g
+     WHERE s.id = $1 AND g.inicio < coalesce(s.fecha_cierre, s.fecha_termino)
        AND NOT EXISTS (SELECT 1 FROM pagos p WHERE p.suscripcion_id = s.id AND p.estado IN ('pagado', 'pendiente')
                        AND p.periodo = date_trunc('month', g.inicio)::date)
      ORDER BY g.inicio`, [suscripcionId]);
@@ -83,7 +85,14 @@ export async function aplicarResultado(cobroId, respuesta) {
       }
     }
     await db.query('COMMIT');
-    if (estado === 'pagado') await notificar('pago_recibido', { suscripcion_id: c.suscripcion_id }, null, { monto: c.monto, fecha_evento: String(c.periodo).slice(0, 10) });
+    if (estado === 'pagado') {
+      // Primer pago de la suscripción: es la contratación completa (aviso al cliente y al administrador).
+      // Los siguientes son pagos del mes.
+      const { rows: [{ antes }] } = await pool.query(
+        'SELECT count(*)::int AS antes FROM pagos WHERE suscripcion_id = $1 AND cobro_id IS DISTINCT FROM $2', [c.suscripcion_id, c.id]);
+      if (antes === 0) await notificar('suscripcion_contratada', { suscripcion_id: c.suscripcion_id }, null, { pagado: c.monto });
+      else await notificar('pago_recibido', { suscripcion_id: c.suscripcion_id }, null, { monto: c.monto, fecha_evento: String(c.periodo).slice(0, 10) });
+    }
     return estado;
   } catch (err) {
     await db.query('ROLLBACK').catch(() => {});
@@ -216,10 +225,9 @@ export async function cobrosDelDia() {
      JOIN clientes c ON c.id = i.cliente_id
      LEFT JOIN tarjetas t ON t.cliente_id = c.id AND t.estado = 'activa'
      CROSS JOIN LATERAL (
-       SELECT g.inicio::date AS inicio, date_trunc('month', g.inicio)::date AS periodo
-       FROM generate_series((s.fecha_inicio + make_interval(months => s.meses_gratis))::timestamp,
-                            (s.fecha_termino - 1)::timestamp, make_interval(months => fn_meses_periodo(s.frecuencia_pago))) g(inicio)
-       WHERE g.inicio::date <= fn_hoy()
+       SELECT g.inicio, date_trunc('month', g.inicio)::date AS periodo
+       FROM (${PERIODOS}) g
+       WHERE g.inicio < s.fecha_termino AND g.inicio <= fn_hoy()
          AND NOT EXISTS (SELECT 1 FROM pagos x WHERE x.suscripcion_id = s.id AND x.estado IN ('pagado', 'pendiente')
                          AND x.periodo = date_trunc('month', g.inicio)::date)
        ORDER BY g.inicio LIMIT 1) p

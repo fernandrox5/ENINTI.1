@@ -7,7 +7,6 @@ import { supabase, clienteAuth } from '../../config/supabase.js';
 import { ErrorHttp } from '../../utils/validar.js';
 import { clienteDeSesion } from '../../utils/clienteSesion.js';
 import { cobrarConTarjeta, crearEnlacePago, plazoPago } from '../../services/cobros.js';
-import { notificar } from '../../services/notificar.js';
 
 const router = Router();
 
@@ -189,7 +188,7 @@ router.post('/planes/contratar', async (req, res) => {
   if (req.body.medio === 'tarjeta') {
     const r = await cobrarConTarjeta(s.id, { origen: 'cliente', perfilId: req.usuario.id });
     if (r.estado === 'rechazado') { await deshacer(); throw new ErrorHttp(402, 'Tu tarjeta no pasó, así que no se activó la suscripción. Prueba con otra tarjeta o paga con Flow.'); }
-    await notificar('suscripcion_contratada', { suscripcion_id: s.id }, req);
+    // El aviso de suscripción contratada sale cuando se confirma el pago (en aplicarResultado)
     return res.status(201).json({ suscripcion: s, pagado: r.estado === 'pagado' });
   }
   let cobro;
@@ -199,7 +198,7 @@ router.post('/planes/contratar', async (req, res) => {
     await deshacer();
     throw err;
   }
-  await notificar('suscripcion_contratada', { suscripcion_id: s.id }, req);
+  // El aviso de suscripción contratada sale cuando Flow confirma el pago (en aplicarResultado)
   res.status(201).json({ suscripcion: s, url: cobro.url_pago });
 });
 

@@ -12,7 +12,9 @@ router.get('/', async (req, res) => {
     pool.query(
       `SELECT (SELECT count(*) FROM suscripciones WHERE estado = 'vigente')::int AS vigentes,
               (SELECT coalesce(sum(monto_pactado / fn_meses_periodo(frecuencia_pago)), 0) FROM suscripciones WHERE estado = 'vigente')::int AS ingreso_mensual,
-              (SELECT coalesce(sum(monto), 0) FROM pagos WHERE estado = 'pagado' AND fecha_pago >= date_trunc('month', now()))::int AS cobrado_mes,
+              (SELECT coalesce(sum(monto), 0) FROM pagos WHERE estado = 'pagado'
+                 AND fecha_pago >= (date_trunc('month', fn_hoy())::timestamp AT TIME ZONE 'America/Santiago')
+                 AND fecha_pago < ((date_trunc('month', fn_hoy()) + interval '1 month')::timestamp AT TIME ZONE 'America/Santiago'))::int AS cobrado_mes,
               (SELECT count(*) FROM v_instalaciones_sin_suscripcion)::int AS sin_plan,
               (SELECT count(*) FROM mantenciones WHERE estado = 'programada' AND fecha_programada BETWEEN fn_hoy() AND fn_hoy() + 6)::int AS semana,
               (SELECT count(*) FROM mantenciones WHERE estado = 'programada' AND fecha_programada BETWEEN fn_hoy() AND fn_hoy() + 6 AND tecnico_id IS NULL)::int AS semana_sin_tecnico,
@@ -33,6 +35,9 @@ router.get('/', async (req, res) => {
     cobrosDelDia(),
   ]);
   // Pago pendiente: el mes en curso sin pagar (con tarjeta, el día del cobro aún no cuenta)
+  // Vencido el plazo sin pagar: se informan aparte; el proceso diario de cobros las cierra por falta de pago
+  const por_cerrar = pendientes.filter((r) => r.accion === 'cerrar')
+    .map((r) => ({ suscripcion_id: r.id, cliente_id: r.cliente_id, cliente: r.cliente, telefono: r.telefono, instalacion: r.instalacion, monto: r.monto_pactado, dias: r.dias_pendiente }));
   const pagos = pendientes.filter((r) => !(r.tarjeta_id && r.dias_pendiente === 0) && r.accion !== 'cerrar')
     .sort((a, b) => a.quedan_dias - b.quedan_dias)
     .map((r) => ({ suscripcion_id: r.id, cliente_id: r.cliente_id, cliente: r.cliente, telefono: r.telefono, instalacion: r.instalacion, monto: r.monto_pactado, quedan_dias: r.quedan_dias }));
@@ -51,7 +56,7 @@ router.get('/', async (req, res) => {
   ];
   const gestiones = await ultimasGestiones([...new Set(llamar.map((x) => x.cliente_id))]);
   const para_llamar = llamar.map((x) => ({ ...x, ultima_gestion: gestiones[x.cliente_id] ?? null }));
-  res.json({ nombre: p?.nombre ?? '', ...indicadores.rows[0], pagos_pendientes: pagos, para_llamar, hoy: hoy.rows, solicitudes: solicitudes.rows });
+  res.json({ nombre: p?.nombre ?? '', ...indicadores.rows[0], pagos_pendientes: pagos, por_cerrar, para_llamar, hoy: hoy.rows, solicitudes: solicitudes.rows });
 });
 
 export default router;

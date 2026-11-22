@@ -2,7 +2,7 @@
 const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 const MESES_CORTOS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sept', 'oct', 'nov', 'dic'];
 
-export const pesos = (n: number | string | null | undefined) => '$' + Number(n || 0).toLocaleString('es-CL');
+export const pesos = (n: number | string | null | undefined) => '$' + Math.round(Number(n) || 0).toLocaleString('es-CL');
 
 // 'AAAA-MM-DD' (o ISO) → '05-11-2026'
 export const fecha = (f?: string | null) => (f ? f.slice(0, 10).split('-').reverse().join('-') : '—');

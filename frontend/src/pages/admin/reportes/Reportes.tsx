@@ -5,7 +5,7 @@ import { useState, type MouseEvent, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { BarChart3, CreditCard, Lightbulb, Tag, Wrench, Zap } from 'lucide-react';
 import { useDatos } from '../../../useDatos';
-import { Aviso, Cargando, Titulo, Vacio } from '../../../componentes';
+import { Ayuda, Aviso, Cargando, Titulo, Vacio } from '../../../componentes';
 import { MEDIOS, fechaCorta, iniciales, pesos } from '../../../formato';
 import { whatsapp } from '../../../contacto';
 
@@ -132,13 +132,13 @@ function Resumen({ d }: { d: Datos }) {
   const r = d.resumen, dif = r.ingreso_mensual - r.ingreso_inicio;
   return (
     <div className="rep-g4">
-      <div className="kpi rep-kpi"><span className="kpi-titulo">Ingreso mensual fijo</span><span className="kpi-valor">{pesos(r.ingreso_mensual)}</span>
+      <div className="kpi rep-kpi"><span className="kpi-titulo">Ingreso mensual fijo<Ayuda texto="Lo que suman al mes las suscripciones vigentes hoy. Abajo: cuánto cambió desde el inicio del periodo." /></span><span className="kpi-valor">{pesos(r.ingreso_mensual)}</span>
         <small className={dif > 0 ? 'texto-bueno' : 'suave'}>{dif === 0 ? 'Igual que al inicio del periodo' : `${dif > 0 ? '▲' : '▼'} ${pesos(Math.abs(dif))} desde ${etiquetaMes(d.meses[0].mes).toLowerCase()}`}</small></div>
-      <div className="kpi rep-kpi"><span className="kpi-titulo">Pagado en el periodo</span><span className="kpi-valor">{pesos(r.pagado)}</span>
+      <div className="kpi rep-kpi"><span className="kpi-titulo">Pagado en el periodo<Ayuda texto="Pagos recibidos por los meses del periodo elegido, comparados con lo que se esperaba cobrar según las suscripciones vigentes de cada mes." /></span><span className="kpi-valor">{pesos(r.pagado)}</span>
         <small className="suave">{pct(r.pagado, r.esperado)} % de lo esperado</small></div>
-      <div className="kpi rep-kpi"><span className="kpi-titulo">Clientes que se quedan</span><span className="kpi-valor">{r.retencion === null ? '—' : `${r.retencion} %`}</span>
+      <div className="kpi rep-kpi"><span className="kpi-titulo">Clientes que se quedan<Ayuda texto="De las suscripciones vigentes al inicio del periodo más las nuevas, el porcentaje que no se canceló ni se cerró." /></span><span className="kpi-valor">{r.retencion === null ? '—' : `${r.retencion} %`}</span>
         <small className="suave">{r.altas} {r.altas === 1 ? 'nueva' : 'nuevas'} · {r.bajas} {r.bajas === 1 ? 'cancelada' : 'canceladas'}</small></div>
-      <div className="kpi rep-kpi"><span className="kpi-titulo">Nota de los clientes</span><span className="kpi-valor">{r.nota === null ? '—' : r.nota.toLocaleString('es-CL')}</span>
+      <div className="kpi rep-kpi"><span className="kpi-titulo">Nota de los clientes<Ayuda texto="Promedio de las notas (de 1 a 5) que los clientes dieron a sus mantenciones en el periodo." /></span><span className="kpi-valor">{r.nota === null ? '—' : r.nota.toLocaleString('es-CL')}</span>
         <small className="suave">{r.opiniones ? `de 5 · ${r.opiniones} ${r.opiniones === 1 ? 'opinión' : 'opiniones'}` : 'Aún sin opiniones'}</small></div>
     </div>
   );

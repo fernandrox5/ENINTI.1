@@ -5,7 +5,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { CreditCard, Download, Plus, RefreshCw, Search, Zap } from 'lucide-react';
 import { api, descargar } from '../../../api';
 import { useDatos } from '../../../useDatos';
-import { AreaTexto, Aviso, Campo, Cargando, Etiqueta, Modal, Pestanas, Titulo, Vacio, type Tono } from '../../../componentes';
+import { Ayuda, AreaTexto, Aviso, Campo, Cargando, Etiqueta, Modal, Pestanas, Titulo, Vacio, type Tono } from '../../../componentes';
 import { MEDIOS, fechaCorta, hoyISO, mes, pesos } from '../../../formato';
 import { ESTADO_PAGO } from '../../../estados';
 
@@ -75,16 +75,16 @@ export default function Pagos() {
 
       {r && (
         <div className="kpis">
-          <div className="kpi destacada"><span className="kpi-titulo">Cobrado este mes</span><strong className="kpi-valor">{pesos(r.cobrado)}</strong>
+          <div className="kpi destacada"><span className="kpi-titulo">Cobrado este mes<Ayuda texto="Pagos recibidos en el mes elegido. «En línea» son los pagados con Flow o tarjeta." /></span><strong className="kpi-valor">{pesos(r.cobrado)}</strong>
             <span className="kpi-enlace">{r.pagos} pagos · {r.en_linea} en línea</span></div>
           <button type="button" className={`kpi ${r.fallidos ? 'mala' : ''}`} onClick={() => cambiar('cobros')}>
-            <span className="kpi-titulo">{r.fallidos ? <i className="punto" /> : null}Cobros fallidos</span><strong className="kpi-valor">{r.fallidos}</strong>
+            <span className="kpi-titulo">{r.fallidos ? <i className="punto" /> : null}Cobros fallidos<Ayuda texto="Cobros con tarjeta o Flow rechazados en los últimos 30 días que siguen sin pagarse. Abajo: pagos abiertos en Flow esperando que el cliente pague." /></span><strong className="kpi-valor">{r.fallidos}</strong>
             <span className="kpi-enlace">{r.pendientes} esperando pago ›</span></button>
           {r.por_validar > 0 && <button type="button" className="kpi alerta" onClick={() => cambiar('validar')}>
-            <span className="kpi-titulo"><i className="punto" />Por validar</span><strong className="kpi-valor">{r.por_validar}</strong>
+            <span className="kpi-titulo"><i className="punto" />Por validar<Ayuda texto="Comprobantes de transferencia que subieron los clientes y falta revisar." /></span><strong className="kpi-valor">{r.por_validar}</strong>
             <span className="kpi-enlace">Comprobantes ›</span></button>}
           <button type="button" className="kpi" onClick={() => cambiar('tarjetas')}>
-            <span className="kpi-titulo">Tarjetas inscritas</span><strong className="kpi-valor">{r.tarjetas}</strong>
+            <span className="kpi-titulo">Tarjetas inscritas<Ayuda texto="Clientes con una tarjeta activa para el cobro automático. Abajo: clientes con algún pago pendiente." /></span><strong className="kpi-valor">{r.tarjetas}</strong>
             <span className="kpi-enlace">{r.morosos} con pago pendiente ›</span></button>
         </div>
       )}

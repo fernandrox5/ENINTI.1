@@ -4,7 +4,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { MessageCircle, Plus, Send } from 'lucide-react';
 import { api } from '../../../api';
 import { useDatos } from '../../../useDatos';
-import { Aviso, Cargando, Etiqueta, Pestanas, Vacio, Volver } from '../../../componentes';
+import { Ayuda, Aviso, Cargando, Etiqueta, Pestanas, Vacio, Volver } from '../../../componentes';
 import { fecha, fechaCorta, iniciales, mes, pesos, MEDIOS, SISTEMAS } from '../../../formato';
 import { ESTADO_PAGO, ESTADO_SOLICITUD, TIPO_SOLICITUD, CANALES, situacionInstalacion } from '../../../estados';
 import ClienteFormulario from './ClienteFormulario';
@@ -166,11 +166,11 @@ export default function ClienteFicha() {
           <div className="encabezado"><span className="suave">Los pagos con tarjeta o por el portal se registran solos.</span>
             <Link to={`/admin/pagos/registrar?cliente=${c.id}`} className="boton secundario mini"><Plus size={16} /> Registrar pago en efectivo</Link></div>
           <div className="kpis tres">
-            <div className="kpi"><span className="kpi-titulo">Total pagado</span><strong className="kpi-valor">{pesos(c.resumen.total_pagado)}</strong></div>
-            <div className="kpi"><span className="kpi-titulo">Último pago</span>
+            <div className="kpi"><span className="kpi-titulo">Total pagado<Ayuda texto="Suma de todos los pagos de este cliente, en todas sus suscripciones." /></span><strong className="kpi-valor">{pesos(c.resumen.total_pagado)}</strong></div>
+            <div className="kpi"><span className="kpi-titulo">Último pago<Ayuda texto="Fecha del pago más reciente de este cliente." /></span>
               <strong className="kpi-valor">{c.resumen.ultimo_pago ? fechaCorta(c.resumen.ultimo_pago.fecha_pago ?? c.resumen.ultimo_pago.created_at).replace(/ \d{4}$/, '') : '—'}</strong>
               {c.resumen.ultimo_pago && <span className="suave">{pesos(c.resumen.ultimo_pago.monto)} · {ESTADO_PAGO[c.resumen.ultimo_pago.estado][1].toLowerCase()}</span>}</div>
-            <div className={`kpi ${c.resumen.deuda > 0 ? 'mala' : ''}`}><span className="kpi-titulo">Pago pendiente</span><strong className="kpi-valor">{c.resumen.deuda > 0 ? pesos(c.resumen.deuda) : 'No'}</strong>{c.resumen.deuda > 0 && <span className="suave">Se cobra solo; si no paga en el plazo, la suscripción se cierra</span>}</div>
+            <div className={`kpi ${c.resumen.deuda > 0 ? 'mala' : ''}`}><span className="kpi-titulo">Pago pendiente<Ayuda texto="Lo que suman los meses ya empezados que este cliente todavía no paga." /></span><strong className="kpi-valor">{c.resumen.deuda > 0 ? pesos(c.resumen.deuda) : 'No'}</strong>{c.resumen.deuda > 0 && <span className="suave">Se cobra solo; si no paga en el plazo, la suscripción se cierra</span>}</div>
           </div>
           {c.pagos.length === 0 ? <Vacio>Sin pagos registrados.</Vacio> : (
             <div className="tabla"><table>

@@ -182,6 +182,15 @@ p { margin: 0; }
   display: flex; flex-direction: column; gap: 6px; padding: 18px 20px; border-radius: var(--radio-grande);
   border: 1px solid var(--linea); background: #fff; text-decoration: none; color: var(--texto);
 }
+.kpi { position: relative; }
+.ayuda { display: inline-grid; place-items: center; color: var(--gris); cursor: help; border-radius: 50%; outline: none; flex: none; }
+.ayuda:hover, .ayuda:focus-visible { color: var(--texto); }
+.ayuda-texto {
+  position: absolute; left: 10px; right: 10px; top: 46px; z-index: 30; padding: 10px 12px; border-radius: 12px;
+  background: #1d1d1f; color: #fff; font-size: 13px; font-weight: 400; line-height: 1.45; text-align: left; letter-spacing: 0;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .18); opacity: 0; visibility: hidden; transition: opacity .15s; pointer-events: none;
+}
+.ayuda:hover .ayuda-texto, .ayuda:focus .ayuda-texto { opacity: 1; visibility: visible; }
 .kpi-titulo { color: var(--gris); font-size: 15px; display: inline-flex; align-items: center; gap: 8px; }
 .kpi-valor { font-size: 32px; font-weight: 600; letter-spacing: -0.01em; }
 .kpi-enlace { color: var(--dorado); font-size: 15px; }

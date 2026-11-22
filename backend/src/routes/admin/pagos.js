@@ -15,9 +15,11 @@ const MEDIOS = ['efectivo', 'transferencia', 'deposito', 'tarjeta', 'otro'];
 router.param('id', (req, res, next, id) => (/^\d+$/.test(id) ? next() : next(new ErrorHttp(404, 'Pago no encontrado'))));
 
 // Mes "AAAA-MM" → [primer día, primer día del mes siguiente]; por defecto el mes actual
+// Inicio y fin del mes como instantes en hora de Chile: un pago de las 23:30 del último día es de ese mes
 async function rangoMes(mes) {
   const { rows: [r] } = await pool.query(
-    `SELECT d::text AS desde, (d + interval '1 month')::date::text AS hasta
+    `SELECT to_char(d, 'YYYY-MM') AS mes, (d::timestamp AT TIME ZONE 'America/Santiago')::text AS desde,
+            ((d + interval '1 month')::timestamp AT TIME ZONE 'America/Santiago')::text AS hasta
      FROM (SELECT CASE WHEN $1 ~ '^\\d{4}-\\d{2}$' THEN ($1 || '-01')::date ELSE date_trunc('month', fn_hoy())::date END AS d) x`, [mes || '']);
   return r;
 }
@@ -36,7 +38,7 @@ const DESDE = `FROM pagos p
 
 // Resumen del mes para las tarjetas de arriba
 router.get('/resumen', async (req, res) => {
-  const { desde, hasta } = await rangoMes(req.query.mes);
+  const { mes, desde, hasta } = await rangoMes(req.query.mes);
   const { rows: [r] } = await pool.query(
     `SELECT
        coalesce(sum(p.monto) FILTER (WHERE p.estado = 'pagado' AND p.fecha_pago >= $1 AND p.fecha_pago < $2), 0)::int AS cobrado,
@@ -55,7 +57,7 @@ router.get('/resumen', async (req, res) => {
             (SELECT count(*) FROM tarjetas WHERE estado = 'activa')::int AS tarjetas,
             (SELECT count(*) FROM v_morosos)::int AS morosos,
             (SELECT coalesce(sum(monto_adeudado), 0) FROM v_suscripciones_estado WHERE estado = 'vigente')::int AS deuda`);
-  res.json({ mes: desde.slice(0, 7), ...r, ...k, medios, automaticos: process.env.COBROS_AUTOMATICOS === 'true' });
+  res.json({ mes, ...r, ...k, medios, automaticos: process.env.COBROS_AUTOMATICOS === 'true' });
 });
 
 // Pagos: ?mes=AAAA-MM (pagados en ese mes) o historial completo con ?estado= ?medio= ?q= ?pagina=
@@ -90,7 +92,7 @@ router.get('/', async (req, res) => {
 
 // Excel (CSV que abre Excel) de los pagos del mes
 router.get('/excel', async (req, res) => {
-  const { desde, hasta } = await rangoMes(req.query.mes);
+  const { mes, desde, hasta } = await rangoMes(req.query.mes);
   const { rows } = await pool.query(
     `SELECT ${COLUMNAS} ${DESDE} WHERE p.estado = 'pagado' AND p.fecha_pago >= $1 AND p.fecha_pago < $2 ORDER BY p.fecha_pago`, [desde, hasta]);
   const celda = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
@@ -100,7 +102,7 @@ router.get('/excel', async (req, res) => {
     ...rows.map((p) => [fecha(p.fecha_pago), p.cliente, p.instalacion ?? p.instalacion_codigo, p.suscripcion, String(p.periodo).slice(0, 7),
       p.medio_pago, p.cobro_id ? 'En línea (Flow)' : 'Manual', p.monto, p.nro_boleta, p.referencia_externa].map(celda).join(';')),
   ];
-  res.set({ 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': `attachment; filename="pagos-${desde.slice(0, 7)}.csv"` });
+  res.set({ 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': `attachment; filename="pagos-${mes}.csv"` });
   res.send('﻿' + lineas.join('\r\n'));
 });
 
@@ -149,7 +151,7 @@ router.post('/', async (req, res) => {
     for (const p of periodos) {
       const { rows: [r] } = await db.query(
         `INSERT INTO pagos (suscripcion_id, periodo, monto, fecha_pago, medio_pago, estado, referencia_externa, observaciones, registrado_por, validado_por)
-         VALUES ($1, $2, $3, COALESCE($4::date::timestamptz, now()), $5, 'pagado', $6, $7, $8, $8) RETURNING id`,
+         VALUES ($1, $2, $3, COALESCE((($4::date + time '12:00') AT TIME ZONE 'America/Santiago'), now()), $5, 'pagado', $6, $7, $8, $8) RETURNING id`,
         [s.id, p, monto, fecha, medio, b.referencia?.trim() || null, b.observaciones?.trim() || null, req.usuario.id]);
       ids.push(r.id);
     }

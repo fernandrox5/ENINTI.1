@@ -14,6 +14,7 @@ interface Datos {
   nombre: string; vigentes: number; ingreso_mensual: number; cobrado_mes: number; sin_plan: number; semana: number; semana_sin_tecnico: number;
   atrasadas: number; solicitudes_nuevas: number; emergencias: number; por_validar: number;
   pagos_pendientes: { suscripcion_id: number; cliente_id: number; cliente: string; telefono: string | null; instalacion: string; monto: number; quedan_dias: number }[];
+  por_cerrar?: { suscripcion_id: number; cliente: string; instalacion: string; monto: number; dias: number }[];
   hoy: { id: number; tipo: string; hora_inicio: string | null; instalacion: string; cliente: string; tecnico: string | null }[];
   solicitudes: { id: number; tipo: string; created_at: string; cliente: string; instalacion: string | null }[];
   para_llamar: Llamar[];
@@ -58,10 +59,10 @@ export default function Inicio() {
       </Saludo>
 
       <div className="kpis">
-        <Kpi icono={RefreshCw} titulo="Suscripciones activas" valor={d.vigentes} enlace={`${pesos(d.ingreso_mensual)} al mes`} a="/admin/suscripciones" />
-        <Kpi icono={CreditCard} titulo="Cobrado este mes" valor={pesos(d.cobrado_mes)} enlace="Ver pagos" a="/admin/pagos" tono="destacada" />
-        <Kpi icono={CircleCheck} titulo="Pagos pendientes" valor={d.pagos_pendientes.length} enlace="Ver pagos" a="/admin/pagos" tono={d.pagos_pendientes.length ? 'mala' : undefined} />
-        <Kpi icono={CalendarDays} titulo="Visitas esta semana" valor={d.semana} enlace={`${d.sin_plan} instalaciones sin suscripción`} a="/admin/mantenciones" />
+        <Kpi icono={RefreshCw} titulo="Suscripciones activas" ayuda="Suscripciones vigentes hoy. No cuenta las vencidas, canceladas ni cerradas. Abajo: lo que suman al mes." valor={d.vigentes} enlace={`${pesos(d.ingreso_mensual)} al mes`} a="/admin/suscripciones" />
+        <Kpi icono={CreditCard} titulo="Cobrado este mes" ayuda="Suma de los pagos recibidos desde el día 1 de este mes: tarjeta, Flow o registrados por ENINTI." valor={pesos(d.cobrado_mes)} enlace="Ver pagos" a="/admin/pagos" tono="destacada" />
+        <Kpi icono={CircleCheck} titulo="Pagos pendientes" ayuda="Suscripciones vigentes con el mes en curso sin pagar y dentro del plazo de 7 días. Abajo: las que ya pasaron el plazo sin pagar; el proceso diario de cobros las cierra por falta de pago." valor={d.pagos_pendientes.length} enlace={(d.por_cerrar ?? []).length ? `${(d.por_cerrar ?? []).length} con plazo vencido, por cerrarse` : 'Ver pagos'} a="/admin/pagos" tono={d.pagos_pendientes.length || (d.por_cerrar ?? []).length ? 'mala' : undefined} />
+        <Kpi icono={CalendarDays} titulo="Visitas esta semana" ayuda="Mantenciones agendadas desde hoy hasta 6 días más. Abajo: instalaciones sin suscripción vigente." valor={d.semana} enlace={`${d.sin_plan} instalaciones sin suscripción`} a="/admin/mantenciones" />
       </div>
 
       <div className="grilla-3 arriba-alineado inicio-listas">

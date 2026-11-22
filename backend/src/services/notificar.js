@@ -32,16 +32,19 @@ const TIPO_VISITA = { preventiva: 'Mantención preventiva', correctiva: 'Reparac
 // Cada función recibe los datos (d) y la URL base (u) y devuelve { asunto, titulo, parrafos, boton }
 export const PLANTILLAS = {
   suscripcion_contratada: {
-    cuando: 'El cliente contrata una suscripción desde su portal',
+    // Se envía siempre, aunque los demás avisos automáticos estén apagados
+    siempre: true,
+    cuando: 'El cliente contrata una suscripción y paga el primer mes',
     cliente: (d, u) => ({
       asunto: 'Tu suscripción está activa', titulo: `¡Listo, ${primerNombre(d.cliente)}!`,
-      parrafos: [`Tu suscripción al ${d.plan} para ${d.instalacion} ya está activa.`,
+      parrafos: [`Recibimos tu pago de ${pesos(d.pagado ?? d.monto)} y tu suscripción al ${d.plan} para ${d.instalacion} ya está activa.`,
         `Se cobra ${pesos(d.monto)} cada mes, el día ${d.dia_cobro}. Incluye ${d.incluidas} ${d.incluidas === 1 ? 'mantención' : 'mantenciones'}: pídelas desde tu portal cuando las necesites.`],
       boton: { texto: 'Ver mi suscripción', url: `${u}/portal/pagos` },
     }),
     admin: (d, u) => ({
-      asunto: `Nueva suscripción: ${d.cliente}`, titulo: 'Nueva suscripción',
-      parrafos: [`${d.cliente} contrató el ${d.plan} para ${d.instalacion} (${pesos(d.monto)} al mes).`],
+      asunto: `Nueva suscripción pagada: ${d.cliente}`, titulo: 'Nueva suscripción',
+      parrafos: [`${d.cliente} contrató el ${d.plan} para ${d.instalacion} y pagó el primer mes (${pesos(d.pagado ?? d.monto)}).`,
+        `Se le cobrará ${pesos(d.monto)} cada mes, el día ${d.dia_cobro}.`],
       boton: { texto: 'Ver la suscripción', url: `${u}/admin/suscripciones/${d.suscripcion_id}` },
     }),
   },
@@ -220,9 +223,10 @@ async function despachar(evento, d, { u, fechaEvento, tipoBd = evento }) {
       // Sin el script 08 la tabla no tiene estos tipos de aviso: el correo igual se envía, sin historial
       console.error(`Aviso ${evento} sin historial:`, err.message);
     }
-    if (!correosActivos()) { resultado.push({ rol, para, estado: 'pendiente' }); continue; }
+    if (!correosActivos() && !p.siempre) { resultado.push({ rol, para, estado: 'pendiente' }); continue; }
     try {
-      await enviarCorreo({ para, asunto: correo.asunto, titulo: correo.titulo, parrafos: correo.parrafos, boton: correo.boton, redirigible: true });
+      // Los que se envían siempre llegan a su destinatario real (no se desvían a la casilla de pruebas)
+      await enviarCorreo({ para, asunto: correo.asunto, titulo: correo.titulo, parrafos: correo.parrafos, boton: correo.boton, redirigible: !p.siempre });
       if (id) await pool.query('SELECT fn_marcar_notificacion($1, true)', [id]);
       resultado.push({ rol, para, estado: 'enviado' });
     } catch (err) {

@@ -1,7 +1,7 @@
 // Componentes de interfaz comunes (estilo de los mockups de Syntia)
 import { useEffect, useId, useState, type ReactNode, type InputHTMLAttributes, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ChevronLeft, X, Loader2, type LucideIcon } from 'lucide-react';
+import { ChevronLeft, CircleHelp, X, Loader2, type LucideIcon } from 'lucide-react';
 
 export function Marca({ sub }: { sub?: string }) {
   return (
@@ -155,11 +155,23 @@ export function Pestanas<T extends string>({ opciones, valor, cambiar }: { opcio
   );
 }
 
+// Signo "?" junto al título de una tarjeta: al pasar el puntero (o tocarlo en el celular) explica de dónde sale la cifra.
+// No es un botón: dentro de una tarjeta que es enlace, tocarlo no navega.
+export function Ayuda({ texto }: { texto: string }) {
+  const parar = (e: { preventDefault: () => void; stopPropagation: () => void }) => { e.preventDefault(); e.stopPropagation(); };
+  return (
+    <span className="ayuda" tabIndex={0} role="note" aria-label={texto} onClick={parar}>
+      <CircleHelp size={15} strokeWidth={2} aria-hidden />
+      <span className="ayuda-texto" aria-hidden>{texto}</span>
+    </span>
+  );
+}
+
 // Tarjeta de indicador del inicio del administrador
-export function Kpi({ titulo, valor, enlace, a, tono, icono: Icono }: { titulo: string; valor: ReactNode; enlace?: string; a?: string; tono?: 'alerta' | 'mala' | 'destacada'; icono?: LucideIcon }) {
+export function Kpi({ titulo, valor, enlace, a, tono, icono: Icono, ayuda }: { titulo: string; valor: ReactNode; enlace?: string; a?: string; tono?: 'alerta' | 'mala' | 'destacada'; icono?: LucideIcon; ayuda?: string }) {
   const contenido = (
     <>
-      <span className="kpi-titulo">{tono === 'mala' || tono === 'alerta' ? <i className="punto" /> : null}{titulo}{Icono && <span className="kpi-icono"><Icono size={20} strokeWidth={1.9} /></span>}</span>
+      <span className="kpi-titulo">{tono === 'mala' || tono === 'alerta' ? <i className="punto" /> : null}{titulo}{ayuda && <Ayuda texto={ayuda} />}{Icono && <span className="kpi-icono"><Icono size={20} strokeWidth={1.9} /></span>}</span>
       <strong className="kpi-valor">{valor}</strong>
       {enlace && <span className="kpi-enlace">{enlace} ›</span>}
     </>

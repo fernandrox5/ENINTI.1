@@ -53,7 +53,7 @@ router.get('/', async (req, res) => {
        WHERE fecha_inicio < $1 AND coalesce(fecha_cierre, fecha_termino) >= $1`, [inicio]),
     pool.query(
       `SELECT medio_pago AS medio, count(*)::int AS n, coalesce(sum(monto), 0)::int AS monto FROM pagos
-       WHERE estado = 'pagado' AND fecha_pago >= $1 GROUP BY medio_pago ORDER BY n DESC`, [inicio]),
+       WHERE estado = 'pagado' AND fecha_pago >= ($1::date::timestamp AT TIME ZONE 'America/Santiago') GROUP BY medio_pago ORDER BY n DESC`, [inicio]),
     // Cada mes cobrado con tarjeta: al primer intento, con reintento, en proceso o no se pudo
     pool.query(
       `SELECT resultado, count(*)::int AS n FROM (
