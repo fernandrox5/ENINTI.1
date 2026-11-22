@@ -16,13 +16,13 @@ export interface InstalacionPortal {
   periodos_adeudados: number | null; monto_adeudado: number | null; pagos_por_validar: number | null; pagado_hasta: string | null;
   ultima_mantencion: string | null; proxima: string | null;
   ultima_suscripcion: { id: number; codigo: string; estado: string; fecha_termino: string; plan: string } | null;
-  pago_pendiente: { desde: string; dias: number; quedan_dias: number } | null;
+  pago_pendiente: { desde: string; dias: number; quedan_dias: number; plazo_vencido?: boolean } | null;
 }
 
-// Al día / pago pendiente con los días de plazo que quedan (la suscripción se cancela al terminar el plazo)
+// Al día / pago pendiente (los días de plazo que quedan se dicen una sola vez, en el aviso y en Pagos)
 export function situacionPortal(i: InstalacionPortal): [Tono, string] {
   const p = i.pago_pendiente && i.pago_pendiente.dias > 0 ? i.pago_pendiente : null;
-  if (p) return ['mala', p.quedan_dias === 0 ? 'Pago pendiente · último día' : `Pago pendiente · ${p.quedan_dias} ${p.quedan_dias === 1 ? 'día' : 'días'}`];
+  if (p) return ['mala', 'Pago pendiente'];
   return situacionInstalacion({ ...i, periodos_adeudados: 0 });
 }
 interface AvisoPortal { tipo: string; tono: 'mala' | 'alerta' | 'neutra' | 'buena' | 'info'; texto: string; accion: string; a: string }
@@ -49,7 +49,8 @@ export function TarjetaInstalacion({ i }: { i: InstalacionPortal }) {
           </>
         ) : null}
         <div className="vigencia-fechas"><span className="suave">Próxima mantención</span>
-          <strong>{i.proxima ? fechaCorta(i.proxima) : i.suscripcion_id ? 'Pídela cuando quieras' : '—'}</strong></div>
+          <strong>{i.proxima ? fechaCorta(i.proxima) : i.suscripcion_id
+            ? <>Sin agendar · <Link to={`/portal/solicitudes?nueva=mantencion&instalacion=${i.id}`}>Pedir</Link></> : '—'}</strong></div>
         {i.ultima_mantencion && <div className="vigencia-fechas"><span className="suave">Última mantención</span><strong>{fechaCorta(i.ultima_mantencion)}</strong></div>}
         {i.suscripcion_id
           ? <Link to={`/portal/instalaciones/${i.id}`} className="boton suave">Ver instalación</Link>
@@ -66,12 +67,10 @@ export default function Inicio() {
   if (cargando && !d) return <Cargando />;
   if (!d) return <Aviso>{error}</Aviso>;
   const primerNombre = d.nombre.replace(/\[[^\]]*\]\s*/g, '').split(' ')[0];
-  const conPlan = d.instalaciones.some((i) => i.suscripcion_id);
   return (
     <div className="pagina-portal">
-      <Saludo titulo={`Hola, ${primerNombre}`} texto={d.avisos.length ? `Tienes ${d.avisos.length} ${d.avisos.length === 1 ? 'aviso' : 'avisos'}.` : 'Todo está al día.'} />
+      <Saludo titulo={`Hola, ${primerNombre}`} texto={d.avisos.length ? undefined : 'Todo está al día.'} />
       <div className="acciones-rapidas">
-        {conPlan && <Link to="/portal/pagos" className="boton primario chico"><CreditCard size={18} /> Pagos</Link>}
         {d.instalaciones.length > 0 && <>
           <Link to="/portal/solicitudes?nueva=mantencion" className="boton secundario chico"><Wrench size={18} /> Pedir mantención</Link>
           <Link to="/portal/solicitudes?nueva=emergencia" className="boton peligro chico"><Zap size={18} /> Reportar emergencia</Link>

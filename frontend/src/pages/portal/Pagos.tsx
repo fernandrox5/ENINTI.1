@@ -12,7 +12,7 @@ import { ESTADO_PAGO } from '../../estados';
 interface Suscripcion {
   id: number; codigo: string; estado: string; tipo_nombre: string; monto_pactado: number; frecuencia_pago: string; fecha_termino: string;
   pagado_hasta: string | null; periodos_adeudados: number; monto_adeudado: number; pagos_por_validar: number;
-  pendiente: { desde: string; quedan_dias: number } | null;
+  pendiente: { desde: string; quedan_dias: number; plazo_vencido?: boolean } | null;
   instalacion_nombre: string | null; instalacion_codigo: string; direccion: string; proximo_cobro: string | null;
 }
 interface Datos {
@@ -81,7 +81,7 @@ export default function Pagos() {
               <strong className="pago-monto">{pesos(s.monto_pactado)} <small>{FRECUENCIAS[s.frecuencia_pago]}</small></strong>
               <p className="suave">{s.instalacion_nombre || s.direccion} · {s.tipo_nombre}</p>
               {p ? (
-                <p className="texto-malo">{d.tarjeta ? 'No pudimos cobrar tu tarjeta. ' : ''}{p.quedan_dias === 0 ? 'Hoy es el último día' : `Tienes ${p.quedan_dias} ${p.quedan_dias === 1 ? 'día' : 'días'}`} para pagar; si no, tu suscripción se cancelará.</p>
+                <p className="texto-malo">{d.tarjeta ? 'No pudimos cobrar tu tarjeta. ' : ''}{p.plazo_vencido ? 'Venció el plazo para pagar: si no pagas hoy, tu suscripción se cerrará por falta de pago.' : <>{p.quedan_dias === 0 ? 'Hoy es el último día' : `Tienes ${p.quedan_dias} ${p.quedan_dias === 1 ? 'día' : 'días'}`} para pagar; si no, tu suscripción se cancelará.</>}</p>
               ) : (
                 <p className="suave">
                   {s.pagado_hasta ? `Pagado hasta el ${fechaCorta(s.pagado_hasta)}. ` : ''}

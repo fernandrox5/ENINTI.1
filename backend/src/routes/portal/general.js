@@ -40,7 +40,8 @@ async function instalaciones(clienteId, soloId = null) {
     const d = new Date(`${i.pagado_hasta ?? i.fecha_inicio}T12:00:00Z`);
     if (i.pagado_hasta) d.setUTCDate(d.getUTCDate() + 1); else d.setUTCMonth(d.getUTCMonth() + (i.meses_gratis ?? 0));
     const desde = d.toISOString().slice(0, 10);
-    if (desde <= hoy) i.pago_pendiente = { desde, dias: Math.round((Date.parse(hoy) - Date.parse(desde)) / 864e5), quedan_dias: Math.max(0, plazo - Math.round((Date.parse(hoy) - Date.parse(desde)) / 864e5)) };
+    if (desde <= hoy) i.pago_pendiente = { desde, dias: Math.round((Date.parse(hoy) - Date.parse(desde)) / 864e5), quedan_dias: Math.max(0, plazo - Math.round((Date.parse(hoy) - Date.parse(desde)) / 864e5)),
+      plazo_vencido: Math.round((Date.parse(hoy) - Date.parse(desde)) / 864e5) > plazo };
   }
   return rows;
 }
@@ -55,7 +56,9 @@ async function avisos(clienteId, lista) {
       // Con tarjeta, el día del cobro todavía no hay nada que avisar: se cobra sola
       if (i.pago_pendiente && !(conTarjeta && i.pago_pendiente.dias === 0)) {
         const q = i.pago_pendiente.quedan_dias;
-        out.push({ tipo: 'deuda', tono: 'mala', texto: `El pago de ${nombre} está pendiente: ${q === 0 ? 'hoy es el último día' : `tienes ${q} ${q === 1 ? 'día' : 'días'}`} para pagar o tu suscripción se cancelará`, accion: 'Pagar o actualizar mi tarjeta', a: '/portal/pagos' });
+        out.push({ tipo: 'deuda', tono: 'mala', texto: i.pago_pendiente.plazo_vencido
+          ? `Venció el plazo para pagar ${nombre}: tu suscripción se cerrará por falta de pago`
+          : `El pago de ${nombre} está pendiente: ${q === 0 ? 'hoy es el último día' : `tienes ${q} ${q === 1 ? 'día' : 'días'}`} para pagar o tu suscripción se cancelará`, accion: 'Pagar o actualizar mi tarjeta', a: '/portal/pagos' });
       }
       if (i.dias_restantes <= 30) out.push({ tipo: 'vence', tono: 'alerta', texto: i.dias_restantes <= 0 ? `Tu suscripción de ${nombre} vence hoy` : `Tu suscripción de ${nombre} vence en ${i.dias_restantes} ${i.dias_restantes === 1 ? 'día' : 'días'}`, accion: 'Ver mi suscripción', a: `/portal/instalaciones/${i.id}?pestana=suscripcion` });
       if (i.pagos_por_validar > 0) out.push({ tipo: 'revision', tono: 'neutra', texto: `Tienes un pago de ${nombre} en revisión`, accion: 'Ver historial de pagos', a: '/portal/pagos' });

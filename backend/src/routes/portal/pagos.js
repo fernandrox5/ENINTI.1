@@ -39,7 +39,8 @@ router.get('/', async (req, res) => {
     lista.push({
       ...s,
       proximo_cobro: sinPagar.find((p) => !p.vencido)?.inicio ?? null,
-      pendiente: vencido ? { desde: vencido.inicio, quedan_dias: Math.max(0, plazo - Math.round((hoy - Date.parse(vencido.inicio)) / 864e5)) } : null,
+      pendiente: vencido ? { desde: vencido.inicio, quedan_dias: Math.max(0, plazo - Math.round((hoy - Date.parse(vencido.inicio)) / 864e5)),
+        plazo_vencido: Math.round((hoy - Date.parse(vencido.inicio)) / 864e5) > plazo } : null,
       puede_adelantar: sinPagar.length,
     });
   }

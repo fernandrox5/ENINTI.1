@@ -525,6 +525,7 @@ button.kpi { text-align: left; font: inherit; color: inherit; cursor: pointer; }
 .instalacion-portal-cuerpo h2 { margin: 0; font-size: 24px; }
 .instalacion-portal-cuerpo p { margin: 0; }
 .foto-ancha { display: block; height: 170px; background: url('/paneles.jpg') center / cover; }
+@media (max-width: 640px) { .instalacion-portal .foto-ancha { display: none; } .pagina-portal .acciones-rapidas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; } .pagina-portal .acciones-rapidas .boton { justify-content: center; padding-inline: 6px; font-size: 14px; gap: 6px; white-space: nowrap; min-width: 0; } .instalacion-portal-cuerpo { padding: 14px 16px 16px; gap: 8px; } .instalacion-portal-cuerpo h2 { font-size: 20px; } }
 .foto-ancha.redondeada { border-radius: var(--radio-grande); height: 220px; }
 .lista-equipos-portal { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
 .lista-equipos-portal li { display: flex; justify-content: space-between; align-items: center; gap: 12px; border: 1px solid var(--linea); border-radius: 14px; padding: 14px 16px; background: #fff; }

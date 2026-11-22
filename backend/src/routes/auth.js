@@ -29,10 +29,34 @@ async function sesion(session) {
 
 const normalizarCorreo = (c) => String(c || '').trim().toLowerCase();
 
+// Límite de intentos (OWASP A07): con 5 fallidos seguidos en 15 minutos, el correo queda bloqueado 15 minutos.
+// Cada intento queda registrado con su IP y fecha (A09). Si la tabla aún no existe, el ingreso sigue funcionando.
+const MAX_FALLIDOS = 5;
+async function bloqueado(correo) {
+  try {
+    const { rows: [r] } = await pool.query(
+      `SELECT count(*)::int AS n FROM intentos_ingreso
+       WHERE correo = $1 AND NOT exito AND creado > now() - interval '15 minutes'
+         AND id > coalesce((SELECT max(id) FROM intentos_ingreso WHERE correo = $1 AND exito), 0)`, [correo]);
+    return r.n >= MAX_FALLIDOS;
+  } catch (err) {
+    if (err.code !== '42P01') throw err;
+    return false;
+  }
+}
+async function registrarIntento(req, correo, exito) {
+  const ip = String(req.headers['x-forwarded-for'] || req.socket?.remoteAddress || '').split(',')[0].trim() || null;
+  await pool.query('INSERT INTO intentos_ingreso (correo, ip, exito) VALUES ($1, $2, $3)', [correo, ip, exito])
+    .catch((err) => { if (err.code !== '42P01') console.error('No se pudo registrar el intento de ingreso:', err.message); });
+}
+
 router.post('/login', async (req, res) => {
   const { correo, password } = req.body;
   if (!correo || !password) throw new ErrorHttp(400, 'Ingresa tu correo y contraseña');
-  const { data, error } = await clienteAuth().auth.signInWithPassword({ email: normalizarCorreo(correo), password });
+  const email = normalizarCorreo(correo);
+  if (await bloqueado(email)) throw new ErrorHttp(429, 'Demasiados intentos fallidos. Espera 15 minutos o crea una nueva contraseña con "¿Olvidaste tu contraseña?".');
+  const { data, error } = await clienteAuth().auth.signInWithPassword({ email, password });
+  await registrarIntento(req, email, !error);
   if (error) {
     if (error.code === 'email_not_confirmed') throw new ErrorHttp(403, 'Debes activar tu cuenta desde el correo que te enviamos');
     throw new ErrorHttp(401, 'Correo o contraseña incorrectos');

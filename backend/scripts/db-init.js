@@ -11,6 +11,7 @@
 //   9. 08_avisos          avisos por correo: un correo por cada cosa que pasa
 //  10. 09_mantenciones_a_pedido  las mantenciones las pide el cliente (no se agendan solas)
 //  11. 10_notificaciones_leidas   lo leído en la campana queda guardado por usuario
+//  12. 11_intentos_ingreso        intentos de inicio de sesión: registro y bloqueo tras 5 fallidos
 //   5. usuarios de prueba en Supabase Auth (el trigger los vincula por correo)
 import { readFile } from 'node:fs/promises';
 
@@ -82,6 +83,7 @@ try {
   await pool.query(await sql('schema/08_avisos.sql'));
   await pool.query(await sql('schema/09_mantenciones_a_pedido.sql'));
   await pool.query(await sql('schema/10_notificaciones_leidas.sql'));
+  await pool.query(await sql('schema/11_intentos_ingreso.sql'));
 
   for (const u of USUARIOS) {
     const { data, error } = await supabase.auth.admin.createUser({

@@ -8,7 +8,7 @@ import { PGLiteSocketServer } from '@electric-sql/pglite-socket';
 const RAIZ = new URL('../../../', import.meta.url);
 // Mismo orden que backend/scripts/db-init.js, sin el reinicio (00) ni los datos demo (03)
 const ESQUEMA = ['01_esquema_eninti', '02_ajustes', '04_pagos_flow', '05_plazo_pago', '06_mantenciones',
-  '07_pago_pendiente', '08_avisos', '09_mantenciones_a_pedido', '10_notificaciones_leidas'];
+  '07_pago_pendiente', '08_avisos', '09_mantenciones_a_pedido', '10_notificaciones_leidas', '11_intentos_ingreso'];
 
 const leer = (ruta) => readFile(new URL(ruta, RAIZ), 'utf8');
 
