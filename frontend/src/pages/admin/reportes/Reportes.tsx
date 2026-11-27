@@ -6,13 +6,13 @@ import { Link } from 'react-router-dom';
 import { BarChart3, CreditCard, Lightbulb, Tag, Wrench, Zap } from 'lucide-react';
 import { useDatos } from '../../../useDatos';
 import { Ayuda, Aviso, Cargando, Titulo, Vacio } from '../../../componentes';
-import { MEDIOS, fechaCorta, iniciales, pesos } from '../../../formato';
+import { MEDIOS, fechaCorta, iniciales, listaY, mediosMasUsados, pesos } from '../../../formato';
 import { whatsapp } from '../../../contacto';
 
-interface Mes { mes: string; esperado: number; pagado: number; altas: number; bajas: number; a_tiempo: number; tarde: number }
+interface Mes { mes: string; esperado: number; cubierto: number; falto: number; en_plazo: number; pagado: number; altas: number; bajas: number; sin_empezar: number; a_tiempo: number; tarde: number }
 interface Datos {
   periodo: string; desde: string; meses: Mes[];
-  resumen: { ingreso_mensual: number; ingreso_inicio: number; activos: number; esperado: number; pagado: number; altas: number; bajas: number; retencion: number | null; nota: number | null; opiniones: number };
+  resumen: { ingreso_mensual: number; ingreso_inicio: number; activos: number; esperado: number; cubierto: number; falto: number; en_plazo: number; pagado: number; altas: number; bajas: number; sin_empezar: number; plazo: number; retencion: number | null; nota: number | null; opiniones: number };
   medios: { medio: string; n: number; monto: number }[];
   tarjeta: Partial<Record<'primer' | 'reintento' | 'en_proceso' | 'fallido', number>>;
   calificaciones: { nota: number; n: number }[];
@@ -59,7 +59,8 @@ export default function Reportes() {
             <Caja titulo="Pagado vs. esperado" sub="Lo que se pagó de cada mes y lo que debía pagarse"
               pie={<Datos2 d={d} />}><GrafIngresos meses={d.meses} mostrar={mostrar} ocultar={ocultar} /></Caja>
             <Caja titulo="Suscripciones nuevas y canceladas" sub={`Hoy hay ${d.resumen.activos} ${d.resumen.activos === 1 ? 'suscripción activa' : 'suscripciones activas'}`}>
-              <GrafAltasBajas meses={d.meses} mostrar={mostrar} ocultar={ocultar} /></Caja>
+              <GrafAltasBajas meses={d.meses} mostrar={mostrar} ocultar={ocultar} />
+              {d.resumen.sin_empezar > 0 && <small className="suave">Además, {d.resumen.sin_empezar} {d.resumen.sin_empezar === 1 ? 'contrató y no pagó el primer mes, así que no empezó' : 'contrataron y no pagaron el primer mes, así que no empezaron'}. No se cuentan como nuevas ni canceladas.</small>}</Caja>
           </div>
           <div className="rep-g3">
             <MediosPago d={d} mostrar={mostrar} ocultar={ocultar} />
@@ -104,13 +105,14 @@ function Hallazgos({ d }: { d: Datos }) {
     lista.push({ icono: <Tag size={18} />, titulo: `Puedes ganar ${pesos(extra)} más al mes`,
       texto: `${n} ${n === 1 ? 'instalación no tiene' : 'instalaciones no tienen'} plan. Si contratan el ${d.plan_base.nombre}, el ingreso mensual pasa de ${pesos(d.resumen.ingreso_mensual)} a ${pesos(d.resumen.ingreso_mensual + extra)}.` });
   }
-  const faltante = d.resumen.esperado - d.resumen.pagado;
-  if (faltante > 0) lista.push({ icono: <CreditCard size={18} />, titulo: `Quedaron ${pesos(faltante)} sin pagar`, texto: `Se pagó el ${pct(d.resumen.pagado, d.resumen.esperado)} % de lo esperado en el periodo. Las suscripciones que no pagan se cierran solas al terminar el plazo.` });
+  const faltante = d.resumen.falto;
+  if (faltante > 0) lista.push({ icono: <CreditCard size={18} />, titulo: `Quedaron ${pesos(faltante)} sin pagar`, texto: `Se pagó el ${pct(d.resumen.cubierto, d.resumen.esperado)} % de lo esperado en el periodo. Lo que pasó el plazo de ${d.resumen.plazo} días sin pagar se cierra solo por falta de pago.` });
   const t = d.tarjeta, totalT = (t.primer ?? 0) + (t.reintento ?? 0) + (t.fallido ?? 0);
   if (totalT > 0) lista.push({ icono: <CreditCard size={18} />, titulo: 'Cobros con tarjeta', texto: `${t.primer ?? 0} de cada ${totalT} cobros salen al primer intento.` });
   else {
-    const top = d.medios[0];
-    if (top) lista.push({ icono: <CreditCard size={18} />, titulo: `El medio más usado es ${(MEDIOS[top.medio] ?? top.medio).toLowerCase()}`, texto: 'Invitar a los clientes a inscribir su tarjeta evita esperar sus pagos cada mes.' });
+    // Si hay empate, se nombran todos los medios empatados (no uno al azar)
+    const top = mediosMasUsados(d.medios);
+    if (top.length) lista.push({ icono: <CreditCard size={18} />, titulo: top.length > 1 ? `Los medios más usados son ${listaY(top)}` : `El medio más usado es ${top[0]}`, texto: 'Invitar a los clientes a inscribir su tarjeta evita esperar sus pagos cada mes.' });
   }
   const atrasado = [...d.tecnicos].sort((a, b) => (b.tarde + b.sin_informe) - (a.tarde + a.sin_informe))[0];
   if (atrasado && atrasado.tarde + atrasado.sin_informe > 0) {
@@ -134,9 +136,9 @@ function Resumen({ d }: { d: Datos }) {
     <div className="rep-g4">
       <div className="kpi rep-kpi"><span className="kpi-titulo">Ingreso mensual fijo<Ayuda texto="Lo que suman al mes las suscripciones vigentes hoy. Abajo: cuánto cambió desde el inicio del periodo." /></span><span className="kpi-valor">{pesos(r.ingreso_mensual)}</span>
         <small className={dif > 0 ? 'texto-bueno' : 'suave'}>{dif === 0 ? 'Igual que al inicio del periodo' : `${dif > 0 ? '▲' : '▼'} ${pesos(Math.abs(dif))} desde ${etiquetaMes(d.meses[0].mes).toLowerCase()}`}</small></div>
-      <div className="kpi rep-kpi"><span className="kpi-titulo">Pagado en el periodo<Ayuda texto="Pagos recibidos por los meses del periodo elegido, comparados con lo que se esperaba cobrar según las suscripciones vigentes de cada mes." /></span><span className="kpi-valor">{pesos(r.pagado)}</span>
-        <small className="suave">{pct(r.pagado, r.esperado)} % de lo esperado</small></div>
-      <div className="kpi rep-kpi"><span className="kpi-titulo">Clientes que se quedan<Ayuda texto="De las suscripciones vigentes al inicio del periodo más las nuevas, el porcentaje que no se canceló ni se cerró." /></span><span className="kpi-valor">{r.retencion === null ? '—' : `${r.retencion} %`}</span>
+      <div className="kpi rep-kpi"><span className="kpi-titulo">Pagado en el periodo<Ayuda texto="Pagos recibidos por los meses del periodo. Abajo: de los cobros que tocaban en el periodo (cada suscripción en su fecha de pago), el porcentaje que se pagó. Los que siguen dentro del plazo no cuentan como impagos." /></span><span className="kpi-valor">{pesos(r.pagado)}</span>
+        <small className="suave">{pct(r.cubierto, r.esperado)} % de lo esperado{r.en_plazo > 0 ? ` · ${pesos(r.en_plazo)} en plazo` : ''}</small></div>
+      <div className="kpi rep-kpi"><span className="kpi-titulo">Clientes que se quedan<Ayuda texto="De las suscripciones vigentes al inicio del periodo más las nuevas, el porcentaje que no se canceló ni se cerró. No cuenta las que se contrataron y nunca pagaron el primer mes." /></span><span className="kpi-valor">{r.retencion === null ? '—' : `${r.retencion} %`}</span>
         <small className="suave">{r.altas} {r.altas === 1 ? 'nueva' : 'nuevas'} · {r.bajas} {r.bajas === 1 ? 'cancelada' : 'canceladas'}</small></div>
       <div className="kpi rep-kpi"><span className="kpi-titulo">Nota de los clientes<Ayuda texto="Promedio de las notas (de 1 a 5) que los clientes dieron a sus mantenciones en el periodo." /></span><span className="kpi-valor">{r.nota === null ? '—' : r.nota.toLocaleString('es-CL')}</span>
         <small className="suave">{r.opiniones ? `de 5 · ${r.opiniones} ${r.opiniones === 1 ? 'opinión' : 'opiniones'}` : 'Aún sin opiniones'}</small></div>
@@ -180,9 +182,9 @@ function GrafIngresos({ meses, mostrar, ocultar }: PropsG) {
       <svg viewBox={`-48 -12 ${ancho + 56} ${alto + 34}`} width="100%" role="img" aria-label="Pagado y esperado por mes">
         <EjeY max={max} alto={alto} ancho={ancho} fmt={miles} />
         {meses.map((m, k) => {
-          const x = k * paso + (paso - w) / 2, he = (m.esperado / max) * alto, hp = (m.pagado / max) * alto, falta = m.esperado - m.pagado;
+          const x = k * paso + (paso - w) / 2, he = (m.esperado / max) * alto, hp = (m.pagado / max) * alto;
           return (
-            <g key={m.mes} className="hov" onMouseMove={(e) => mostrar(e, <><b>{mesLargo(m.mes)}</b><br />Pagado {pesos(m.pagado)}<br />Esperado {pesos(m.esperado)}{falta > 0 && <><br />Faltó {pesos(falta)}</>}</>)} onMouseLeave={ocultar}>
+            <g key={m.mes} className="hov" onMouseMove={(e) => mostrar(e, <><b>{mesLargo(m.mes)}</b><br />Pagado {pesos(m.pagado)}<br />Esperado {pesos(m.esperado)}{m.falto > 0 && <><br />Faltó {pesos(m.falto)}</>}{m.en_plazo > 0 && <><br />En plazo {pesos(m.en_plazo)}</>}</>)} onMouseLeave={ocultar}>
               <rect x={k * paso} y={0} width={paso} height={alto} fill="transparent" />
               <path d={barra(x, alto, w, he)} fill={FANTASMA} />
               <path d={barra(x + w * 0.18, alto, w * 0.64, hp)} fill={S1} />
@@ -351,8 +353,8 @@ function Datos2({ d }: { d: Datos }) {
     <details className="rep-datos">
       <summary>Ver los números</summary>
       <div className="tabla"><table>
-        <thead><tr><th>Mes</th><th className="num">Esperado</th><th className="num">Pagado</th><th className="num">Faltó</th></tr></thead>
-        <tbody>{d.meses.map((m) => <tr key={m.mes}><td>{mesLargo(m.mes)}</td><td className="num">{pesos(m.esperado)}</td><td className="num">{pesos(m.pagado)}</td><td className="num">{pesos(Math.max(0, m.esperado - m.pagado))}</td></tr>)}</tbody>
+        <thead><tr><th>Mes</th><th className="num">Esperado</th><th className="num">Pagado</th><th className="num">Faltó</th><th className="num">En plazo</th></tr></thead>
+        <tbody>{d.meses.map((m) => <tr key={m.mes}><td>{mesLargo(m.mes)}</td><td className="num">{pesos(m.esperado)}</td><td className="num">{pesos(m.pagado)}</td><td className="num">{pesos(m.falto)}</td><td className="num">{pesos(m.en_plazo)}</td></tr>)}</tbody>
       </table></div>
     </details>
   );

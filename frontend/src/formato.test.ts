@@ -1,7 +1,7 @@
 // Pruebas unitarias: formato de cifras y estados que ve el usuario.
 // Estándar de Pruebas ENINTI · Regla 5 (formato CLP) y módulo DAT.
 import { describe, it, expect } from 'vitest';
-import { pesos, fechaCorta, formatearRut } from './formato';
+import { pesos, fechaCorta, formatearRut, mediosMasUsados, listaY } from './formato';
 import { estadoSuscripcion, situacionInstalacion } from './estados';
 
 describe('CP-DAT-01 · Formato CLP: punto de miles, sin decimales', () => {
@@ -33,4 +33,13 @@ describe('CP-SUS-02 · Situación de la instalación que ve el cliente', () => {
   it('sin suscripción', () => expect(situacionInstalacion({ suscripcion_id: null })[1]).toBe('Sin suscripción'));
   it('con mes adeudado: pago pendiente', () => expect(situacionInstalacion({ suscripcion_id: 1, periodos_adeudados: 1, dias_restantes: 100 })[1]).toBe('Pago pendiente'));
   it('al día', () => expect(situacionInstalacion({ suscripcion_id: 1, periodos_adeudados: 0, pagos_por_validar: 0, dias_restantes: 100 })[1]).toBe('Al día'));
+});
+
+describe('CP-REP-08 · Reportes: medio de pago más usado', () => {
+  it('un solo medio con más pagos', () => expect(mediosMasUsados([{ medio: 'deposito', n: 7 }, { medio: 'efectivo', n: 6 }])).toEqual(['depósito']));
+  it('con empate se nombran todos los empatados, no uno al azar', () => {
+    const top = mediosMasUsados([{ medio: 'transferencia', n: 6 }, { medio: 'deposito', n: 6 }, { medio: 'efectivo', n: 6 }, { medio: 'tarjeta', n: 2 }]);
+    expect(listaY(top)).toBe('transferencia, depósito y efectivo');
+  });
+  it('sin pagos no hay medio más usado', () => expect(mediosMasUsados([])).toEqual([]));
 });

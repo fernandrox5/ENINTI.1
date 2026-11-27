@@ -1,12 +1,16 @@
 // T-35 · Reportes: tablero del negocio de mantenciones para el periodo elegido
 // (últimos 6 o 12 meses, o desde la primera suscripción).
-//   Mes a mes: lo esperado (planes vigentes), lo pagado de ese mes, planes nuevos y cancelados,
-//              mantenciones a tiempo y cerradas tarde
+//   Mes a mes: lo esperado (los cobros que tocaban ese mes, con la misma regla del proceso de cobros),
+//              lo pagado de ese mes, lo que quedó sin pagar con el plazo vencido, planes nuevos y
+//              cancelados, mantenciones a tiempo y cerradas tarde
+//   Las suscripciones que se cerraron el mismo día en que empezaban (contrató y no pagó el primer mes)
+//   no cuentan como nuevas ni como canceladas: se informan aparte como "no empezaron".
 //   Resumen:   ingreso mensual fijo, retención, nota de los clientes
 //   Detalle:   medios de pago, cobros con tarjeta, calificaciones, técnicos, emergencias,
 //              instalaciones sin plan (oportunidades) y motivos de cancelación
 import { Router } from 'express';
 import { pool } from '../../config/db.js';
+import { PERIODOS, plazoPago } from '../../services/cobros.js';
 
 const router = Router();
 
@@ -26,24 +30,42 @@ router.get('/', async (req, res) => {
   const periodo = ['6', '12', 'todo'].includes(req.query.periodo) ? req.query.periodo : '6';
   const inicio = await desde(periodo);
 
-  const [meses, actual, base, medios, tarjeta, notas, tecnicos, emergencias, sinPlan, plan, motivos] = await Promise.all([
+  const plazo = await plazoPago();
+
+  const [meses, actual, base, medios, tarjeta, notas, tecnicos, emergencias, sinPlan, plan, motivos, inicial] = await Promise.all([
+    // Cada cobro que tocaba en el periodo: la fecha de pago de cada suscripción (inicio + n meses), solo antes de su
+    // cierre o término y hasta hoy (igual que el proceso de cobros). Se compara cobro por cobro con su pago, sin
+    // compensar un mes con otro: "faltó" es lo impago con el plazo vencido; "en plazo" aún se puede pagar.
     pool.query(
       `WITH m AS (
          SELECT generate_series($1::date, date_trunc('month', fn_hoy())::date, interval '1 month')::date AS mes
+       ),
+       cobro AS (
+         SELECT date_trunc('month', g.inicio)::date AS mes, s.monto_pactado AS monto,
+                EXISTS (SELECT 1 FROM pagos p WHERE p.suscripcion_id = s.id AND p.estado = 'pagado'
+                          AND p.periodo = date_trunc('month', g.inicio)::date) AS pagado,
+                (fn_hoy() - g.inicio::date) <= $2 OR EXISTS (SELECT 1 FROM pagos p WHERE p.suscripcion_id = s.id AND p.estado = 'pendiente'
+                          AND p.periodo = date_trunc('month', g.inicio)::date) AS en_plazo
+         FROM suscripciones s CROSS JOIN LATERAL (${PERIODOS}) g
+         WHERE g.inicio < coalesce(s.fecha_cierre, s.fecha_termino) AND g.inicio <= fn_hoy() AND g.inicio >= $1
        )
        SELECT to_char(m.mes, 'YYYY-MM') AS mes,
-              (SELECT coalesce(sum(s.monto_pactado / fn_meses_periodo(s.frecuencia_pago)), 0) FROM suscripciones s
-                WHERE s.fecha_inicio < m.mes + interval '1 month'
-                  AND coalesce(s.fecha_cierre, s.fecha_termino) >= m.mes
-                  AND coalesce(s.fecha_cierre, s.fecha_termino) > s.fecha_inicio)::int AS esperado,
+              (SELECT coalesce(sum(c.monto), 0) FROM cobro c WHERE c.mes = m.mes)::int AS esperado,
+              (SELECT coalesce(sum(c.monto), 0) FROM cobro c WHERE c.mes = m.mes AND c.pagado)::int AS cubierto,
+              (SELECT coalesce(sum(c.monto), 0) FROM cobro c WHERE c.mes = m.mes AND NOT c.pagado AND NOT c.en_plazo)::int AS falto,
+              (SELECT coalesce(sum(c.monto), 0) FROM cobro c WHERE c.mes = m.mes AND NOT c.pagado AND c.en_plazo)::int AS en_plazo,
               (SELECT coalesce(sum(p.monto), 0) FROM pagos p WHERE p.estado = 'pagado' AND p.periodo = m.mes)::int AS pagado,
-              (SELECT count(*) FROM suscripciones s WHERE date_trunc('month', s.fecha_inicio) = m.mes)::int AS altas,
-              (SELECT count(*) FROM suscripciones s WHERE s.estado = 'cerrada' AND date_trunc('month', s.fecha_cierre) = m.mes)::int AS bajas,
+              (SELECT count(*) FROM suscripciones s WHERE date_trunc('month', s.fecha_inicio) = m.mes
+                 AND coalesce(s.fecha_cierre, s.fecha_termino) > s.fecha_inicio)::int AS altas,
+              (SELECT count(*) FROM suscripciones s WHERE s.estado = 'cerrada' AND date_trunc('month', s.fecha_cierre) = m.mes
+                 AND s.fecha_cierre > s.fecha_inicio AND s.fecha_cierre <= fn_hoy())::int AS bajas,
+              (SELECT count(*) FROM suscripciones s WHERE s.estado = 'cerrada' AND date_trunc('month', s.fecha_inicio) = m.mes
+                 AND s.fecha_cierre <= s.fecha_inicio)::int AS sin_empezar,
               (SELECT count(*) FROM mantenciones x WHERE x.estado = 'realizada' AND date_trunc('month', x.fecha_realizada) = m.mes
                  AND (x.fecha_programada IS NULL OR x.fecha_realizada <= x.fecha_programada))::int AS a_tiempo,
               (SELECT count(*) FROM mantenciones x WHERE x.estado = 'realizada' AND date_trunc('month', x.fecha_realizada) = m.mes
                  AND x.fecha_realizada > x.fecha_programada)::int AS tarde
-       FROM m ORDER BY m.mes`, [inicio]),
+       FROM m ORDER BY m.mes`, [inicio, plazo]),
     pool.query(
       `SELECT count(*)::int AS activos, coalesce(sum(monto_pactado / fn_meses_periodo(frecuencia_pago)), 0)::int AS ingreso_mensual
        FROM suscripciones WHERE estado = 'vigente'`),
@@ -53,7 +75,7 @@ router.get('/', async (req, res) => {
        WHERE fecha_inicio < $1 AND coalesce(fecha_cierre, fecha_termino) >= $1`, [inicio]),
     pool.query(
       `SELECT medio_pago AS medio, count(*)::int AS n, coalesce(sum(monto), 0)::int AS monto FROM pagos
-       WHERE estado = 'pagado' AND fecha_pago >= ($1::date::timestamp AT TIME ZONE 'America/Santiago') GROUP BY medio_pago ORDER BY n DESC`, [inicio]),
+       WHERE estado = 'pagado' AND fecha_pago >= ($1::date::timestamp AT TIME ZONE 'America/Santiago') GROUP BY medio_pago ORDER BY n DESC, monto DESC, medio_pago`, [inicio]),
     // Cada mes cobrado con tarjeta: al primer intento, con reintento, en proceso o no se pudo
     pool.query(
       `SELECT resultado, count(*)::int AS n FROM (
@@ -89,12 +111,18 @@ router.get('/', async (req, res) => {
        WHERE activo ORDER BY monto_clp / fn_meses_periodo(frecuencia_pago) LIMIT 1`),
     pool.query(
       `SELECT regexp_replace(coalesce(motivo_cierre, 'Sin motivo'), '^Cancelada por el cliente:\\s*', '') AS motivo, count(*)::int AS n
-       FROM suscripciones WHERE estado = 'cerrada' AND fecha_cierre >= $1 GROUP BY 1 ORDER BY n DESC, motivo`, [inicio]),
+       FROM suscripciones WHERE estado = 'cerrada' AND fecha_cierre >= $1 AND fecha_cierre <= fn_hoy() AND fecha_cierre > fecha_inicio
+       GROUP BY 1 ORDER BY n DESC, motivo`, [inicio]),
+    // Ingreso mensual fijo al empezar el periodo (para comparar con el de hoy)
+    pool.query(
+      `SELECT coalesce(sum(monto_pactado / fn_meses_periodo(frecuencia_pago)), 0)::int AS v FROM suscripciones
+       WHERE fecha_inicio <= $1 AND coalesce(fecha_cierre, fecha_termino) > $1`, [inicio]),
   ]);
 
   const filas = meses.rows;
   const altas = filas.reduce((a, m) => a + m.altas, 0);
   const bajas = filas.reduce((a, m) => a + m.bajas, 0);
+  const suma = (k) => filas.reduce((a, m) => a + m[k], 0);
   const totalNotas = notas.rows.reduce((a, r) => a + r.n, 0);
   const promedio = totalNotas ? notas.rows.reduce((a, r) => a + r.nota * r.n, 0) / totalNotas : null;
   const enJuego = base.rows[0].n + altas;
@@ -104,11 +132,14 @@ router.get('/', async (req, res) => {
     meses: filas,
     resumen: {
       ingreso_mensual: actual.rows[0].ingreso_mensual,
-      ingreso_inicio: filas[0]?.esperado ?? 0,
+      ingreso_inicio: inicial.rows[0].v,
       activos: actual.rows[0].activos,
-      esperado: filas.reduce((a, m) => a + m.esperado, 0),
-      pagado: filas.reduce((a, m) => a + m.pagado, 0),
-      altas, bajas,
+      esperado: suma('esperado'),
+      cubierto: suma('cubierto'),
+      falto: suma('falto'),
+      en_plazo: suma('en_plazo'),
+      pagado: suma('pagado'),
+      altas, bajas, sin_empezar: suma('sin_empezar'), plazo,
       retencion: enJuego ? Math.round(((enJuego - bajas) / enJuego) * 100) : null,
       nota: promedio === null ? null : Math.round(promedio * 10) / 10,
       opiniones: totalNotas,

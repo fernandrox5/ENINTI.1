@@ -31,7 +31,7 @@ const urlConfirmacion = (req) => `${basePublica(req)}/api/flow/confirmacion`;
 
 // Fechas de cobro de una suscripción: cada una se cuenta desde la fecha de inicio (inicio + n meses), no desde la
 // anterior. Así un contrato del 31 cobra el 28 o 29 en febrero y vuelve al 31 en marzo, sin correrse ni sumar un mes extra.
-const PERIODOS = `SELECT (s.fecha_inicio + make_interval(months => s.meses_gratis + n * fn_meses_periodo(s.frecuencia_pago)))::date AS inicio
+export const PERIODOS = `SELECT (s.fecha_inicio + make_interval(months => s.meses_gratis + n * fn_meses_periodo(s.frecuencia_pago)))::date AS inicio
   FROM generate_series(0, ((coalesce(s.fecha_cierre, s.fecha_termino) - s.fecha_inicio) / 28)) n`;
 
 // Periodos sin pagar de una suscripción (con su fecha de inicio real); "vencido" = ya corresponde cobrarlo

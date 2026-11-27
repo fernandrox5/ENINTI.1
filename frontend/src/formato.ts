@@ -32,6 +32,15 @@ export const iniciales = (nombre?: string | null) =>
 
 export const plural = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`;
 
+// "a", "a y b", "a, b y c"
+export const listaY = (xs: string[]) => (xs.length > 1 ? `${xs.slice(0, -1).join(', ')} y ${xs[xs.length - 1]}` : xs[0] ?? '');
+
+// Medios de pago con más pagos; si hay empate, todos los empatados (no uno al azar)
+export const mediosMasUsados = (medios: { medio: string; n: number }[]) => {
+  const max = Math.max(0, ...medios.map((m) => m.n));
+  return max ? medios.filter((m) => m.n === max).map((m) => (MEDIOS[m.medio] ?? m.medio).toLowerCase()) : [];
+};
+
 export const MEDIOS: Record<string, string> = {
   transferencia: 'Transferencia', deposito: 'Depósito', efectivo: 'Efectivo', tarjeta: 'Tarjeta', otro: 'Otro',
 };
