@@ -18,7 +18,7 @@ export const ESTADO_PAGO: Record<string, [Tono, string]> = {
 export const ESTADO_SOLICITUD: Record<string, [Tono, string]> = {
   nueva: ['alerta', 'Nueva'], en_proceso: ['info', 'En proceso'], resuelta: ['buena', 'Resuelta'], cerrada: ['neutra', 'Cerrada'],
 };
-export const TIPO_SOLICITUD: Record<string, string> = { mantencion: 'Mantención', emergencia: 'Emergencia', consulta: 'Consulta' };
+export const TIPO_SOLICITUD: Record<string, string> = { mantencion: 'Mantención', emergencia: 'Emergencia', consulta: 'Cotización' }; // las consultas generales van por WhatsApp; desde el portal solo llegan pedidos de cotización
 export const CANALES: Record<string, string> = { plataforma: 'Portal', whatsapp: 'WhatsApp', telefono: 'Teléfono', email: 'Correo', presencial: 'Presencial' };
 
 export const ESTADO_MANTENCION: Record<string, [Tono, string]> = {

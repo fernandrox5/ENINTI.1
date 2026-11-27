@@ -153,10 +153,10 @@ export const PLANTILLAS = {
     }),
   },
   solicitud_nueva: {
-    cuando: 'Un cliente pide una mantención o reporta una emergencia en su portal',
+    cuando: 'Un cliente pide una mantención, reporta una emergencia o pide una cotización en su portal',
     admin: (d, u) => ({
-      asunto: d.tipo === 'emergencia' ? `Emergencia: ${d.cliente}` : `Pedido de mantención: ${d.cliente}`,
-      titulo: d.tipo === 'emergencia' ? 'Nueva emergencia' : 'Nuevo pedido de mantención',
+      asunto: d.tipo === 'emergencia' ? `Emergencia: ${d.cliente}` : d.tipo === 'consulta' ? `Pide cotización: ${d.cliente}` : `Pedido de mantención: ${d.cliente}`,
+      titulo: d.tipo === 'emergencia' ? 'Nueva emergencia' : d.tipo === 'consulta' ? 'Nuevo pedido de cotización' : 'Nuevo pedido de mantención',
       parrafos: [`${d.cliente}${d.instalacion ? ` (${d.instalacion})` : ''} escribió: "${d.descripcion}"`],
       boton: { texto: 'Atender', url: `${u}/admin/solicitudes?id=${d.solicitud_id}` },
     }),

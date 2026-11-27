@@ -32,12 +32,12 @@ const ORDEN = `(s.tipo = 'emergencia') DESC, array_position(ARRAY['critica','alt
 router.get('/', async (req, res) => {
   const atendidas = req.query.vista === 'atendidas';
   const { rows } = await pool.query(
-    `SELECT ${COLUMNAS} ${DESDE} WHERE s.estado IN (${atendidas ? "'resuelta', 'cerrada'" : "'nueva', 'en_proceso'"}) AND s.tipo <> 'consulta'
+    `SELECT ${COLUMNAS} ${DESDE} WHERE s.estado IN (${atendidas ? "'resuelta', 'cerrada'" : "'nueva', 'en_proceso'"})
      ORDER BY ${atendidas ? 's.updated_at DESC' : ORDEN} LIMIT 100`);
   const { rows: [conteo] } = await pool.query(
     `SELECT count(*) FILTER (WHERE estado IN ('nueva', 'en_proceso'))::int AS pendientes,
             count(*) FILTER (WHERE estado IN ('nueva', 'en_proceso') AND tipo = 'emergencia')::int AS emergencias
-     FROM solicitudes WHERE tipo <> 'consulta'`);
+     FROM solicitudes`);
   res.json({ solicitudes: rows, conteo });
 });
 

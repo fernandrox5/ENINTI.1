@@ -5,6 +5,7 @@ import { pool } from '../../config/db.js';
 import { supabase } from '../../config/supabase.js';
 import { ErrorHttp } from '../../utils/validar.js';
 import { clienteDeSesion } from '../../utils/clienteSesion.js';
+import { notificar } from '../../services/notificar.js';
 
 const router = Router();
 
@@ -81,6 +82,7 @@ router.post('/:id/cotizacion', async (req, res) => {
     `INSERT INTO solicitudes (cliente_id, instalacion_id, tipo, prioridad, descripcion, canal)
      VALUES ($1, $2, 'consulta', 'media', $3, 'plataforma') RETURNING id`,
     [cliente, m.instalacion_id, `${marca}: el cliente pide cotizar "${m.detalle_inversion}" para ${m.instalacion}.`]);
+  await notificar('solicitud_nueva', { solicitud_id: s.id }, req);
   res.status(201).json({ id: s.id });
 });
 

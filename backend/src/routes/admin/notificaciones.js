@@ -19,10 +19,11 @@ router.get('/', async (req, res) => {
   const { rows } = await pool.query(
     `SELECT * FROM (
        SELECT 'sol-' || s.id AS clave, s.tipo::text AS tipo, s.created_at AS fecha,
-              CASE WHEN s.tipo = 'emergencia' THEN 'Emergencia en ' ELSE 'Pedido de mantención: ' END || coalesce(i.nombre, i.codigo, 'sin instalación') AS titulo,
+              CASE WHEN s.tipo = 'emergencia' THEN 'Emergencia en ' WHEN s.tipo = 'consulta' THEN 'Pide cotización: ' ELSE 'Pedido de mantención: ' END
+                || coalesce(i.nombre, i.codigo, 'sin instalación') AS titulo,
               c.nombre AS detalle, '/admin/solicitudes?id=' || s.id AS enlace, s.tipo = 'emergencia' AS importante
        FROM solicitudes s JOIN clientes c ON c.id = s.cliente_id LEFT JOIN instalaciones i ON i.id = s.instalacion_id
-       WHERE s.created_at > now() - interval '30 days' AND s.tipo <> 'consulta'
+       WHERE s.created_at > now() - interval '30 days'
      UNION ALL
        SELECT 'val-' || p.id, 'por_validar', p.created_at,
               'Pago por revisar: ' || c.nombre || ' · $' || replace(to_char(p.monto, 'FM999G999G999'), ',', '.'),

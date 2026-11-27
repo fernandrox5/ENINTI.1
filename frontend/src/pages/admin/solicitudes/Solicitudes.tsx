@@ -3,7 +3,7 @@
 // mantención, resolver o cerrar. "Anotar solicitud" registra las que llegan por teléfono o WhatsApp.
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { CalendarDays, Check, Inbox, Plus, Search, Wrench, Zap } from 'lucide-react';
+import { CalendarDays, Check, FileText, Inbox, Plus, Search, Wrench, Zap } from 'lucide-react';
 import { api } from '../../../api';
 import { useDatos } from '../../../useDatos';
 import { AreaTexto, Aviso, Cargando, Etiqueta, Modal, Selector, Titulo, Vacio, type Tono } from '../../../componentes';
@@ -18,7 +18,7 @@ interface Solicitud {
   mantencion: { id: number; estado: string; fecha_programada: string | null; fecha_realizada: string | null } | null;
 }
 export const PRIORIDAD: Record<string, [Tono, string]> = { critica: ['mala', 'Crítica'], alta: ['mala', 'Alta'], media: ['alerta', 'Media'], baja: ['neutra', 'Baja'] };
-const ICONO = { emergencia: Zap, mantencion: Wrench } as const;
+const ICONO = { emergencia: Zap, mantencion: Wrench, consulta: FileText } as const;
 
 // "hace 12 min", "hoy 10:20", "ayer", "3 nov"
 function cuando(f: string) {
@@ -48,7 +48,7 @@ export default function Solicitudes() {
   return (
     <>
       <div className="encabezado">
-        <Titulo icono={Inbox} fuerte="Solicitudes" suave="Pedidos de mantención y emergencias de los clientes" />
+        <Titulo icono={Inbox} fuerte="Solicitudes" suave="Pedidos de mantención, emergencias y cotizaciones de los clientes" />
         <button type="button" className="boton primario chico" onClick={() => setAnotar(true)}><Plus size={18} /> Anotar solicitud</button>
       </div>
       <div className="segmentos">
