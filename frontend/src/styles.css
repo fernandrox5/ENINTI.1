@@ -635,6 +635,15 @@ button.kpi { text-align: left; font: inherit; color: inherit; cursor: pointer; }
 .visita-hora { min-width: 58px; font-weight: 700; font-size: 17px; }
 .archivo.camara { justify-content: center; padding: 22px; font-size: 16px; color: var(--texto); background: var(--amarillo-suave); }
 .archivo.camara input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.tecnico-resumen { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.tecnico-cifra { display: grid; justify-items: center; gap: 2px; padding: 12px 6px; border: 1px solid #ece8de; border-radius: 14px; background: #fff; }
+.tecnico-cifra strong { font-size: 26px; font-weight: 600; line-height: 1.1; }
+.tecnico-cifra span { color: var(--gris); font-size: 14px; }
+.tecnico-cifra.mala { background: var(--rojo-claro); border-color: transparent; }
+.tecnico-cifra.mala strong { color: var(--rojo); }
+.tecnico-estado { display: grid; justify-items: center; gap: 12px; background: #fff; }
+.tecnico-estado p { margin: 0; line-height: 1.5; }
+.tecnico-estado .acciones-rapidas { justify-content: center; }
 .archivo { position: relative; }
 
 /* ---------- Inicio del administrador (T-36) ---------- */

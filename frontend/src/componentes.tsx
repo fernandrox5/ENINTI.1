@@ -1,5 +1,5 @@
 // Componentes de interfaz comunes (estilo de los mockups de Syntia)
-import { useEffect, useId, useState, type ReactNode, type InputHTMLAttributes, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react';
+import { Component, useEffect, useId, useState, type ReactNode, type InputHTMLAttributes, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ChevronLeft, CircleHelp, X, Loader2, type LucideIcon } from 'lucide-react';
 
@@ -121,6 +121,22 @@ export function Cargando({ texto = 'Cargando…' }: { texto?: string }) {
 
 export function Vacio({ children }: { children: ReactNode }) {
   return <div className="vacio">{children}</div>;
+}
+
+// Si una pantalla falla al dibujarse, muestra un aviso con "Reintentar" en vez de dejarla en blanco
+export class Protegido extends Component<{ children: ReactNode }, { fallo: boolean }> {
+  state = { fallo: false };
+  static getDerivedStateFromError() { return { fallo: true }; }
+  componentDidCatch(error: unknown) { console.error(error); }
+  render() {
+    if (!this.state.fallo) return this.props.children;
+    return (
+      <div className="vacio">
+        <p><strong>No se pudo mostrar esta pantalla.</strong></p>
+        <button type="button" className="boton secundario chico" onClick={() => window.location.reload()}>Reintentar</button>
+      </div>
+    );
+  }
 }
 
 export function Modal({ titulo, cerrar, children, ancho }: { titulo: string; cerrar: () => void; children: ReactNode; ancho?: number }) {

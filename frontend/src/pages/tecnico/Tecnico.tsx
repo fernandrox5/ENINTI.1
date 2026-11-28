@@ -3,11 +3,12 @@
 // fotos de la cámara. Lo que guarda lo ve ENINTI en el calendario y el cliente en su portal.
 import { useState, type FormEvent } from 'react';
 import { Link, NavLink, Outlet, useLocation, useParams } from 'react-router-dom';
-import { CalendarDays, Camera, Check, ChevronRight, LogOut, MapPin, Phone } from 'lucide-react';
+import { CalendarCheck, CalendarDays, Camera, Check, ChevronRight, LogOut, MapPin, MessageCircle, Phone, RotateCw, TriangleAlert } from 'lucide-react';
 import { api } from '../../api';
 import { useSesion } from '../../sesion';
 import { useDatos } from '../../useDatos';
-import { AreaTexto, Aviso, Campo, Cargando, Etiqueta, Saludo, Vacio, Volver } from '../../componentes';
+import { useWhatsapp } from '../../contacto';
+import { AreaTexto, Aviso, Campo, Cargando, Etiqueta, Protegido, Saludo, Volver } from '../../componentes';
 import { SISTEMAS, TIPOS_EQUIPO, TIPOS_MANTENCION, fechaCorta, hoyISO, pesos } from '../../formato';
 
 interface Visita {
@@ -28,8 +29,20 @@ const DIA = (f: string) => new Date(`${f}T12:00:00`).toLocaleDateString('es-CL',
 const mapa = (v: Pick<Visita, 'latitud' | 'longitud' | 'direccion' | 'localidad'>) =>
   `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(v.latitud && v.longitud ? `${v.latitud},${v.longitud}` : `${v.direccion}, ${v.localidad ?? 'Calama'}, Chile`)}`;
 
+// Aviso de error que nunca queda vacío, con botón para volver a cargar
+function ErrorCarga({ error, reintentar }: { error: string; reintentar: () => void }) {
+  return (
+    <div className="vacio tecnico-estado">
+      <TriangleAlert size={30} className="texto-malo" />
+      <p><strong>No se pudieron cargar tus visitas.</strong><br /><span className="suave">{error || 'Revisa tu internet e intenta de nuevo.'}</span></p>
+      <button type="button" className="boton secundario chico" onClick={reintentar}><RotateCw size={16} /> Reintentar</button>
+    </div>
+  );
+}
+
 export function PanelTecnico() {
   const { usuario, salir } = useSesion();
+  const { pathname } = useLocation();
   return (
     <div className="panel-tecnico con-menu">
       <aside className="portal-menu solo-escritorio">
@@ -43,17 +56,17 @@ export function PanelTecnico() {
       </aside>
       <header className="tecnico-cabecera">
         <Link to="/tecnico" className="portal-marca"><img src="/syntia-icono.png" alt="" className="marca-sol" /> <strong>Syntia</strong> <small className="suave">Técnico</small></Link>
-        <span className="suave">{usuario?.nombre.split(' ')[0]}</span>
+        <span className="suave">{(usuario?.nombre ?? '').split(' ')[0]}</span>
         <button type="button" className="icono-boton chico" aria-label="Cerrar sesión" onClick={salir}><LogOut size={18} /></button>
       </header>
-      <main className="tecnico-pagina"><Outlet /></main>
+      <main className="tecnico-pagina"><Protegido key={pathname}><Outlet /></Protegido></main>
     </div>
   );
 }
 
 function TarjetaVisita({ v }: { v: Visita }) {
   const fecha = v.fecha_realizada ?? v.fecha_programada;
-  const atrasada = v.estado === 'programada' && (v.fecha_programada ?? '') < hoyISO();
+  const atrasada = v.estado === 'programada' && Boolean(v.fecha_programada) && v.fecha_programada! < hoyISO();
   return (
     <li>
       <Link to={`/tecnico/visitas/${v.id}`} className={`visita ${v.tipo} ${atrasada ? 'atrasada' : ''}`}>
@@ -72,26 +85,45 @@ function TarjetaVisita({ v }: { v: Visita }) {
 }
 
 export function Visitas() {
-  const { datos, error, cargando } = useDatos<{ tecnico: { nombre: string }; programadas: Visita[]; realizadas: Visita[] }>('/tecnico/visitas');
+  const { usuario } = useSesion();
+  const { datos, error, cargando, recargar } = useDatos<{ tecnico: { nombre: string }; programadas: Visita[]; realizadas: Visita[] }>('/tecnico/visitas');
   const aviso = (useLocation().state as { aviso?: string } | null)?.aviso;
-  if (cargando && !datos) return <Cargando />;
-  if (!datos) return <Aviso>{error}</Aviso>;
+  const whatsapp = useWhatsapp('Hola, soy técnico de ENINTI y no veo visitas asignadas en Syntia.');
+  const nombre = (datos?.tecnico?.nombre || usuario?.nombre || '').split(' ')[0];
+  const saludo = `Hola${nombre ? `, ${nombre}` : ''}`;
+  if (cargando && !datos) return <Cargando texto="Cargando tus visitas…" />;
+  if (!datos) return <><Saludo titulo={saludo} /><ErrorCarga error={error} reintentar={recargar} /></>;
+  const programadas = datos.programadas ?? [];
+  const realizadas = datos.realizadas ?? [];
   const hoy = hoyISO();
-  const atrasadas = datos.programadas.filter((v) => v.fecha_programada && v.fecha_programada < hoy);
-  const deHoy = datos.programadas.filter((v) => v.fecha_programada === hoy);
-  const proximas = datos.programadas.filter((v) => !v.fecha_programada || v.fecha_programada > hoy);
+  const atrasadas = programadas.filter((v) => v.fecha_programada && v.fecha_programada < hoy);
+  const deHoy = programadas.filter((v) => v.fecha_programada === hoy);
+  const proximas = programadas.filter((v) => !v.fecha_programada || v.fecha_programada > hoy);
   const grupo = (titulo: string, lista: Visita[]) => lista.length > 0 && (
     <><h2 className="subtitulo">{titulo}</h2><ul className="lista-mantenciones">{lista.map((v) => <TarjetaVisita key={v.id} v={v} />)}</ul></>
   );
+  const resumen: [string, number, string][] = [['Hoy', deHoy.length, ''], ['Atrasadas', atrasadas.length, atrasadas.length ? 'mala' : ''], ['Próximas', proximas.length, '']];
   return (
     <>
-      <Saludo titulo={`Hola, ${datos.tecnico.nombre.split(' ')[0]}`} texto={`${deHoy.length ? `Hoy tienes ${deHoy.length} ${deHoy.length === 1 ? 'visita' : 'visitas'}.` : 'Hoy no tienes visitas.'}${atrasadas.length ? ` ${atrasadas.length} ${atrasadas.length === 1 ? 'visita pasada está' : 'visitas pasadas están'} sin informe.` : ''}`} />
+      <Saludo titulo={saludo} texto={`${deHoy.length ? `Hoy tienes ${deHoy.length} ${deHoy.length === 1 ? 'visita' : 'visitas'}.` : 'Hoy no tienes visitas.'}${atrasadas.length ? ` ${atrasadas.length} ${atrasadas.length === 1 ? 'visita pasada está' : 'visitas pasadas están'} sin informe.` : ''}`} />
       <Aviso tipo="ok">{aviso}</Aviso>
+      <div className="tecnico-resumen">
+        {resumen.map(([t, n, tono]) => <div key={t} className={`tecnico-cifra ${tono}`}><strong>{n}</strong><span>{t}</span></div>)}
+      </div>
       {grupo('Atrasadas · falta el informe', atrasadas)}
       {grupo(`Hoy · ${DIA(hoy)}`, deHoy)}
       {grupo('Próximas', proximas)}
-      {datos.programadas.length === 0 && <Vacio>No tienes visitas pendientes asignadas.</Vacio>}
-      {grupo('Realizadas (últimos 60 días)', datos.realizadas)}
+      {programadas.length === 0 && (
+        <div className="vacio tecnico-estado">
+          <CalendarCheck size={32} className="suave" />
+          <p><strong>No tienes visitas pendientes</strong><br /><span className="suave">Cuando ENINTI te asigne una visita, aparecerá aquí.</span></p>
+          <div className="acciones-rapidas">
+            <button type="button" className="boton secundario chico" onClick={recargar} disabled={cargando}><RotateCw size={16} /> Actualizar</button>
+            {whatsapp && <a href={whatsapp} target="_blank" rel="noreferrer" className="boton secundario chico"><MessageCircle size={16} /> Escribir a ENINTI</a>}
+          </div>
+        </div>
+      )}
+      {grupo('Realizadas (últimos 60 días)', realizadas)}
     </>
   );
 }
@@ -113,8 +145,8 @@ export function VisitaTecnico() {
   const [version, setVersion] = useState(0);
   const { datos: v, error, cargando } = useDatos<Detalle>(`/tecnico/visitas/${id}?v=${version}`);
   const [editando, setEditando] = useState(false);
-  if (cargando && !v) return <Cargando />;
-  if (!v) return <><Volver a="/tecnico" texto="Mis visitas" /><Aviso>{error}</Aviso></>;
+  if (cargando && !v) return <Cargando texto="Cargando la visita…" />;
+  if (!v) return <><Volver a="/tecnico" texto="Mis visitas" /><ErrorCarga error={error} reintentar={() => setVersion((x) => x + 1)} /></>;
   const realizada = v.estado === 'realizada';
   return (
     <>
